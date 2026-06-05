@@ -180,12 +180,12 @@ export default function WorkingGroupEditorNavigation({
                           // weight/color. Removed the 3px left-stripe accent
                           // that duplicated those signals (AI-slop tell).
                           "w-full text-left py-2 px-3 rounded text-body font-normal transition-all duration-200 ease-in-out",
-                          "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 focus:ring-offset-1",
+                          "focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-opacity-50 focus:ring-offset-1",
                           !isLocked && !disabled && "active:scale-[0.98] transform",
                           (isLocked || disabled)
                             ? "text-muted-foreground cursor-not-allowed opacity-60"
                             : isActive
-                              ? "bg-blue-100 text-blue-700 font-medium shadow-sm"
+                              ? "bg-surface-muted text-foreground font-medium shadow-sm"
                               : "text-muted-foreground hover:bg-muted hover:text-gunmetal"
                         )}
                         aria-current={isActive ? "page" : undefined}

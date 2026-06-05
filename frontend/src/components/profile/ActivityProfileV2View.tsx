@@ -1113,7 +1113,7 @@ function ActivityLocationsSection({
   return (
     <Card className="bg-card p-6">
       <div className="mb-4 flex flex-col space-y-1.5">
-        <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Activity Locations</h2>
+        <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground flex items-center gap-2"><MapPin className="h-6 w-6 text-muted-foreground" />Activity Locations</h2>
         <p className="text-body text-muted-foreground">
           Mapped locations and sub-national breakdown for this activity
         </p>

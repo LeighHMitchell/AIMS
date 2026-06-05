@@ -2233,7 +2233,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               <div className="flex items-center gap-2">
                 Activity Hierarchy Level
                 <HelpTextTooltip>
-                  Indicates the organizational level of this activity within a project structure. Level 1 represents top-level programs, while higher numbers represent sub-components. This helps establish parent-child relationships between activities for better project organization and reporting.
+                  The IATI <code>@hierarchy</code> value: a depth number your organisation defines for itself. Level 1 is the top of your structure; higher numbers are sub-activities further down. IATI sets no fixed labels or maximum, and the number is only meaningful within your own reporting. It is optional — leave it blank if you don't use a hierarchy. To actually connect activities, add a Parent/Child link on the Linked Activities tab.
                 </HelpTextTooltip>
               </div>
               {fieldLockStatus.isLocked && (

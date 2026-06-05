@@ -143,7 +143,9 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
     return sortOrder === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />;
   };
 
-  if (loading) {
+  // Only show the skeleton on the initial load. On a sort/page refetch we keep
+  // the existing rows visible so the column just reorders (no full-table flash).
+  if (loading && disbursements.length === 0) {
     return (
       <div className="space-y-2">
         {[...Array(5)].map((_, i) => (

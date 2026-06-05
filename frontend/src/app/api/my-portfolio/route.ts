@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         title_narrative,
         description_narrative,
         activity_status,
-        validation_status,
+        submission_status,
         planned_start_date,
         planned_end_date,
         updated_at,
@@ -217,13 +217,13 @@ export async function GET(request: NextRequest) {
       missingDataByActivity.sort((a, b) => b.missingFields.length - a.missingFields.length)
     }
 
-    // Real validation status, derived from each activity's validation_status
-    // column. Buckets: validated; pending = submitted / more-info-requested;
-    // rejected. 'draft' / null are not yet submitted for validation, so they
-    // are intentionally excluded from all three counts.
+    // Real validation status, derived from each activity's submission_status.
+    // Buckets: validated; pending = submitted / more-info-requested; rejected.
+    // 'draft' / 'not_submitted' / 'published' / null are not pending validation,
+    // so they are intentionally excluded from all three counts.
     const validationStatus = { validated: 0, pending: 0, rejected: 0 }
     ;(activities || []).forEach((activity: any) => {
-      switch (activity?.validation_status) {
+      switch (activity?.submission_status) {
         case 'validated':
           validationStatus.validated++
           break

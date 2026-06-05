@@ -23,27 +23,26 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { convertToCSV, downloadCSV, CSVColumn } from '@/lib/exports';
-import type {
-  ValidationRulesResponse,
-  ImplementationPastEndDateActivity,
-  ImplementationWithActualEndActivity,
-  MissingPlannedStartActivity,
-  MissingPlannedEndActivity,
-  ClosedWithoutActualEndActivity,
-  NoCommitmentActivity,
-  PercentageNotHundredActivity,
-  NoLocationsActivity,
-  MixedAdminLevelsActivity,
-  ZeroPercentLocationActivity,
-  NoImplementingOrgActivity,
-  SectorPercentageNotHundredActivity,
-  ZeroPercentSectorActivity,
-} from '@/types/validation-rules';
+import type { ValidationRulesResponse } from '@/types/validation-rules';
 import { ACTIVITY_STATUS_LABELS } from '@/types/validation-rules';
 import { apiFetch } from '@/lib/api-fetch';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 
 interface ValidationRulesCardProps {
   organizationId: string;
+}
+
+// A single, flattened data-quality issue (one failing rule for one activity).
+interface DataQualityIssue {
+  category: string;
+  rule: string;
+  activityId: string;
+  iatiIdentifier: string;
+  title: string;
+  status: string;
+  details: string;
+  /** Activity editor href, deep-linked to the most relevant tab. */
+  editHref: string;
 }
 
 // Format date for display
@@ -56,76 +55,147 @@ function formatDate(dateString: string | null): string {
   });
 }
 
-// Validation rule table component
-interface RuleTableProps<T> {
-  title: string;
-  description: string;
-  items: T[];
-  columns: { header: string; accessor: (item: T) => React.ReactNode; className?: string }[];
-  onEditClick: (activityId: string) => void;
+const statusLabel = (status: string): string =>
+  ACTIVITY_STATUS_LABELS[status]?.label || status;
+
+/**
+ * Flatten every validation-rule failure into a uniform list of issue rows, used
+ * by both the consolidated table and the CSV export. Each rule deep-links its
+ * Edit action to the relevant Activity Editor tab.
+ */
+function flattenIssues(data: ValidationRulesResponse): DataQualityIssue[] {
+  const issues: DataQualityIssue[] = [];
+  const href = (id: string, tab?: string) => `/activities/${id}${tab ? `?tab=${tab}` : ''}`;
+
+  // ---- Activity rules ----
+  data.activityRules.implementationPastEndDate.forEach((item) => {
+    issues.push({
+      category: 'Activity', rule: 'Implementation Past End Date',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status), details: `${item.days_past_end} days past end`,
+      editHref: href(item.id),
+    });
+  });
+  data.activityRules.implementationWithActualEnd.forEach((item) => {
+    issues.push({
+      category: 'Activity', rule: 'Implementation With Actual End Date',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status), details: `Actual end: ${formatDate(item.actual_end_date)}`,
+      editHref: href(item.id),
+    });
+  });
+  data.activityRules.missingPlannedStart.forEach((item) => {
+    issues.push({
+      category: 'Activity', rule: 'Missing Planned Start Date',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status), details: '',
+      editHref: href(item.id),
+    });
+  });
+  data.activityRules.missingPlannedEnd.forEach((item) => {
+    issues.push({
+      category: 'Activity', rule: 'Missing Planned End Date',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status),
+      details: item.planned_start_date ? `Planned start: ${formatDate(item.planned_start_date)}` : '',
+      editHref: href(item.id),
+    });
+  });
+  data.activityRules.closedWithoutActualEnd.forEach((item) => {
+    issues.push({
+      category: 'Activity', rule: 'Closed Without Actual End Date',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status),
+      details: item.planned_end_date ? `Planned end: ${formatDate(item.planned_end_date)}` : '',
+      editHref: href(item.id),
+    });
+  });
+
+  // ---- Transaction rules ----
+  data.transactionRules.noCommitmentTransaction.forEach((item) => {
+    issues.push({
+      category: 'Transaction', rule: 'No Commitment Transaction',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status), details: `Total transactions: ${item.transaction_count}`,
+      editHref: href(item.id, 'finances'),
+    });
+  });
+
+  // ---- Location rules ----
+  data.locationRules.percentageNotHundred.forEach((item) => {
+    issues.push({
+      category: 'Location', rule: "Percentages Not 100%",
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status),
+      details: `Total: ${item.total_percentage}% across ${item.location_count} locations`,
+      editHref: href(item.id, 'locations'),
+    });
+  });
+  data.locationRules.noLocations.forEach((item) => {
+    issues.push({
+      category: 'Location', rule: 'No Locations',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status), details: '',
+      editHref: href(item.id, 'locations'),
+    });
+  });
+  data.locationRules.mixedAdminLevels.forEach((item) => {
+    issues.push({
+      category: 'Location', rule: 'Mixed Admin Levels',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status),
+      details: `${item.distinct_admin_levels} levels: ${item.admin_levels.join(', ')}`,
+      editHref: href(item.id, 'locations'),
+    });
+  });
+  data.locationRules.zeroPercentLocation.forEach((item) => {
+    issues.push({
+      category: 'Location', rule: 'Zero Percent Location',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status), details: `Location: ${item.location_name}`,
+      editHref: href(item.id, 'locations'),
+    });
+  });
+
+  // ---- Participating Organisation rules ----
+  data.participatingOrgRules.noImplementingOrg.forEach((item) => {
+    issues.push({
+      category: 'Participating Organisation', rule: 'No Implementing Organisation',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status), details: `Participating orgs: ${item.participating_org_count}`,
+      editHref: href(item.id, 'stakeholders'),
+    });
+  });
+
+  // ---- Sector rules ----
+  data.sectorRules.sectorPercentageNotHundred.forEach((item) => {
+    issues.push({
+      category: 'Sector', rule: "Percentages Not 100%",
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status),
+      details: `Total: ${item.total_sector_percentage}% across ${item.sector_count} sectors`,
+      editHref: href(item.id, 'sectors'),
+    });
+  });
+  data.sectorRules.zeroPercentSector.forEach((item) => {
+    issues.push({
+      category: 'Sector', rule: 'Zero Percent Sector',
+      activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
+      status: statusLabel(item.activity_status), details: `Sector: ${item.sector_name} (${item.sector_code})`,
+      editHref: href(item.id, 'sectors'),
+    });
+  });
+
+  return issues;
 }
 
-function RuleTable<T extends { id: string }>({
-  title,
-  description,
-  items,
-  columns,
-  onEditClick,
-}: RuleTableProps<T>) {
-  if (items.length === 0) {
-    return null; // Don't render empty tables
-  }
-
-  return (
-    <div className="border border-border rounded-lg overflow-hidden shadow-sm">
-      <div className="bg-muted px-4 py-3 border-b border-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-medium text-foreground flex items-center gap-2">
-              {title}
-              <Badge variant="destructive">{items.length}</Badge>
-            </h3>
-            <p className="text-body text-muted-foreground mt-0.5">{description}</p>
-          </div>
-        </div>
-      </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {columns.map((col, idx) => (
-              <TableHead key={idx} className={col.className}>
-                {col.header}
-              </TableHead>
-            ))}
-            <TableHead className="w-[80px]"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.id} className="hover:bg-muted">
-              {columns.map((col, idx) => (
-                <TableCell key={idx} className={col.className}>
-                  {col.accessor(item)}
-                </TableCell>
-              ))}
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => onEditClick(item.id)}
-                  title="Edit activity"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
+const CATEGORY_BADGE: Record<string, string> = {
+  Activity: 'bg-blue-50 text-blue-700',
+  Transaction: 'bg-emerald-50 text-emerald-700',
+  Location: 'bg-amber-50 text-amber-700',
+  'Participating Organisation': 'bg-violet-50 text-violet-700',
+  Sector: 'bg-rose-50 text-rose-700',
+};
 
 export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps) {
   const router = useRouter();
@@ -159,196 +229,26 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
     }
   }, [organizationId, fetchData]);
 
-  const handleEditClick = (activityId: string) => {
-    router.push(`/activities/${activityId}`);
-  };
-
   const handleDownloadCSV = () => {
     if (!data) return;
-
     try {
-      // Flatten all validation failures into a single CSV
-      const allFailures: any[] = [];
-
-      // Activity rules
-      data.activityRules.implementationPastEndDate.forEach(item => {
-        allFailures.push({
-          rule_category: 'Activity',
-          rule_name: 'Implementation Past End Date',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: `${item.days_past_end} days past end`,
-        });
-      });
-
-      data.activityRules.implementationWithActualEnd.forEach(item => {
-        allFailures.push({
-          rule_category: 'Activity',
-          rule_name: 'Implementation With Actual End Date',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: `Actual end: ${formatDate(item.actual_end_date)}`,
-        });
-      });
-
-      data.activityRules.missingPlannedStart.forEach(item => {
-        allFailures.push({
-          rule_category: 'Activity',
-          rule_name: 'Missing Planned Start Date',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: '',
-        });
-      });
-
-      data.activityRules.missingPlannedEnd.forEach(item => {
-        allFailures.push({
-          rule_category: 'Activity',
-          rule_name: 'Missing Planned End Date',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: item.planned_start_date ? `Planned start: ${formatDate(item.planned_start_date)}` : '',
-        });
-      });
-
-      data.activityRules.closedWithoutActualEnd.forEach(item => {
-        allFailures.push({
-          rule_category: 'Activity',
-          rule_name: 'Closed Without Actual End Date',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: item.planned_end_date ? `Planned end: ${formatDate(item.planned_end_date)}` : '',
-        });
-      });
-
-      // Transaction rules
-      data.transactionRules.noCommitmentTransaction.forEach(item => {
-        allFailures.push({
-          rule_category: 'Transaction',
-          rule_name: 'No Commitment Transaction',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: `Total transactions: ${item.transaction_count}`,
-        });
-      });
-
-      // Location rules
-      data.locationRules.percentageNotHundred.forEach(item => {
-        allFailures.push({
-          rule_category: 'Location',
-          rule_name: 'Percentages Not 100%',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: `Total: ${item.total_percentage}% across ${item.location_count} locations`,
-        });
-      });
-
-      data.locationRules.noLocations.forEach(item => {
-        allFailures.push({
-          rule_category: 'Location',
-          rule_name: 'No Locations',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: '',
-        });
-      });
-
-      data.locationRules.mixedAdminLevels.forEach(item => {
-        allFailures.push({
-          rule_category: 'Location',
-          rule_name: 'Mixed Admin Levels',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: `${item.distinct_admin_levels} levels: ${item.admin_levels.join(', ')}`,
-        });
-      });
-
-      data.locationRules.zeroPercentLocation.forEach(item => {
-        allFailures.push({
-          rule_category: 'Location',
-          rule_name: 'Zero Percent Location',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: `Location: ${item.location_name}`,
-        });
-      });
-
-      // Participating Organisation rules
-      data.participatingOrgRules.noImplementingOrg.forEach(item => {
-        allFailures.push({
-          rule_category: 'Participating Organisation',
-          rule_name: 'No Implementing Organisation',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: `Participating orgs: ${item.participating_org_count}`,
-        });
-      });
-
-      // Sector rules
-      data.sectorRules.sectorPercentageNotHundred.forEach(item => {
-        allFailures.push({
-          rule_category: 'Sector',
-          rule_name: 'Percentages Not 100%',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: `Total: ${item.total_sector_percentage}% across ${item.sector_count} sectors`,
-        });
-      });
-
-      data.sectorRules.zeroPercentSector.forEach(item => {
-        allFailures.push({
-          rule_category: 'Sector',
-          rule_name: 'Zero Percent Sector',
-          activity_id: item.id,
-          iati_identifier: item.iati_identifier || '',
-          title: item.title_narrative,
-          status: ACTIVITY_STATUS_LABELS[item.activity_status]?.label || item.activity_status,
-          details: `Sector: ${item.sector_name} (${item.sector_code})`,
-        });
-      });
-
-      if (allFailures.length === 0) {
+      const issues = flattenIssues(data);
+      if (issues.length === 0) {
         toast.info('No validation failures to export');
         return;
       }
-
-      const columns: CSVColumn<typeof allFailures[0]>[] = [
-        { header: 'Rule Category', accessor: 'rule_category' },
-        { header: 'Rule Name', accessor: 'rule_name' },
-        { header: 'Activity ID', accessor: 'activity_id' },
-        { header: 'IATI Identifier', accessor: 'iati_identifier' },
+      const columns: CSVColumn<DataQualityIssue>[] = [
+        { header: 'Rule Category', accessor: 'category' },
+        { header: 'Rule Name', accessor: 'rule' },
+        { header: 'Activity ID', accessor: 'activityId' },
+        { header: 'IATI Identifier', accessor: 'iatiIdentifier' },
         { header: 'Title', accessor: 'title' },
         { header: 'Status', accessor: 'status' },
         { header: 'Details', accessor: 'details' },
       ];
-
-      const csv = convertToCSV(allFailures, columns);
+      const csv = convertToCSV(issues, columns);
       downloadCSV(csv, 'validation_rule_failures');
-      toast.success(`Exported ${allFailures.length} validation failures`);
+      toast.success(`Exported ${issues.length} validation failures`);
     } catch (err) {
       console.error('CSV export error:', err);
       toast.error('Failed to export CSV');
@@ -367,9 +267,9 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full" />
+          <div className="space-y-2">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>
         </CardContent>
@@ -400,13 +300,6 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
 
   const totalIssues = data.counts.total;
 
-  // Check if a category has any issues
-  const hasActivityRules = data.counts.activityRules > 0;
-  const hasTransactionRules = data.counts.transactionRules > 0;
-  const hasLocationRules = data.counts.locationRules > 0;
-  const hasParticipatingOrgRules = data.counts.participatingOrgRules > 0;
-  const hasSectorRules = data.counts.sectorRules > 0;
-
   if (totalIssues === 0) {
     return (
       <Card className="bg-white">
@@ -432,8 +325,10 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
     );
   }
 
+  const issues = flattenIssues(data);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Summary header */}
       <div className="flex items-center justify-between">
         <div>
@@ -460,545 +355,57 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
         </Button>
       </div>
 
-      {/* Activity Rules */}
-      {hasActivityRules && (
-        <Card className="bg-white">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Activity Rules
-              <Badge variant="secondary">{data.counts.activityRules}</Badge>
-            </CardTitle>
-            <CardDescription>
-              Date and status consistency checks
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <RuleTable<ImplementationPastEndDateActivity>
-                title="Implementation Past End Date"
-                description="Activities under implementation but past their planned end date"
-                items={data.activityRules.implementationPastEndDate}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Planned End',
-                    accessor: (item) => <span className="text-body text-foreground">{formatDate(item.planned_end_date)}</span>,
-                    className: 'w-[130px]',
-                  },
-                  {
-                    header: 'Overdue',
-                    accessor: (item) => (
-                      <Badge variant="destructive">{item.days_past_end} days</Badge>
-                    ),
-                    className: 'w-[110px]',
-                  },
-                ]}
-                onEditClick={handleEditClick}
-              />
-
-              <RuleTable<ImplementationWithActualEndActivity>
-                title="Implementation With Actual End Date"
-                description="Activities still in implementation but already have an actual end date — update the status or remove the end date"
-                items={data.activityRules.implementationWithActualEnd}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Actual End Date',
-                    accessor: (item) => <span className="text-body text-foreground">{formatDate(item.actual_end_date)}</span>,
-                    className: 'w-[140px]',
-                  },
-                  {
-                    header: 'Status',
-                    accessor: (item) => {
-                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
-                    },
-                    className: 'w-[130px]',
-                  },
-                ]}
-                onEditClick={handleEditClick}
-              />
-
-              <RuleTable<MissingPlannedStartActivity>
-                title="Missing Planned Start Date"
-                description="Activities without a planned start date"
-                items={data.activityRules.missingPlannedStart}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Status',
-                    accessor: (item) => {
-                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
-                    },
-                    className: 'w-[130px]',
-                  },
-                ]}
-                onEditClick={handleEditClick}
-              />
-
-              <RuleTable<MissingPlannedEndActivity>
-                title="Missing Planned End Date"
-                description="Activities without a planned end date"
-                items={data.activityRules.missingPlannedEnd}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Planned Start',
-                    accessor: (item) => <span className="text-body text-foreground">{formatDate(item.planned_start_date)}</span>,
-                    className: 'w-[130px]',
-                  },
-                  {
-                    header: 'Status',
-                    accessor: (item) => {
-                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
-                    },
-                    className: 'w-[130px]',
-                  },
-                ]}
-                onEditClick={handleEditClick}
-              />
-
-              <RuleTable<ClosedWithoutActualEndActivity>
-                title="Closed Without Actual End Date"
-                description="Closed activities that don't have an actual end date"
-                items={data.activityRules.closedWithoutActualEnd}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Planned End',
-                    accessor: (item) => <span className="text-body text-foreground">{formatDate(item.planned_end_date)}</span>,
-                    className: 'w-[130px]',
-                  },
-                  {
-                    header: 'Status',
-                    accessor: (item) => {
-                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
-                    },
-                    className: 'w-[130px]',
-                  },
-                ]}
-                onEditClick={handleEditClick}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Transaction Rules */}
-      {hasTransactionRules && (
-        <Card className="bg-white">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Transaction Rules
-              <Badge variant="secondary">{data.counts.transactionRules}</Badge>
-            </CardTitle>
-            <CardDescription>
-              Financial transaction completeness checks
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <RuleTable<NoCommitmentActivity>
-                title="No Commitment Transaction"
-                description="Activities without any commitment transactions"
-                items={data.transactionRules.noCommitmentTransaction}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Other Transactions',
-                    accessor: (item) => <span className="text-body text-foreground">{item.transaction_count}</span>,
-                    className: 'w-[150px]',
-                  },
-                  {
-                    header: 'Status',
-                    accessor: (item) => {
-                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
-                    },
-                    className: 'w-[130px]',
-                  },
-                ]}
-                onEditClick={(id) => router.push(`/activities/${id}?tab=finances`)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Location Rules */}
-      {hasLocationRules && (
-        <Card className="bg-white">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Location Rules
-              <Badge variant="secondary">{data.counts.locationRules}</Badge>
-            </CardTitle>
-            <CardDescription>
-              Geographic data quality checks
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <RuleTable<PercentageNotHundredActivity>
-                title="Percentages Don't Sum to 100%"
-                description="Activities where location percentages don't add up to 100%"
-                items={data.locationRules.percentageNotHundred}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Locations',
-                    accessor: (item) => <span className="text-body text-foreground">{item.location_count}</span>,
-                    className: 'w-[100px]',
-                  },
-                  {
-                    header: 'Total',
-                    accessor: (item) => (
-                      <Badge variant="destructive">{item.total_percentage.toFixed(1)}%</Badge>
-                    ),
-                    className: 'w-[100px]',
-                  },
-                ]}
-                onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
-              />
-
-              <RuleTable<NoLocationsActivity>
-                title="No Locations"
-                description="Activities without any linked locations"
-                items={data.locationRules.noLocations}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Status',
-                    accessor: (item) => {
-                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
-                    },
-                    className: 'w-[130px]',
-                  },
-                ]}
-                onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
-              />
-
-              <RuleTable<MixedAdminLevelsActivity>
-                title="Mixed Admin Levels"
-                description="Activities with locations at different administrative levels"
-                items={data.locationRules.mixedAdminLevels}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Locations',
-                    accessor: (item) => <span className="text-body text-foreground">{item.location_count}</span>,
-                    className: 'w-[100px]',
-                  },
-                  {
-                    header: 'Admin Levels',
-                    accessor: (item) => (
-                      <div className="flex gap-1 flex-wrap">
-                        {item.admin_levels.map((level, idx) => (
-                          <Badge key={idx} variant="outline" className="text-helper">
-                            Level {level}
-                          </Badge>
-                        ))}
-                      </div>
-                    ),
-                    className: 'w-[160px]',
-                  },
-                ]}
-                onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
-              />
-
-              <RuleTable<ZeroPercentLocationActivity>
-                title="Zero Percent Location"
-                description="Activities with locations that have 0% allocation"
-                items={data.locationRules.zeroPercentLocation}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Location',
-                    accessor: (item) => <span className="text-body text-foreground">{item.location_name}</span>,
-                    className: 'w-[200px]',
-                  },
-                  {
-                    header: 'Allocation',
-                    accessor: () => (
-                      <Badge variant="destructive">0%</Badge>
-                    ),
-                    className: 'w-[100px]',
-                  },
-                ]}
-                onEditClick={(id) => router.push(`/activities/${id}?tab=locations`)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Participating Organisation Rules */}
-      {hasParticipatingOrgRules && (
-        <Card className="bg-white">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Participating Organisation Rules
-              <Badge variant="secondary">{data.counts.participatingOrgRules}</Badge>
-            </CardTitle>
-            <CardDescription>
-              Organisation role completeness checks
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <RuleTable<NoImplementingOrgActivity>
-                title="No Implementing Organisation"
-                description="Activities without an implementing organisation"
-                items={data.participatingOrgRules.noImplementingOrg}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Other Orgs',
-                    accessor: (item) => <span className="text-body text-foreground">{item.participating_org_count}</span>,
-                    className: 'w-[110px]',
-                  },
-                  {
-                    header: 'Status',
-                    accessor: (item) => {
-                      const statusInfo = ACTIVITY_STATUS_LABELS[item.activity_status];
-                      return <Badge variant="outline">{statusInfo?.label || 'Unknown'}</Badge>;
-                    },
-                    className: 'w-[130px]',
-                  },
-                ]}
-                onEditClick={(id) => router.push(`/activities/${id}?tab=stakeholders`)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Sector Rules */}
-      {hasSectorRules && (
-        <Card className="bg-white">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              Sector Rules
-              <Badge variant="secondary">{data.counts.sectorRules}</Badge>
-            </CardTitle>
-            <CardDescription>
-              Sector allocation checks
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <RuleTable<SectorPercentageNotHundredActivity>
-                title="Sector Percentages Don't Sum to 100%"
-                description="Activities where sector percentage allocations don't total 100%"
-                items={data.sectorRules.sectorPercentageNotHundred}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Sectors',
-                    accessor: (item) => <span className="text-body text-foreground">{item.sector_count}</span>,
-                    className: 'w-[100px]',
-                  },
-                  {
-                    header: 'Total',
-                    accessor: (item) => (
-                      <Badge variant="destructive">{item.total_sector_percentage.toFixed(1)}%</Badge>
-                    ),
-                    className: 'w-[100px]',
-                  },
-                ]}
-                onEditClick={(id) => router.push(`/activities/${id}?tab=sectors`)}
-              />
-
-              <RuleTable<ZeroPercentSectorActivity>
-                title="Zero Percent Sector"
-                description="Activities with sectors that have 0% allocation"
-                items={data.sectorRules.zeroPercentSector}
-                columns={[
-                  {
-                    header: 'Activity',
-                    accessor: (item) => (
-                      <div>
-                        <p className="font-medium text-foreground">{item.title_narrative}</p>
-                        {item.iati_identifier && (
-                          <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-0.5">
-                            {item.iati_identifier}
-                          </code>
-                        )}
-                      </div>
-                    ),
-                  },
-                  {
-                    header: 'Sector',
-                    accessor: (item) => (
-                      <div>
-                        <span className="text-body text-foreground">{item.sector_name}</span>
-                        <code className="text-xs font-mono text-muted-foreground block mt-0.5">{item.sector_code}</code>
-                      </div>
-                    ),
-                    className: 'w-[200px]',
-                  },
-                  {
-                    header: 'Allocation',
-                    accessor: () => (
-                      <Badge variant="destructive">0%</Badge>
-                    ),
-                    className: 'w-[100px]',
-                  },
-                ]}
-                onEditClick={(id) => router.push(`/activities/${id}?tab=sectors`)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Consolidated issues table */}
+      <div className="border border-border rounded-lg overflow-hidden shadow-sm bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Activity</TableHead>
+              <TableHead className="w-[180px]">Category</TableHead>
+              <TableHead className="w-[230px]">Issue</TableHead>
+              <TableHead>Details</TableHead>
+              <TableHead className="w-[150px]">Status</TableHead>
+              <TableHead className="w-[64px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {issues.map((issue, idx) => (
+              <TableRow key={`${issue.activityId}-${issue.category}-${issue.rule}-${idx}`} className="hover:bg-muted">
+                <TableCell>
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground leading-snug">{issue.title}</p>
+                    {issue.iatiIdentifier && (
+                      <CopyableIdBadge value={issue.iatiIdentifier} label="Activity ID" className="mt-0.5" />
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge className={`whitespace-nowrap border-0 ${CATEGORY_BADGE[issue.category] || 'bg-muted text-muted-foreground'}`}>
+                    {issue.category}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-body text-foreground">{issue.rule}</TableCell>
+                <TableCell className="text-body text-muted-foreground">{issue.details || '—'}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="whitespace-nowrap">{issue.status}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                    onClick={() => router.push(issue.editHref)}
+                    title="Edit activity"
+                    aria-label="Edit activity"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

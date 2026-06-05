@@ -287,6 +287,22 @@ export async function GET(request: NextRequest) {
     const budgetOriginalMap = new Map<string, number>();
     const plannedDisbursementMap = new Map<string, number>();
     const plannedDisbursementOriginalMap = new Map<string, number>();
+    // Track the distinct original currencies per activity so the UI knows whether
+    // a single-currency original figure is meaningful (single non-USD currency)
+    // or whether it should fall back to the USD aggregate (USD or mixed currencies).
+    const budgetCurrencySetMap = new Map<string, Set<string>>();
+    const plannedDisbursementCurrencySetMap = new Map<string, Set<string>>();
+    const addCurrency = (map: Map<string, Set<string>>, activityId: string, currency?: string | null) => {
+      if (!currency) return;
+      if (!map.has(activityId)) map.set(activityId, new Set());
+      map.get(activityId)!.add(currency);
+    };
+    // null = no data; a currency code = all rows share it; 'MIXED' = multiple currencies.
+    const resolveCurrency = (set?: Set<string>): string | null => {
+      if (!set || set.size === 0) return null;
+      if (set.size === 1) return Array.from(set)[0];
+      return 'MIXED';
+    };
     
     // Organization entry type with logo support
     type OrgEntry = {
@@ -376,6 +392,7 @@ export async function GET(request: NextRequest) {
           const currentOriginal = budgetOriginalMap.get(b.activity_id) || 0;
           budgetMap.set(b.activity_id, current + (b.usd_value || (b.currency === 'USD' ? parseFloat(b.value) || 0 : 0)));
           budgetOriginalMap.set(b.activity_id, currentOriginal + (b.value || 0));
+          addCurrency(budgetCurrencySetMap, b.activity_id, b.currency);
         });
       }
 
@@ -389,6 +406,7 @@ export async function GET(request: NextRequest) {
           const currentOriginal = plannedDisbursementOriginalMap.get(pd.activity_id) || 0;
           plannedDisbursementMap.set(pd.activity_id, current + (pd.usd_amount || (pd.currency === 'USD' ? parseFloat(pd.amount) || 0 : 0)));
           plannedDisbursementOriginalMap.set(pd.activity_id, currentOriginal + (pd.amount || 0));
+          addCurrency(plannedDisbursementCurrencySetMap, pd.activity_id, pd.currency);
         });
       }
 
@@ -625,6 +643,10 @@ export async function GET(request: NextRequest) {
       return {
         ...activity,
         ...summary,
+        // Original-currency resolution for the financial tables: a single currency
+        // code when all rows share it, 'MIXED' across currencies, or null when none.
+        budgetCurrency: resolveCurrency(budgetCurrencySetMap.get(activity.id)),
+        plannedDisbursementCurrency: resolveCurrency(plannedDisbursementCurrencySetMap.get(activity.id)),
         // Map database fields to API fields for backward compatibility
         partnerId: activity.other_identifier,
         iatiId: activity.iati_identifier,

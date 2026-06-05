@@ -7,10 +7,14 @@ import { getSupabaseAdmin } from '@/lib/supabase';
  * `activity-permissions.ts`, which no API route ever called — so every write
  * was gated by login alone. These helpers enforce the approved rule:
  *
- *   EDIT an activity  → super_user, OR the owning org (activities.created_by_org_id),
- *                       OR the creator (activities.created_by), OR an accepted
- *                       contributor org (activity_contributors.status='accepted').
+ *   EDIT an activity  → super_user, OR the owning org (activities.reporting_org_id
+ *                       matches the user's organization_id), OR the creator
+ *                       (activities.created_by), OR an accepted contributor org
+ *                       (activity_contributors.status='accepted').
  *   DELETE an activity → super_user, OR the owning org, OR the creator.
+ *
+ * NOTE: the owning-org column is `reporting_org_id` (the activities table has NO
+ * `created_by_org_id` — that exists only on the tasks tables).
  *
  * Security notes:
  *  - Always check against the SESSION user id (from requireAuth), never a
@@ -60,7 +64,7 @@ export async function canDeleteActivities(
 
   const { data: acts } = await admin
     .from('activities')
-    .select('id, created_by, created_by_org_id')
+    .select('id, created_by, reporting_org_id')
     .in('id', activityIds);
 
   const returnedIds = new Set((acts ?? []).map((a: any) => a.id as string));
@@ -68,7 +72,7 @@ export async function canDeleteActivities(
 
   const blockedFromRows = (acts ?? [])
     .filter((a: any) => {
-      const ownsByOrg = !!organizationId && a.created_by_org_id === organizationId;
+      const ownsByOrg = !!organizationId && a.reporting_org_id === organizationId;
       const isCreator = !!a.created_by && String(a.created_by) === String(userId);
       return !(ownsByOrg || isCreator);
     })
@@ -96,7 +100,7 @@ export async function canEditActivities(
 
   const { data: acts } = await admin
     .from('activities')
-    .select('id, created_by, created_by_org_id')
+    .select('id, created_by, reporting_org_id')
     .in('id', activityIds);
 
   // Activities this user's org is an accepted contributor on
@@ -116,7 +120,7 @@ export async function canEditActivities(
 
   const blockedFromRows = (acts ?? [])
     .filter((a: any) => {
-      const ownsByOrg = !!organizationId && a.created_by_org_id === organizationId;
+      const ownsByOrg = !!organizationId && a.reporting_org_id === organizationId;
       const isCreator = !!a.created_by && String(a.created_by) === String(userId);
       const isContributor = contributorActivityIds.has(a.id);
       return !(ownsByOrg || isCreator || isContributor);

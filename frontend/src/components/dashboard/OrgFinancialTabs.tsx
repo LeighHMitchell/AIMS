@@ -76,21 +76,21 @@ export function OrgFinancialTabs({ organizationId, userId, context = 'overview' 
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex items-end justify-between gap-4 mb-4">
-            <TabsList>
-              <TabsTrigger value="activities" className="flex items-center gap-1.5">
-                <ListTodo className="h-3.5 w-3.5" />
+            <TabsList className="p-1 h-auto bg-background gap-1 border flex flex-wrap">
+              <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <ListTodo className="h-4 w-4" />
                 Activities
               </TabsTrigger>
-              <TabsTrigger value="budgets" className="flex items-center gap-1.5">
-                <Wallet className="h-3.5 w-3.5" />
+              <TabsTrigger value="budgets" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <Wallet className="h-4 w-4" />
                 Budgets
               </TabsTrigger>
-              <TabsTrigger value="planned-disbursements" className="flex items-center gap-1.5">
-                <Banknote className="h-3.5 w-3.5" />
+              <TabsTrigger value="planned-disbursements" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <Banknote className="h-4 w-4" />
                 Planned Disbursements
               </TabsTrigger>
-              <TabsTrigger value="transactions" className="flex items-center gap-1.5">
-                <DollarSign className="h-3.5 w-3.5" />
+              <TabsTrigger value="transactions" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <DollarSign className="h-4 w-4" />
                 Transactions
               </TabsTrigger>
             </TabsList>
@@ -99,13 +99,18 @@ export function OrgFinancialTabs({ organizationId, userId, context = 'overview' 
               <div className="space-y-1">
                 <Label htmlFor="org-financial-reported-by" className="text-helper text-muted-foreground">Reported by</Label>
                 <Select value={reportedBy} onValueChange={(val: ReportedByFilter) => setReportedBy(val)}>
-                  <SelectTrigger id="org-financial-reported-by" className="w-[280px] h-8">
+                  <SelectTrigger id="org-financial-reported-by" className="w-[360px] h-8">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {financialFilter.allowedFilters.map((filter) => (
+                    {financialFilter.allowedFilters.map((filter, index) => (
                       <SelectItem key={filter} value={filter}>
-                        {financialFilter.filterLabels[filter] || filter}
+                        <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                          <span className="inline-flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-mono rounded px-1.5 py-0.5 shrink-0">
+                            {index + 1}
+                          </span>
+                          {financialFilter.filterLabels[filter] || filter}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>

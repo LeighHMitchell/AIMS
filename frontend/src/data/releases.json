@@ -1,7 +1,22 @@
 {
-  "currentVersion": "4.0.2",
-  "narrativeSummary": "This update brings a new Results Framework for tracking outcomes and indicators, plus a broad consistency pass across the analytics dashboard and aid-flow visualisations. Charts, maps and the Sankey flow diagrams now share the same colours and number formatting wherever they appear, the activity profile and transaction views got a polish, and dozens of analytics endpoints were tidied behind the scenes for steadier, more reliable figures. Nothing new to set up — your data just reads more clearly and consistently across the whole platform.",
+  "currentVersion": "4.0.3",
+  "narrativeSummary": "This update is all about understanding data quality and timeliness at a glance. New analytics surface how on-time your activities and disbursements are, how spending is classified, where the unusual outliers sit, and how government contributions stack up. A pair of new detailed reports cover budgets and planned disbursements, and there's a new workbook-style report card for richer exports. The organisation dashboard, hero cards and data-quality view got a polish, the editor navigation is cleaner, and a new nightly clean-up keeps abandoned imports from piling up. Faster, clearer, and easier to trust.",
   "releases": [
+    {
+      "version": "4.0.3",
+      "date": "2026-06-05",
+      "narrativeSummary": "This update is all about understanding data quality and timeliness at a glance. New analytics surface how on-time your activities and disbursements are, how spending is classified, where the unusual outliers sit, and how government contributions stack up. A pair of new detailed reports cover budgets and planned disbursements, and there's a new workbook-style report card for richer exports. The organisation dashboard, hero cards and data-quality view got a polish, the editor navigation is cleaner, and a new nightly clean-up keeps abandoned imports from piling up. Faster, clearer, and easier to trust.",
+      "changes": [
+        "<b>New data-quality & timeliness analytics</b>",
+        "&nbsp;&nbsp;New charts for activity timeliness, disbursement timeliness, aid classification, outliers and government contributions. Why it helps: you can see how on-time and well-classified your data is at a glance, and spot the unusual records worth a closer look.",
+        "<b>New detailed reports</b>",
+        "&nbsp;&nbsp;Ready-made budgets-detail and planned-disbursements-detail reports, plus a new workbook-style report card for richer exports. Why it helps: more of the answers you need are waiting for you, exportable in one click.",
+        "<b>Dashboard & editor polish</b>",
+        "&nbsp;&nbsp;Refinements to the organisation dashboard, hero cards, recency cards, the data-quality summary and the Sankey flow, plus cleaner Activity / Organisation / Working-Group editor navigation. Why it helps: smoother, clearer day-to-day reviewing and editing.",
+        "<b>Behind the scenes</b>",
+        "&nbsp;&nbsp;A new nightly clean-up clears abandoned imports automatically, and several analytics endpoints were tuned for steadier figures. Why it helps: a tidier, more reliable platform with less manual housekeeping."
+      ]
+    },
     {
       "version": "4.0.2",
       "date": "2026-06-02",

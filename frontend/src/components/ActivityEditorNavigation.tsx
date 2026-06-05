@@ -204,13 +204,13 @@ export default function ActivityEditorNavigation({
                         // weight/color. Removed the 3px left-stripe accent that
                         // duplicated those signals and is a common AI-slop tell.
                         "w-full text-left py-2 px-3 ml-2 rounded text-body font-normal transition-all duration-200 ease-in-out",
-                        "focus:outline-none focus:ring-2 focus:ring-[#5f7f7a]/50 focus:ring-opacity-50 focus:ring-offset-1",
+                        "focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-opacity-50 focus:ring-offset-1",
                         !isLocked && !disabled && "active:scale-[0.98] transform",
                         (isLocked || disabled)
                           ? "text-muted-foreground cursor-not-allowed opacity-60"
                           : isActive
-                            ? "bg-[#5f7f7a]/15 text-[#3C6255] font-medium shadow-sm"
-                            : "text-muted-foreground hover:bg-[#5f7f7a]/8 hover:text-gunmetal"
+                            ? "bg-surface-muted text-foreground font-medium shadow-sm"
+                            : "text-muted-foreground hover:bg-muted hover:text-gunmetal"
                       )}
                       aria-current={isActive ? "page" : undefined}
                       aria-describedby={undefined}

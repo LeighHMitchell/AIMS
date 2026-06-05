@@ -22,6 +22,9 @@ import { toast } from 'sonner'
 
 // Chart components
 import { CommitmentsChart } from '@/components/analytics/CommitmentsChart'
+import { OutlierChart } from '@/components/analytics/OutlierChart'
+import { OutlierTable } from '@/components/analytics/OutlierTable'
+import { ActivityTimelinessChart } from '@/components/analytics/ActivityTimelinessChart'
 import { AllDonorsHorizontalBarChart } from '@/components/analytics/AllDonorsHorizontalBarChart'
 import { SectorDistributionChart } from '@/components/analytics/SectorDistributionChart'
 import { HumanitarianChart } from '@/components/analytics/HumanitarianChart'
@@ -44,6 +47,8 @@ import { CumulativeSpendingOverTime } from '@/components/analytics/CumulativeSpe
 import { PlannedVsActualDisbursements } from '@/components/analytics/PlannedVsActualDisbursements'
 import { FundingSourceBreakdown } from '@/components/analytics/FundingSourceBreakdown'
 import { FinanceTypeFlowChart } from '@/components/analytics/FinanceTypeFlowChart'
+import AidClassificationChart from '@/components/analytics/AidClassificationChart'
+import GovernmentContributionChart from '@/components/analytics/GovernmentContributionChart'
 import { AllActivitiesFundingSourceBreakdown } from '@/components/analytics/AllActivitiesFundingSourceBreakdown'
 
 // Top 10 charts
@@ -226,6 +231,12 @@ export default function AnalyticsDashboardPage() {
   const [activityStatusData, setActivityStatusData] = useState<any[]>([])
   const [transactionTypeData, setTransactionTypeData] = useState<any[]>([])
   const [sectorAnalysisData, setSectorAnalysisData] = useState<any[]>([])
+  // Outliers tab — flagged-record exports per metric
+  const [outlierTxData, setOutlierTxData] = useState<any[]>([])
+  const [outlierActivitySizeData, setOutlierActivitySizeData] = useState<any[]>([])
+  const [outlierRatioData, setOutlierRatioData] = useState<any[]>([])
+  const [outlierOrgData, setOutlierOrgData] = useState<any[]>([])
+  const [outlierSectorData, setOutlierSectorData] = useState<any[]>([])
   const [donorsData, setDonorsData] = useState<any[]>([])
   const [sectorPieData, setSectorPieData] = useState<any[]>([])
   const [humanitarianData, setHumanitarianData] = useState<any[]>([])
@@ -237,6 +248,15 @@ export default function AnalyticsDashboardPage() {
   const [top10GovernmentValidatedData, setTop10GovernmentValidatedData] = useState<any[]>([])
   const [top10SectorFocusedData, setTop10SectorFocusedData] = useState<any[]>([])
   const [financeTypeFlowData, setFinanceTypeFlowData] = useState<any[]>([])
+  // Aid-classification + government-contribution breakdowns (export rows feed the
+  // card table/CSV/colour-scale toolbar).
+  const [flowClassData, setFlowClassData] = useState<any[]>([])
+  const [aidClassData, setAidClassData] = useState<any[]>([])
+  const [tiedClassData, setTiedClassData] = useState<any[]>([])
+  const [collabClassData, setCollabClassData] = useState<any[]>([])
+  const [activityTimelinessData, setActivityTimelinessData] = useState<any[]>([])
+  const [timelinessData, setTimelinessData] = useState<any[]>([])
+  const [govContribData, setGovContribData] = useState<any[]>([])
   const [humanitarianShareData, setHumanitarianShareData] = useState<any[]>([])
   const [topLikedActivitiesData, setTopLikedActivitiesData] = useState<any[]>([])
   const [topViewedActivitiesData, setTopViewedActivitiesData] = useState<any[]>([])
@@ -600,6 +620,7 @@ export default function AnalyticsDashboardPage() {
                     { value: 'operations', label: 'Operations' },
                     { value: 'transaction-calendar', label: 'Transaction Calendar' },
                     { value: 'rankings', label: 'Rankings' },
+                    { value: 'outliers', label: 'Outliers' },
                   ].map((t) => (
                     <TabsTrigger
                       key={t.value}
@@ -809,6 +830,60 @@ export default function AnalyticsDashboardPage() {
                     </div>
 
                     <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Aid Classification</h2>
+                      <p className="text-muted-foreground mb-4">How aid breaks down by flow type, aid modality and tied status — disbursements (USD), with a "Not reported" slice for un-classified value</p>
+                      <ChartGrid>
+                        <CompactChartCard
+                          title="Flow Type (ODA vs OOF)"
+                          shortDescription="Disbursements by IATI flow type"
+                          fullDescription="Distribution of disbursements across IATI flow types (ODA, OOF, private flows, etc.). Each transaction inherits its flow type from the transaction-level value or the activity default."
+                          mathTooltip="Sums USD disbursements (transaction type 3) on published, non-deleted activities, grouped by flow type. Flow type is taken from the transaction, falling back to the activity's default_flow_type; transactions with neither fall into 'Not reported'. Internal/pooled-fund transfers are excluded."
+                          exportData={flowClassData}
+                          inlineToolbar
+                          compactHeight={300}
+                        >
+                          <AidClassificationChart dimension="flow" refreshKey={refreshKey} onDataChange={setFlowClassData} />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Aid Type"
+                          shortDescription="Disbursements by aid modality"
+                          fullDescription="Distribution of disbursements across IATI aid types (budget support, project-type interventions, technical assistance, etc.)."
+                          mathTooltip="Sums USD disbursements (transaction type 3) on published, non-deleted activities, grouped by aid type. Aid type is taken from the transaction, falling back to the activity's default_aid_type; transactions with neither fall into 'Not reported'. Internal/pooled-fund transfers are excluded."
+                          exportData={aidClassData}
+                          inlineToolbar
+                          compactHeight={300}
+                        >
+                          <AidClassificationChart dimension="aid" refreshKey={refreshKey} onDataChange={setAidClassData} />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Tied Aid Status"
+                          shortDescription="Untied vs partially-tied vs tied disbursements"
+                          fullDescription="Share of disbursements that are untied, partially tied or tied — a core aid-effectiveness (GPEDC/Paris) indicator. Untied aid lets the recipient procure freely; tied aid restricts procurement to the donor country."
+                          mathTooltip="Sums USD disbursements (transaction type 3) on published, non-deleted activities, grouped by tied status (5 Untied / 3 Partially tied / 4 Tied). Status is taken from the transaction, falling back to the activity's default_tied_status; transactions with neither fall into 'Not reported'. Internal/pooled-fund transfers are excluded."
+                          exportData={tiedClassData}
+                          inlineToolbar
+                          compactHeight={300}
+                        >
+                          <AidClassificationChart dimension="tied" refreshKey={refreshKey} onDataChange={setTiedClassData} />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Collaboration Type"
+                          shortDescription="Bilateral vs multilateral disbursements"
+                          fullDescription="Share of disbursements delivered through bilateral versus multilateral channels (and other IATI collaboration types) — how aid is routed between partners. Bilateral is donor-to-recipient directly; multilateral is pooled through institutions like the UN or World Bank."
+                          mathTooltip="Sums USD disbursements (transaction type 3) on published, non-deleted activities, grouped by the activity's IATI collaboration type (1 Bilateral, 2/3 Multilateral, etc.). Collaboration type is an activity-level field, so every disbursement inherits its activity's value; activities with none fall into 'Not reported'. Internal/pooled-fund transfers are excluded."
+                          exportData={collabClassData}
+                          inlineToolbar
+                          compactHeight={300}
+                        >
+                          <AidClassificationChart dimension="collaboration" refreshKey={refreshKey} onDataChange={setCollabClassData} />
+                        </CompactChartCard>
+                      </ChartGrid>
+                    </div>
+
+                    <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Performance & Predictability</h2>
                       <p className="text-muted-foreground mb-4">Are development partners delivering what they promised? How predictable is aid?</p>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -871,6 +946,22 @@ export default function AnalyticsDashboardPage() {
                           compactHeight={300}
                         >
                           <NPAidPredictabilityChart />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Disbursement Timeliness by Partner"
+                          shortDescription="Share of each partner's planned disbursements delivered by their planned date"
+                          fullDescription="For each funding partner, the share of its planned disbursement tranches that were actually delivered on or before the date they were planned for — did the money arrive when the partner said it would? Bars are coloured darker the more on-time the partner; hover for average lateness."
+                          mathTooltip="Each activity's planned disbursement schedule (planned_disbursements: a USD target due by a period-end date) is compared with its actual disbursement stream (transaction type 3). For each planned tranche, the cumulative planned target at its due date is matched against the earliest point the activity's cumulative actual disbursements reached it — the fulfilment date. On time = fulfilled on or before the planned due date; average delay averages the late tranches' lateness in days. Only past-due tranches are judged; internal/pooled-fund transfers excluded. Partners need ≥3 judged tranches; top 10 by on-time share."
+                          exportData={timelinessData}
+                          exportFilename="disbursement-timeliness"
+                          compactHeight={300}
+                        >
+                          <TimelinessChart
+                            dateRange={fiveYearRange}
+                            refreshKey={refreshKey}
+                            onDataChange={setTimelinessData}
+                          />
                         </CompactChartCard>
                       </div>
                     </div>
@@ -1067,6 +1158,24 @@ export default function AnalyticsDashboardPage() {
                       >
                         <EnhancedAidOnBudgetChart refreshKey={refreshKey} />
                       </CompactChartCard>
+                    </div>
+
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Government Contribution</h2>
+                      <p className="text-muted-foreground mb-4">Recipient-government counterpart financing (RGC) vs external development-partner disbursements — cumulative, USD</p>
+                      <ChartGrid>
+                        <CompactChartCard
+                          title="Government vs External Financing"
+                          shortDescription="Government counterpart contribution vs external disbursements"
+                          fullDescription="Compares recipient-government counterpart contributions — cash (financial) and in-kind/other (staff, facilities, tax exemptions) — against external development-partner disbursements, cumulatively to date."
+                          mathTooltip="External = USD disbursements (transaction type 3) on published activities, internal transfers excluded. Government financial = sum of RGC financial counterpart contributions (lump-sum or annual rows). Government in-kind/other = estimated USD value of in-kind and other contributions. Government figures are cumulative (no date window) as they lack a reliable per-period split."
+                          exportData={govContribData}
+                          inlineToolbar
+                          compactHeight={300}
+                        >
+                          <GovernmentContributionChart refreshKey={refreshKey} onDataChange={setGovContribData} />
+                        </CompactChartCard>
+                      </ChartGrid>
                     </div>
 
                     <div>
@@ -1417,6 +1526,26 @@ export default function AnalyticsDashboardPage() {
                       </ChartGrid>
                     </div>
 
+                    {/* Activity Timeliness Section */}
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Activity Timeliness</h2>
+                      <p className="text-muted-foreground mb-4">Are activities finishing on schedule? Actual vs planned end dates across the portfolio</p>
+                      <CompactChartCard
+                        title="Completion vs Plan"
+                        shortDescription="Activities by how their actual end date compares to the planned end date"
+                        fullDescription="Each published activity is bucketed by how its actual completion date compares to its planned end date — finished early, on time (within ±30 days), late, or very late — plus activities still in progress and those missing a planned end date. Expand the table to see each activity's planned vs actual end and the delay in days, and open it to investigate."
+                        mathTooltip="For every published, non-deleted activity, delay = actual_end_date − planned_end_date (in days). Buckets: Finished early (≤ −31d), On time (±30d), Late (31–180d), Very late (>180d), In progress (planned end set but no actual end), Missing planned end date. Counts are activities, not money."
+                        exportData={activityTimelinessData}
+                        exportFilename="activity-timeliness"
+                        compactHeight={340}
+                      >
+                        <ActivityTimelinessChart
+                          refreshKey={refreshKey}
+                          onDataChange={setActivityTimelinessData}
+                        />
+                      </CompactChartCard>
+                    </div>
+
                   </div>
                 </TabsContent>
 
@@ -1552,6 +1681,130 @@ export default function AnalyticsDashboardPage() {
                           <TopExecutionGapChart
                             refreshKey={refreshKey}
                             onDataChange={setTopExecutionGapData}
+                          />
+                        </CompactChartCard>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* ==================== OUTLIERS TAB ==================== */}
+                {/* Audience: data stewards & analysts. Two panels: data-quality
+                    error catching (click through to fix) and analytical
+                    standouts. All metrics use the canonical reporting filters. */}
+                <TabsContent value="outliers">
+                  <div className="space-y-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Data Quality</h2>
+                      <p className="text-muted-foreground mb-4">
+                        Distributions whose tails usually mean data-entry errors. Expand a chart to see the flagged records and click through to fix them.
+                      </p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                        <CompactChartCard
+                          title="Transaction Value Distribution"
+                          shortDescription="USD value of every transaction, log scale — the far-right tail is where fat-fingered amounts hide"
+                          fullDescription="Histogram of every reportable transaction's USD-converted value on a log scale (financial data spans many orders of magnitude). Bars beyond the fence are flagged as likely data-entry errors — e.g. a missing decimal or wrong currency. Expand to see and open the flagged transactions."
+                          mathTooltip="Each reportable transaction's USD value (value_usd, or raw value when already USD) is log10-transformed and binned. Outliers are flagged with the modified z-score (median absolute deviation, |z| > 3.5) computed in log space, so the rule is robust to the heavy right tail. Published & non-deleted activities only; internal pooled-fund transfers excluded; zero/negative values shown separately, not on the log axis."
+                          className="w-full"
+                          compactHeight={300}
+                          inlineToolbar
+                          exportData={outlierTxData}
+                          exportFilename="outlier-transactions"
+                          tableView={<OutlierTable rows={outlierTxData} unit="usd" />}
+                        >
+                          <OutlierChart
+                            metric="transaction_value"
+                            countLabel="Transactions"
+                            refreshKey={refreshKey}
+                            onDataChange={setOutlierTxData}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Budget vs Spend Ratio"
+                          shortDescription="Disbursed + spent ÷ budget per activity — bumps at 0 (never started) and >1.2 (overspend)"
+                          fullDescription="For each activity with a budget, the ratio of actual spend (disbursements + expenditures) to total budget. A spike at 0 means activities that have a budget but no recorded spend; anything past 1.2 (120%) is an overspend or a likely data error. Expand to see both groups."
+                          mathTooltip="Ratio = USD spend (transaction types 3 + 4) ÷ USD budget (activity_budgets.usd_value) per published activity. Only activities with a positive budget are included. Bins are linear and capped at 2.0× so a single large overspend doesn't flatten the chart. Flagging is a domain rule, not statistical: ratio = 0 (nothing spent) or ratio > 1.2 (overspend). Internal transfers excluded."
+                          className="w-full"
+                          compactHeight={300}
+                          inlineToolbar
+                          exportData={outlierRatioData}
+                          exportFilename="outlier-budget-spend-ratio"
+                          tableView={<OutlierTable rows={outlierRatioData} unit="ratio" />}
+                        >
+                          <OutlierChart
+                            metric="budget_spend_ratio"
+                            countLabel="Activities"
+                            refreshKey={refreshKey}
+                            onDataChange={setOutlierRatioData}
+                          />
+                        </CompactChartCard>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Analytical Insights</h2>
+                      <p className="text-muted-foreground mb-4">
+                        The same distributions read the other way — records that genuinely stand out from their peers. Notable, not necessarily wrong.
+                      </p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                        <CompactChartCard
+                          title="Activity Size Distribution"
+                          shortDescription="Total disbursements per activity, log scale — find the giants and the empty shells"
+                          fullDescription="Histogram of total disbursements (USD) per published activity on a log scale. The right tail is the portfolio's largest activities; the flagged records list the standouts. Activities with zero disbursements are reported separately as potential empty shells."
+                          mathTooltip="Sums actual disbursements (type 3, USD) per published activity, then log10-bins the positive totals. Outliers flagged via modified z-score (MAD, |z| > 3.5) in log space. Internal pooled-fund transfers excluded. Activities with $0 disbursements are counted separately and not placed on the log axis."
+                          className="w-full"
+                          compactHeight={300}
+                          inlineToolbar
+                          exportData={outlierActivitySizeData}
+                          exportFilename="outlier-activity-size"
+                          tableView={<OutlierTable rows={outlierActivitySizeData} unit="usd" />}
+                        >
+                          <OutlierChart
+                            metric="activity_size"
+                            countLabel="Activities"
+                            refreshKey={refreshKey}
+                            onDataChange={setOutlierActivitySizeData}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Funder Totals Distribution"
+                          shortDescription="Commitments + disbursements per provider organisation, log scale"
+                          fullDescription="Histogram of total outgoing value (commitments + disbursements, USD) per provider organisation. The flagged tail highlights funders far above their peers — useful for spotting dominant donors or a mis-attributed mega-flow."
+                          mathTooltip="Sums USD commitments (type 2) + disbursements (type 3) credited to each provider organisation across published activities, then log10-bins the totals. Outliers via modified z-score (MAD, |z| > 3.5) in log space. Internal pooled-fund transfers excluded."
+                          className="w-full"
+                          compactHeight={300}
+                          inlineToolbar
+                          exportData={outlierOrgData}
+                          exportFilename="outlier-funder-totals"
+                          tableView={<OutlierTable rows={outlierOrgData} unit="usd" />}
+                        >
+                          <OutlierChart
+                            metric="org_totals"
+                            countLabel="Organisations"
+                            refreshKey={refreshKey}
+                            onDataChange={setOutlierOrgData}
+                          />
+                        </CompactChartCard>
+
+                        <CompactChartCard
+                          title="Sector Funding Distribution"
+                          shortDescription="Disbursements allocated per DAC sector, log scale — over/under-funded sectors"
+                          fullDescription="Histogram of disbursements allocated to each DAC sector (using each activity's declared sector percentages) on a log scale. The flagged tail surfaces the sectors absorbing far more (or less) than the rest."
+                          mathTooltip="Each activity's total disbursements (type 3, USD) are split across its declared DAC sectors using activity_sectors.percentage, then summed per sector code and log10-binned. Outliers via modified z-score (MAD, |z| > 3.5) in log space. Published & non-deleted activities only; internal transfers excluded."
+                          className="w-full"
+                          compactHeight={300}
+                          inlineToolbar
+                          exportData={outlierSectorData}
+                          exportFilename="outlier-sector-funding"
+                          tableView={<OutlierTable rows={outlierSectorData} unit="usd" />}
+                        >
+                          <OutlierChart
+                            metric="sector_totals"
+                            countLabel="Sectors"
+                            refreshKey={refreshKey}
+                            onDataChange={setOutlierSectorData}
                           />
                         </CompactChartCard>
                       </div>

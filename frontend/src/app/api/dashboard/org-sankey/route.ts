@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams;
     const organizationId = searchParams.get('organizationId');
-    const months = parseInt(searchParams.get('months') || '12', 10);
-    const transactionTypes = (searchParams.get('transactionTypes') || 'disbursements') as SankeyTransactionFilter;
+    const months = parseInt(searchParams.get('months') || '0', 10); // 0 = all time
+    const transactionTypes = (searchParams.get('transactionTypes') || 'all') as SankeyTransactionFilter;
 
     if (!organizationId) {
       return NextResponse.json(
@@ -68,8 +68,9 @@ export async function GET(request: NextRequest) {
 
     const selfOrgName = orgData?.acronym || orgData?.name || 'Your Organization';
 
-    // Fetch outgoing transactions (org is provider)
-    const { data: outgoingTransactions } = await supabase
+    // Fetch outgoing transactions (org is provider). months <= 0 means "all time"
+    // (no lower bound); we always exclude future-dated rows.
+    let outgoingQuery = supabase
       .from('transactions')
       .select(`
         value,
@@ -82,11 +83,12 @@ export async function GET(request: NextRequest) {
       .eq('provider_org_id', organizationId)
       .eq('status', 'actual')
       .in('transaction_type', typeFilter)
-      .gte('transaction_date', fromDate.toISOString())
       .lte('transaction_date', now.toISOString());
+    if (months > 0) outgoingQuery = outgoingQuery.gte('transaction_date', fromDate.toISOString());
+    const { data: outgoingTransactions, error: outgoingError } = await outgoingQuery;
 
     // Fetch incoming transactions (org is receiver)
-    const { data: incomingTransactions } = await supabase
+    let incomingQuery = supabase
       .from('transactions')
       .select(`
         value,
@@ -99,8 +101,18 @@ export async function GET(request: NextRequest) {
       .eq('receiver_org_id', organizationId)
       .eq('status', 'actual')
       .in('transaction_type', typeFilter)
-      .gte('transaction_date', fromDate.toISOString())
       .lte('transaction_date', now.toISOString());
+    if (months > 0) incomingQuery = incomingQuery.gte('transaction_date', fromDate.toISOString());
+    const { data: incomingTransactions, error: incomingError } = await incomingQuery;
+
+    // Surface real query failures instead of silently returning an empty chart.
+    if (outgoingError || incomingError) {
+      console.error('[Org Sankey] Transaction query error:', outgoingError || incomingError);
+      return NextResponse.json(
+        { error: (outgoingError || incomingError)!.message || 'Failed to load transaction flows' },
+        { status: 500 }
+      );
+    }
 
     // Build nodes and links
     const nodesMap = new Map<string, SankeyNode>();
@@ -117,8 +129,11 @@ export async function GET(request: NextRequest) {
     let totalOutgoing = 0;
     if (outgoingTransactions) {
       for (const t of outgoingTransactions) {
-        const receiverId = t.receiver_org_id || 'unknown-receiver';
+        // Name fallback: when the org isn't resolved to an ID, key the node by
+        // its name so named-but-unresolved counterparties still show as distinct
+        // flows instead of merging into a single "Unknown" bucket.
         const receiverName = t.receiver_org_name || 'Unknown Receiver';
+        const receiverId = t.receiver_org_id || (t.receiver_org_name ? `name:${t.receiver_org_name}` : 'unknown-receiver');
         // Currency-safe: only fall back to raw value when currency === 'USD'.
         const value = (t.value_usd != null && Number.isFinite(Number(t.value_usd))) ? Number(t.value_usd)
           : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0);
@@ -154,8 +169,9 @@ export async function GET(request: NextRequest) {
     let totalIncoming = 0;
     if (incomingTransactions) {
       for (const t of incomingTransactions) {
-        const providerId = t.provider_org_id || 'unknown-provider';
+        // Name fallback (see outgoing block above).
         const providerName = t.provider_org_name || 'Unknown Provider';
+        const providerId = t.provider_org_id || (t.provider_org_name ? `name:${t.provider_org_name}` : 'unknown-provider');
         // Currency-safe: only fall back to raw value when currency === 'USD'.
         const value = (t.value_usd != null && Number.isFinite(Number(t.value_usd))) ? Number(t.value_usd)
           : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0);

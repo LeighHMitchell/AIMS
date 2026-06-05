@@ -73,12 +73,12 @@ function FlowBar({
 
 export function OrgSankeyFlow({
   organizationId,
-  monthsRange = 12,
+  monthsRange = 0, // 0 = all time
 }: OrgSankeyFlowProps) {
   const [data, setData] = useState<OrgSankeyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [transactionFilter, setTransactionFilter] = useState<SankeyTransactionFilter>('disbursements');
+  const [transactionFilter, setTransactionFilter] = useState<SankeyTransactionFilter>('all');
   const [months, setMonths] = useState(monthsRange);
 
   useEffect(() => {
@@ -203,6 +203,7 @@ export function OrgSankeyFlow({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="0">All time</SelectItem>
                 <SelectItem value="6">Last 6 months</SelectItem>
                 <SelectItem value="12">Last 12 months</SelectItem>
                 <SelectItem value="24">Last 24 months</SelectItem>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { CheckCircle, MapPin, Map as MapIcon } from 'lucide-react';
+import { CheckCircle, MapPin, BarChart3 } from 'lucide-react';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 // Using the new LocationsTab component instead of LocationEditor
 // import LocationEditor, { IATILocation } from './LocationEditor';
@@ -164,8 +164,8 @@ export default function CombinedLocationsTab({
           },
           {
             value: 'subnational-breakdown',
-            label: 'Subnational Allocation',
-            icon: MapIcon,
+            label: 'Sub-national Breakdown',
+            icon: BarChart3,
             badge: hasSubnationalData ? <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" /> : undefined,
           },
         ]}

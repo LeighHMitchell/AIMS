@@ -17,7 +17,7 @@ interface Activity {
   default_flow_type?: string;
   activity_sectors?: Array<{
     id: string;
-    sector_id: string;
+    sector_code: string;
     percentage: number;
   }>;
 }
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
           default_flow_type,
           activity_sectors (
             id,
-            sector_id,
+            sector_code,
             percentage
           )
         `)

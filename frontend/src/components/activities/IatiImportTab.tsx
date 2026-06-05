@@ -28,6 +28,7 @@ import { getOrCreateOrganization } from '@/lib/organization-helpers';
 import { IATIXMLParser, validateIATIXML, ActivityMetadata } from '@/lib/xml-parser';
 import { checkExistingActivities, ExistingActivityInfo } from '@/lib/iati-activity-lookup';
 import { MultiActivityPreview } from '@/components/activities/MultiActivityPreview';
+import { getHierarchyLevelName } from '@/components/forms/HierarchySelect';
 import { IATI_REGIONS } from '@/data/iati-regions';
 import { IATI_COUNTRIES } from '@/data/iati-countries';
 import { countries } from '@/data/countries';
@@ -1545,12 +1546,8 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                             );
                           })()}
                           {activity.hierarchy && (() => {
-                            // Hierarchy values: 1 = Parent activity, 2 = Child activity
-                            const hierarchyLabels: Record<string, string> = {
-                              '1': 'Parent activity',
-                              '2': 'Child activity'
-                            };
-                            const hierarchyName = activity.hierarchyName || hierarchyLabels[String(activity.hierarchy)] || '';
+                            // IATI @hierarchy is a depth number (1 = top), not a parent/child link.
+                            const hierarchyName = activity.hierarchyName || getHierarchyLevelName(activity.hierarchy);
                             return (
                               <tr key="hierarchy" className="border-b border-border">
                                 <td className="py-1 pr-2 text-muted-foreground whitespace-nowrap align-top">Hierarchy:</td>
@@ -3626,15 +3623,8 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
       });
       if (typeof parsedActivity.hierarchy === 'number' && !isNaN(parsedActivity.hierarchy)) {
         const currentHierarchy = fetchedActivityData.hierarchy ?? null;
-        const hierarchyLabels: Record<string, string> = {
-          '1': 'Top-level Program/Strategy',
-          '2': 'Sub-program/Country Project',
-          '3': 'Specific Implementation/Project',
-          '4': 'Sub-component/Activity',
-          '5': 'Task/Output Level'
-        };
-        const currentHierarchyLabel = currentHierarchy !== null ? hierarchyLabels[String(currentHierarchy)] || `Level ${currentHierarchy}` : null;
-        const importHierarchyLabel = hierarchyLabels[String(parsedActivity.hierarchy)] || `Level ${parsedActivity.hierarchy}`;
+        const currentHierarchyLabel = currentHierarchy !== null ? getHierarchyLevelName(currentHierarchy) : null;
+        const importHierarchyLabel = getHierarchyLevelName(parsedActivity.hierarchy);
 
         // Create objects with code and name for consistent display
         const currentHierarchyObj = currentHierarchy !== null ? { code: String(currentHierarchy), name: currentHierarchyLabel } : null;
@@ -3672,14 +3662,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
         // FALLBACK: Always show hierarchy field even if XML doesn't have it, so users can see current value
         const currentHierarchy = fetchedActivityData.hierarchy ?? null;
         if (currentHierarchy !== null) {
-          const hierarchyLabels: Record<string, string> = {
-            '1': 'Top-level Program/Strategy',
-            '2': 'Sub-program/Country Project',
-            '3': 'Specific Implementation/Project',
-            '4': 'Sub-component/Activity',
-            '5': 'Task/Output Level'
-          };
-          const currentHierarchyLabel = hierarchyLabels[String(currentHierarchy)] || `Level ${currentHierarchy}`;
+          const currentHierarchyLabel = getHierarchyLevelName(currentHierarchy);
           const currentHierarchyObj = { code: String(currentHierarchy), name: currentHierarchyLabel };
 
           console.log('[IATI Import] ℹ️ Adding hierarchy field with current value only (no import value):', {

@@ -237,7 +237,9 @@ export function OrgTransactionsTable({
     <p className="text-body text-destructive">Failed to load transactions: {error}</p>
   );
 
-  const tableContent = loading ? loadingSkeleton : error ? errorContent : transactions.length === 0 ? (
+  // Only show the skeleton on the initial load. On a sort/page refetch we keep
+  // the existing rows visible so the column just reorders (no full-table flash).
+  const tableContent = loading && transactions.length === 0 ? loadingSkeleton : error ? errorContent : transactions.length === 0 ? (
     <div className="text-center py-8">
       <DollarSign className="h-12 w-12 text-slate-300 mx-auto mb-3" />
       <p className="text-body text-muted-foreground">No transactions found</p>

@@ -84,6 +84,10 @@
     {
       "path": "/api/cron/purge-recycle-bin",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-abandoned-imports",
+      "schedule": "0 4 * * *"
     }
   ],
   "headers": [

@@ -1,9 +1,18 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useUser } from "@/hooks/useUser";
 import { apiFetch } from "@/lib/api-fetch";
 import {
@@ -39,22 +48,24 @@ const ROW_CONFIG: {
   key: CountKey;
   tab: string;
   icon: React.ComponentType<{ className?: string }>;
-  label: (n: number) => string;
+  category: string;
+  issue: string;
 }[] = [
-  { key: "activitiesMissingSector", tab: "activities", icon: FileText, label: (n) => `${n} ${n === 1 ? "activity" : "activities"} missing a sector` },
-  { key: "activitiesMissingLocation", tab: "activities", icon: FileText, label: (n) => `${n} ${n === 1 ? "activity" : "activities"} missing a location` },
-  { key: "activitiesMissingAidType", tab: "activities", icon: FileText, label: (n) => `${n} ${n === 1 ? "activity" : "activities"} missing an aid type` },
-  { key: "activitiesMissingFinanceType", tab: "activities", icon: FileText, label: (n) => `${n} ${n === 1 ? "activity" : "activities"} missing a finance type` },
-  { key: "activitiesMissingStatus", tab: "activities", icon: FileText, label: (n) => `${n} ${n === 1 ? "activity" : "activities"} missing a status` },
-  { key: "activitiesMissingDates", tab: "activities", icon: FileText, label: (n) => `${n} ${n === 1 ? "activity" : "activities"} missing start dates` },
-  { key: "transactionsMissingDate", tab: "transactions", icon: ArrowLeftRight, label: (n) => `${n} ${n === 1 ? "transaction" : "transactions"} missing a date` },
-  { key: "transactionsMissingFinanceType", tab: "transactions", icon: ArrowLeftRight, label: (n) => `${n} ${n === 1 ? "transaction" : "transactions"} missing a finance type` },
-  { key: "organizationsMissingType", tab: "organizations", icon: Building2, label: (n) => `${n} ${n === 1 ? "organisation" : "organisations"} missing a type` },
-  { key: "organizationsMissingIdentifier", tab: "organizations", icon: Building2, label: (n) => `${n} ${n === 1 ? "organisation" : "organisations"} missing an IATI identifier` },
-  { key: "duplicatePairs", tab: "duplicates", icon: Copy, label: (n) => `${n} potential duplicate ${n === 1 ? "record" : "records"}` },
+  { key: "activitiesMissingSector", tab: "activities", icon: FileText, category: "Activities", issue: "Missing a sector" },
+  { key: "activitiesMissingLocation", tab: "activities", icon: FileText, category: "Activities", issue: "Missing a location" },
+  { key: "activitiesMissingAidType", tab: "activities", icon: FileText, category: "Activities", issue: "Missing an aid type" },
+  { key: "activitiesMissingFinanceType", tab: "activities", icon: FileText, category: "Activities", issue: "Missing a finance type" },
+  { key: "activitiesMissingStatus", tab: "activities", icon: FileText, category: "Activities", issue: "Missing a status" },
+  { key: "activitiesMissingDates", tab: "activities", icon: FileText, category: "Activities", issue: "Missing start dates" },
+  { key: "transactionsMissingDate", tab: "transactions", icon: ArrowLeftRight, category: "Transactions", issue: "Missing a date" },
+  { key: "transactionsMissingFinanceType", tab: "transactions", icon: ArrowLeftRight, category: "Transactions", issue: "Missing a finance type" },
+  { key: "organizationsMissingType", tab: "organizations", icon: Building2, category: "Organisations", issue: "Missing a type" },
+  { key: "organizationsMissingIdentifier", tab: "organizations", icon: Building2, category: "Organisations", issue: "Missing an IATI identifier" },
+  { key: "duplicatePairs", tab: "duplicates", icon: Copy, category: "Records", issue: "Potential duplicates" },
 ];
 
 export function DataQualitySummaryCard({ className }: { className?: string }) {
+  const router = useRouter();
   const { user } = useUser();
   const [counts, setCounts] = useState<SummaryCounts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,17 +113,14 @@ export function DataQualitySummaryCard({ className }: { className?: string }) {
           Data Quality
         </CardTitle>
         <CardDescription>
-          System-wide data gaps from the Data Clinic — click to review and fix
+          System-wide data gaps from the Data Clinic — click a row to review and fix
         </CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
-                <Skeleton className="h-9 w-9 rounded-full shrink-0" />
-                <Skeleton className="h-4 flex-1" />
-              </div>
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
         ) : error ? (
@@ -129,26 +137,44 @@ export function DataQualitySummaryCard({ className }: { className?: string }) {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {rows.map((r) => {
-              const Icon = r.icon;
-              const n = counts![r.key];
-              return (
-                <Link
-                  key={r.key}
-                  href={`/data-clinic?tab=${r.tab}`}
-                  className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md hover:border-input no-underline"
-                >
-                  <div className="p-2 rounded-full bg-white text-muted-foreground">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <p className="flex-1 min-w-0 font-medium text-body text-foreground truncate">
-                    {r.label(n)}
-                  </p>
-                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                </Link>
-              );
-            })}
+          <div className="border border-border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[90px] text-right">Count</TableHead>
+                  <TableHead className="w-[160px]">Category</TableHead>
+                  <TableHead>Issue</TableHead>
+                  <TableHead className="w-[48px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => {
+                  const Icon = r.icon;
+                  const n = counts![r.key];
+                  return (
+                    <TableRow
+                      key={r.key}
+                      className="cursor-pointer hover:bg-muted"
+                      onClick={() => router.push(`/data-clinic?tab=${r.tab}`)}
+                    >
+                      <TableCell className="text-right">
+                        <Badge variant="secondary">{n}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-2 text-body text-muted-foreground whitespace-nowrap">
+                          <Icon className="h-4 w-4 shrink-0" />
+                          {r.category}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-body text-foreground">{r.issue}</TableCell>
+                      <TableCell>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         )}
       </CardContent>

@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from 'next/navigation'
 import { MainLayout } from '@/components/layout/main-layout'
 import { ReportCard, ReportHeader } from "@/components/reports/ReportCard"
+import { WorkbookReportCard } from "@/components/reports/WorkbookReportCard"
 import { CustomReportBuilder } from "@/components/reports/CustomReportBuilder"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -14,6 +15,79 @@ interface ReportConfig {
   filename: string
   headers: ReportHeader[]
 }
+
+// Line-level "every record" exports, grouped at the top of the page.
+const detailExports: ReportConfig[] = [
+  {
+    title: "Transaction Detail Export",
+    description: "Line-by-line export of every transaction with type, date, provider, receiver, original value, currency, USD value, and IATI classifications.",
+    apiEndpoint: "/api/reports/transactions-detail",
+    filename: "transactions_detail",
+    headers: [
+      { key: "activity_identifier", label: "Activity Identifier" },
+      { key: "iati_identifier", label: "IATI Identifier" },
+      { key: "activity_title", label: "Activity Title" },
+      { key: "transaction_type_code", label: "Transaction Type Code" },
+      { key: "transaction_type_name", label: "Transaction Type" },
+      { key: "transaction_date", label: "Transaction Date" },
+      { key: "provider_org", label: "Provider Organisation" },
+      { key: "receiver_org", label: "Receiver Organisation" },
+      { key: "value", label: "Value (Original Currency)" },
+      { key: "currency", label: "Currency" },
+      { key: "value_usd", label: "Value (USD)" },
+      { key: "aid_type_code", label: "Aid Type Code" },
+      { key: "aid_type_name", label: "Aid Type" },
+      { key: "finance_type_code", label: "Finance Type Code" },
+      { key: "finance_type_name", label: "Finance Type" },
+      { key: "flow_type_code", label: "Flow Type Code" },
+      { key: "flow_type_name", label: "Flow Type" },
+      { key: "tied_status_code", label: "Tied Status Code" },
+      { key: "tied_status_name", label: "Tied Status" },
+      { key: "description", label: "Description" },
+      { key: "reference", label: "Reference" },
+    ],
+  },
+  {
+    title: "Budget Detail Export",
+    description: "Line-by-line export of every activity budget with type, status, period, original value, currency, and USD value.",
+    apiEndpoint: "/api/reports/budgets-detail",
+    filename: "budgets_detail",
+    headers: [
+      { key: "activity_identifier", label: "Activity Identifier" },
+      { key: "iati_identifier", label: "IATI Identifier" },
+      { key: "activity_title", label: "Activity Title" },
+      { key: "budget_type_code", label: "Budget Type Code" },
+      { key: "budget_type_name", label: "Budget Type" },
+      { key: "budget_status_code", label: "Budget Status Code" },
+      { key: "budget_status_name", label: "Budget Status" },
+      { key: "period_start", label: "Period Start" },
+      { key: "period_end", label: "Period End" },
+      { key: "value", label: "Value (Original Currency)" },
+      { key: "currency", label: "Currency" },
+      { key: "value_usd", label: "Value (USD)" },
+    ],
+  },
+  {
+    title: "Planned Disbursement Detail Export",
+    description: "Line-by-line export of every planned disbursement with type, period, provider, receiver, original amount, currency, and USD amount.",
+    apiEndpoint: "/api/reports/planned-disbursements-detail",
+    filename: "planned_disbursements_detail",
+    headers: [
+      { key: "activity_identifier", label: "Activity Identifier" },
+      { key: "iati_identifier", label: "IATI Identifier" },
+      { key: "activity_title", label: "Activity Title" },
+      { key: "type_code", label: "Type Code" },
+      { key: "type_name", label: "Type" },
+      { key: "period_start", label: "Period Start" },
+      { key: "period_end", label: "Period End" },
+      { key: "provider_org", label: "Provider Organisation" },
+      { key: "receiver_org", label: "Receiver Organisation" },
+      { key: "amount", label: "Amount (Original Currency)" },
+      { key: "currency", label: "Currency" },
+      { key: "amount_usd", label: "Amount (USD)" },
+    ],
+  },
+]
 
 const activityReports: ReportConfig[] = [
   {
@@ -31,8 +105,8 @@ const activityReports: ReportConfig[] = [
       { key: "reporting_org", label: "Reporting Organisation" },
       { key: "description_general", label: "Activity Description - General" },
       { key: "description_objectives", label: "Activity Description - Objectives" },
-      { key: "description_other", label: "Activity Description - Other" },
       { key: "description_target_groups", label: "Activity Description - Target Groups" },
+      { key: "description_other", label: "Activity Description - Other" },
       { key: "default_modality_code", label: "Default Modality Code" },
       { key: "default_modality_name", label: "Default Modality" },
       { key: "collaboration_type_code", label: "Collaboration Type Code" },
@@ -48,7 +122,6 @@ const activityReports: ReportConfig[] = [
       { key: "default_flow_type_name", label: "Default Flow Type" },
       { key: "default_tied_status_code", label: "Default Tied Status Code" },
       { key: "default_tied_status_name", label: "Default Tied Status" },
-      { key: "default_currency_code", label: "Default Currency Code" },
       { key: "default_currency_name", label: "Default Currency" },
       { key: "default_disbursement_channel_code", label: "Default Disbursement Channel Code" },
       { key: "default_disbursement_channel_name", label: "Default Disbursement Channel" },
@@ -182,35 +255,6 @@ const financialReports: ReportConfig[] = [
       { key: "total_committed", label: "Total Committed (USD)" },
       { key: "total_disbursed", label: "Total Disbursed (USD)" },
       { key: "top_sectors", label: "Top Sectors" },
-    ],
-  },
-  {
-    title: "Transaction Detail Export",
-    description: "Line-by-line export of every transaction with type, date, provider, receiver, original value, currency, USD value, and IATI classifications.",
-    apiEndpoint: "/api/reports/transactions-detail",
-    filename: "transactions_detail",
-    headers: [
-      { key: "activity_identifier", label: "Activity Identifier" },
-      { key: "iati_identifier", label: "IATI Identifier" },
-      { key: "activity_title", label: "Activity Title" },
-      { key: "transaction_type_code", label: "Transaction Type Code" },
-      { key: "transaction_type_name", label: "Transaction Type" },
-      { key: "transaction_date", label: "Transaction Date" },
-      { key: "provider_org", label: "Provider Organisation" },
-      { key: "receiver_org", label: "Receiver Organisation" },
-      { key: "value", label: "Value (Original Currency)" },
-      { key: "currency", label: "Currency" },
-      { key: "value_usd", label: "Value (USD)" },
-      { key: "aid_type_code", label: "Aid Type Code" },
-      { key: "aid_type_name", label: "Aid Type" },
-      { key: "finance_type_code", label: "Finance Type Code" },
-      { key: "finance_type_name", label: "Finance Type" },
-      { key: "flow_type_code", label: "Flow Type Code" },
-      { key: "flow_type_name", label: "Flow Type" },
-      { key: "tied_status_code", label: "Tied Status Code" },
-      { key: "tied_status_name", label: "Tied Status" },
-      { key: "description", label: "Description" },
-      { key: "reference", label: "Reference" },
     ],
   },
   {
@@ -440,6 +484,35 @@ export default function ReportsPage() {
 
           {/* Standard Reports Tab */}
           <TabsContent value="standard" className="space-y-8 mt-0 border-0 p-0">
+            {/* Detail Exports — every Transaction, Budget and Planned Disbursement */}
+            <section>
+              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
+                Detail Exports
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {detailExports.map((report) => (
+                  <ReportCard
+                    key={report.filename}
+                    title={report.title}
+                    description={report.description}
+                    apiEndpoint={report.apiEndpoint}
+                    filename={report.filename}
+                    headers={report.headers}
+                  />
+                ))}
+                <WorkbookReportCard
+                  title="Financial Data (Excel)"
+                  description="One Excel workbook with three tabs — Transactions, Budgets, and Planned Disbursements — for all published activities."
+                  filename="financial_data"
+                  sheets={[
+                    { endpoint: "/api/reports/transactions-detail", sheetName: "Transactions", headers: detailExports[0].headers },
+                    { endpoint: "/api/reports/budgets-detail", sheetName: "Budgets", headers: detailExports[1].headers },
+                    { endpoint: "/api/reports/planned-disbursements-detail", sheetName: "Planned Disbursements", headers: detailExports[2].headers },
+                  ]}
+                />
+              </div>
+            </section>
+
             {/* Activity Reports */}
             <section>
               <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">

@@ -36,13 +36,9 @@ export async function GET(request: NextRequest) {
           provider_org_name,
           receiver_org_id,
           receiver_org_name,
-          organization_id,
           description,
-          activities!inner (
+          activities!activity_id!inner (
             title_narrative
-          ),
-          organizations (
-            name
           )
         `)
         .order('transaction_date', { ascending: false })
@@ -67,7 +63,7 @@ export async function GET(request: NextRequest) {
           provider_org_name,
           receiver_org_name,
           description,
-          activities!inner (
+          activities!activity_id!inner (
             title_narrative
           )
         `)

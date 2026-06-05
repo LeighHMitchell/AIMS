@@ -51,6 +51,9 @@ interface ActivityRow {
   totalPlannedDisbursements?: number;
   totalPlannedDisbursementsOriginal?: number;
   currency?: string;
+  /** Single original currency code, 'MIXED' across currencies, or null/undefined when none. */
+  budgetCurrency?: string | null;
+  plannedDisbursementCurrency?: string | null;
   plannedStartDate?: string;
   plannedEndDate?: string;
   validationStatus?: string;
@@ -105,6 +108,42 @@ const VARIANT_CONFIG: Record<ActivityTableVariant, {
     emptyMessage: 'No activities closing soon',
   },
 };
+
+/**
+ * Right-aligned financial cell. Shows the original-currency figure with the USD
+ * conversion beneath ONLY when the activity reports a single non-USD currency.
+ * When the figures are already USD, or span multiple currencies (where a single
+ * original total would be meaningless), it shows just the USD aggregate — so we
+ * never stack two identical USD lines.
+ */
+function FinancialCell({ currency, original, usd }: { currency?: string | null; original?: number; usd?: number }) {
+  const showOriginal = !!currency && currency !== 'USD' && currency !== 'MIXED' && !!original && original > 0;
+  if (showOriginal) {
+    return (
+      <div className="flex flex-col items-end">
+        <span className="font-medium">
+          <span className="text-helper text-muted-foreground mr-1 font-normal">{currency}</span>
+          {formatCurrencyCompact(original!, currency!)}
+        </span>
+        {!!usd && usd > 0 && (
+          <span className="text-helper text-muted-foreground mt-0.5">
+            <span className="mr-1 font-normal">USD</span>
+            {formatCurrencyCompact(usd, 'USD')}
+          </span>
+        )}
+      </div>
+    );
+  }
+  if (!!usd && usd > 0) {
+    return (
+      <span className="font-medium">
+        <span className="text-helper text-muted-foreground mr-1 font-normal">USD</span>
+        {formatCurrencyCompact(usd, 'USD')}
+      </span>
+    );
+  }
+  return <>-</>;
+}
 
 export function OrgActivitiesTable({
   organizationId,
@@ -239,6 +278,8 @@ export function OrgActivitiesTable({
             totalPlannedDisbursements: activity.totalPlannedDisbursementsUSD || activity.totalPlannedDisbursements || 0,
             totalPlannedDisbursementsOriginal: activity.totalPlannedDisbursementsOriginal || 0,
             currency: activity.default_currency || 'USD',
+            budgetCurrency: activity.budgetCurrency ?? null,
+            plannedDisbursementCurrency: activity.plannedDisbursementCurrency ?? null,
             plannedStartDate: activity.planned_start_date,
             plannedEndDate: activity.planned_end_date,
             validationStatus: activity.submission_status,
@@ -444,54 +485,10 @@ export function OrgActivitiesTable({
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        {activity.totalBudgetOriginal && activity.totalBudgetOriginal > 0 ? (
-                          <div className="flex flex-col items-end">
-                            <span className="font-medium">
-                              <span className="text-helper text-muted-foreground mr-1 font-normal">
-                                {activity.currency}
-                              </span>
-                              {formatCurrencyCompact(activity.totalBudgetOriginal, activity.currency)}
-                            </span>
-                            {activity.totalBudget && activity.totalBudget > 0 && (
-                              <span className="text-helper text-muted-foreground mt-0.5">
-                                <span className="mr-1 font-normal">USD</span>
-                                {formatCurrencyCompact(activity.totalBudget, 'USD')}
-                              </span>
-                            )}
-                          </div>
-                        ) : activity.totalBudget && activity.totalBudget > 0 ? (
-                          <span className="font-medium">
-                            <span className="text-helper text-muted-foreground mr-1 font-normal">USD</span>
-                            {formatCurrencyCompact(activity.totalBudget, 'USD')}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
+                        <FinancialCell currency={activity.budgetCurrency} original={activity.totalBudgetOriginal} usd={activity.totalBudget} />
                       </TableCell>
                       <TableCell className="text-right">
-                        {activity.totalPlannedDisbursementsOriginal && activity.totalPlannedDisbursementsOriginal > 0 ? (
-                          <div className="flex flex-col items-end">
-                            <span className="font-medium">
-                              <span className="text-helper text-muted-foreground mr-1 font-normal">
-                                {activity.currency}
-                              </span>
-                              {formatCurrencyCompact(activity.totalPlannedDisbursementsOriginal, activity.currency)}
-                            </span>
-                            {activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 && (
-                              <span className="text-helper text-muted-foreground mt-0.5">
-                                <span className="mr-1 font-normal">USD</span>
-                                {formatCurrencyCompact(activity.totalPlannedDisbursements, 'USD')}
-                              </span>
-                            )}
-                          </div>
-                        ) : activity.totalPlannedDisbursements && activity.totalPlannedDisbursements > 0 ? (
-                          <span className="font-medium">
-                            <span className="text-helper text-muted-foreground mr-1 font-normal">USD</span>
-                            {formatCurrencyCompact(activity.totalPlannedDisbursements, 'USD')}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
+                        <FinancialCell currency={activity.plannedDisbursementCurrency} original={activity.totalPlannedDisbursementsOriginal} usd={activity.totalPlannedDisbursements} />
                       </TableCell>
                       <TableCell>
                         <span className="text-helper text-muted-foreground" title={format(new Date(activity.lastUpdated), 'PPpp')}>

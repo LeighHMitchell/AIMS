@@ -965,6 +965,14 @@ export async function POST(request: Request) {
     // Otherwise, create new activity
     let insertData;
     try {
+      // Authoritative creator = the authenticated session user. Falls back to a
+      // body-supplied id only if there's no session. This guarantees every new
+      // activity records its creator and owning org (reporting_org_id) even when
+      // the caller uses a different field name (e.g. the import modal sends
+      // `user_id`, not `user.id`) — so an abandoned IATI import is still OWNED,
+      // not orphaned/un-editable.
+      const creatorUserId = sessionUser?.id ?? body.user?.id ?? null;
+
       // Fetch user's organization information if user ID is provided
       let userOrgData = {
         created_by_org_name: body.created_by_org_name || null,
@@ -973,7 +981,7 @@ export async function POST(request: Request) {
         submitted_by: body.submitted_by || null,
       };
 
-      if (body.user?.id) {
+      if (creatorUserId) {
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select(`
@@ -988,7 +996,7 @@ export async function POST(request: Request) {
               acronym
             )
           `)
-          .eq('id', body.user.id)
+          .eq('id', creatorUserId)
           .single();
 
         if (userData) {
@@ -1111,8 +1119,8 @@ export async function POST(request: Request) {
         default_flow_type: body.defaultFlowType || null,
         documents: body.documents ? JSON.stringify(body.documents) : '[]',
         general_info: body.general_info || {},
-        created_by: cleanUUIDValue(body.user?.id),
-        last_edited_by: cleanUUIDValue(body.user?.id),
+        created_by: cleanUUIDValue(creatorUserId),
+        last_edited_by: cleanUUIDValue(creatorUserId),
         submitted_by: userOrgData.submitted_by,
         created_via: body.created_via || 'manual',
       };

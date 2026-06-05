@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { ValidationEventType } from '@/types/dashboard';
 import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 
 interface RecencyCardsProps {
   organizationId: string;
@@ -140,7 +141,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
     <StaggerContainer className="grid gap-4 md:grid-cols-3">
       {/* Last Activity Created */}
       <StaggerItem>
-        <Card className="bg-white transition-all h-full">
+        <Card className="bg-white transition-all h-full group">
           <CardHeader className="pb-2">
             <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
               <Plus className="h-4 w-4 text-muted-foreground" />
@@ -151,18 +152,20 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             {lastCreated ? (
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <a href={`/activities/new?id=${lastCreated.id}`} className="font-medium text-foreground leading-snug hover:text-primary hover:underline" title={lastCreated.title}>
-                    {lastCreated.title}
+                  <div className="min-w-0 flex-1">
+                    <a href={`/activities/new?id=${lastCreated.id}`} className="block font-medium text-body text-foreground leading-snug hover:text-primary truncate" title={lastCreated.title}>
+                      {lastCreated.title}
+                    </a>
                     {lastCreated.iatiIdentifier && (
-                      <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastCreated.iatiIdentifier}</code></>
+                      <CopyableIdBadge value={lastCreated.iatiIdentifier} label="Activity ID" className="mt-1" />
                     )}
-                  </a>
+                  </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 transition-opacity"
                       >
                         <MoreVertical className="h-3.5 w-3.5" />
                       </Button>
@@ -209,7 +212,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
 
       {/* Last Activity Edited */}
       <StaggerItem>
-        <Card className="bg-white transition-all h-full">
+        <Card className="bg-white transition-all h-full group">
           <CardHeader className="pb-2">
             <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
               <Pencil className="h-4 w-4 text-muted-foreground" />
@@ -220,18 +223,20 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             {lastEdited ? (
               <>
                 <div className="flex items-start justify-between gap-2">
-                  <a href={`/activities/new?id=${lastEdited.id}`} className="font-medium text-foreground leading-snug hover:text-primary hover:underline" title={lastEdited.title}>
-                    {lastEdited.title}
+                  <div className="min-w-0 flex-1">
+                    <a href={`/activities/new?id=${lastEdited.id}`} className="block font-medium text-body text-foreground leading-snug hover:text-primary truncate" title={lastEdited.title}>
+                      {lastEdited.title}
+                    </a>
                     {lastEdited.iatiIdentifier && (
-                      <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{lastEdited.iatiIdentifier}</code></>
+                      <CopyableIdBadge value={lastEdited.iatiIdentifier} label="Activity ID" className="mt-1" />
                     )}
-                  </a>
+                  </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 transition-opacity"
                       >
                         <MoreVertical className="h-3.5 w-3.5" />
                       </Button>
@@ -285,7 +290,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
 
       {/* Last Validation Event */}
       <StaggerItem>
-        <Card className="bg-white transition-all h-full">
+        <Card className="bg-white transition-all h-full group">
           <CardHeader className="pb-2">
             <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -296,7 +301,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
             {lastValidation ? (
               <>
                 <div className="flex items-start gap-2">
-                  <a href={`/activities/new?id=${lastValidation.activityId}&section=government-endorsement`} className="font-medium text-foreground leading-snug flex-1 hover:text-primary hover:underline" title={lastValidation.activityTitle}>
+                  <a href={`/activities/new?id=${lastValidation.activityId}&section=government-endorsement`} className="font-medium text-body text-foreground leading-snug flex-1 hover:text-primary truncate" title={lastValidation.activityTitle}>
                     {lastValidation.activityTitle}
                   </a>
                   <div className="flex items-center gap-1 shrink-0">
@@ -313,7 +318,7 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0"
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 transition-opacity"
                         >
                           <MoreVertical className="h-3.5 w-3.5" />
                         </Button>
@@ -335,9 +340,9 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                   </div>
                 </div>
                 {lastValidation.iatiIdentifier && (
-                  <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-1 inline-block">
-                    {lastValidation.iatiIdentifier}
-                  </code>
+                  <div className="mt-1">
+                    <CopyableIdBadge value={lastValidation.iatiIdentifier} label="Activity ID" />
+                  </div>
                 )}
                 {lastValidation.validatorName && (
                   <p className="text-helper text-muted-foreground mt-1.5">

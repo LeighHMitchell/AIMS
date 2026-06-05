@@ -4,7 +4,7 @@ import { codeAndName } from '@/lib/iati/codelist-resolver';
 import { titleWithAcronym, orgWithAcronym } from '@/lib/reports/format-helpers';
 import { txUsd, excludeInternalTransfers, getPooledFundIds } from '@/lib/analytics-transaction-filters';
 import { safeUsd } from '@/lib/safe-usd';
-import { getModalityName } from '@/utils/modality-calculation';
+import { calculateModality, getModalityName } from '@/utils/modality-calculation';
 
 export const dynamic = 'force-dynamic'
 
@@ -411,6 +411,14 @@ export async function GET() {
       const dtied = cn('tied_status', a.default_tied_status)
       const dcur = cn('currency', a.default_currency)
       const ddc = cn('disbursement_channel', a.default_disbursement_channel)
+      // Modality: use the stored value; if none was saved (the editor only
+      // persists it when its Defaults tab is opened) and it isn't overridden,
+      // derive it from aid + finance type exactly like the editor does.
+      const modalityCode = (a.default_modality != null && a.default_modality !== '')
+        ? String(a.default_modality)
+        : (!a.default_modality_override && a.default_aid_type && a.default_finance_type
+            ? calculateModality(String(a.default_aid_type), String(a.default_finance_type))
+            : '')
 
       const row: Record<string, any> = {
         activity_identifier: a.other_identifier || '',
@@ -424,8 +432,8 @@ export async function GET() {
         description_objectives: a.description_objectives || '',
         description_other: a.description_other || '',
         description_target_groups: a.description_target_groups || '',
-        default_modality_code: a.default_modality || '',
-        default_modality_name: a.default_modality ? getModalityName(String(a.default_modality)) : '',
+        default_modality_code: modalityCode,
+        default_modality_name: modalityCode ? getModalityName(modalityCode) : '',
         collaboration_type_code: collab.code,
         collaboration_type_name: collab.name,
         activity_scope_code: scope.code,

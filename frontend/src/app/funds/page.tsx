@@ -36,7 +36,18 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
 import { showUndoToast, useFlushDeletesOnUnmount } from "@/lib/toast-manager"
-import { Search, DollarSign, Users, Layers, TrendingUp, ChevronsUpDown, Wallet, MoreVertical, Pencil, Download, Trash2, Copy, Calendar } from "lucide-react"
+import { Search, DollarSign, Users, Layers, TrendingUp, ChevronsUpDown, Wallet, MoreVertical, Pencil, Download, Trash2, Copy, Calendar, LayoutGrid, TableIcon, ChevronRight } from "lucide-react"
+import {
+  Table,
+  TableContainer,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+  getSortIcon,
+  sortableHeaderClasses,
+} from "@/components/ui/table"
 import { EmptyState } from "@/components/ui/empty-state"
 import { useLoadingBar } from "@/hooks/useLoadingBar"
 import { useUser } from "@/hooks/useUser"
@@ -71,10 +82,28 @@ interface FundSummary {
   sparkline: { quarter: string; amount: number }[]
 }
 
+type TableSortField = 'title' | 'fundManager' | 'status' | 'contributions' | 'disbursed' | 'balance' | 'utilised' | 'children'
+
 function formatUSD(value: number): string {
   if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
   if (Math.abs(value) >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
   return `$${value.toFixed(0)}`
+}
+
+// Activity-list style amount (no leading $, lowercase m/k); pair with a gray "USD" prefix
+function formatAmount(value: number): string {
+  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`
+  if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1)}k`
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value)
+}
+
+// Reusable gray "USD" prefix before an amount, matching the activity list
+function UsdAmount({ value }: { value: number }) {
+  return (
+    <>
+      <span className="text-helper text-muted-foreground font-normal">USD</span> {formatAmount(value)}
+    </>
+  )
 }
 
 // getActivityStatusDisplay imported from @/lib/activity-status-utils
@@ -89,6 +118,34 @@ export default function FundsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("title")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [viewMode, setViewMode] = useState<'card' | 'table'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('funds_viewMode')
+      if (saved === 'card' || saved === 'table') return saved
+    }
+    return 'card'
+  })
+  const [tableSortField, setTableSortField] = useState<TableSortField>('title')
+  const [tableSortOrder, setTableSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [expandedChildrenIds, setExpandedChildrenIds] = useState<Set<string>>(new Set())
+
+  const handleSetViewMode = useCallback((mode: 'card' | 'table') => {
+    setViewMode(mode)
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('funds_viewMode', mode) } catch { /* ignore */ }
+    }
+  }, [])
+
+  const handleTableSort = useCallback((field: TableSortField) => {
+    setTableSortField(prev => {
+      if (prev === field) {
+        setTableSortOrder(order => (order === 'asc' ? 'desc' : 'asc'))
+        return prev
+      }
+      setTableSortOrder('asc')
+      return field
+    })
+  }, [])
   const [deleteFundId, setDeleteFundId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [openMoreChildFundId, setOpenMoreChildFundId] = useState<string | null>(null)
@@ -111,6 +168,15 @@ export default function FundsPage() {
       () => toast.success(`${label} copied to clipboard`),
       () => toast.error('Failed to copy')
     )
+  }, [])
+
+  const toggleChildren = useCallback((fundId: string) => {
+    setExpandedChildrenIds(prev => {
+      const next = new Set(prev)
+      if (next.has(fundId)) next.delete(fundId)
+      else next.add(fundId)
+      return next
+    })
   }, [])
 
   useLoadingBar(loading)
@@ -190,6 +256,75 @@ export default function FundsPage() {
     ? funds.filter(f => f.title.toLowerCase().includes(searchQuery.toLowerCase()))
     : funds
 
+  // Client-side sort for the table view (the "Sort by" dropdown drives the card view via the API)
+  const tableFunds = React.useMemo(() => {
+    const dir = tableSortOrder === 'asc' ? 1 : -1
+    const sorted = [...filteredFunds].sort((a, b) => {
+      switch (tableSortField) {
+        case 'title':
+          return a.title.localeCompare(b.title) * dir
+        case 'fundManager':
+          return (a.fundManager?.name || '').localeCompare(b.fundManager?.name || '') * dir
+        case 'status':
+          return (a.status || '').localeCompare(b.status || '') * dir
+        case 'contributions':
+          return (a.totalContributions - b.totalContributions) * dir
+        case 'disbursed':
+          return (a.totalDisbursements - b.totalDisbursements) * dir
+        case 'balance':
+          return (a.balance - b.balance) * dir
+        case 'utilised': {
+          const ua = a.totalContributions > 0 ? a.totalDisbursements / a.totalContributions : 0
+          const ub = b.totalContributions > 0 ? b.totalDisbursements / b.totalContributions : 0
+          return (ua - ub) * dir
+        }
+        case 'children':
+          return (a.childCount - b.childCount) * dir
+        default:
+          return 0
+      }
+    })
+    return sorted
+  }, [filteredFunds, tableSortField, tableSortOrder])
+
+  const renderFundActions = (fund: FundSummary, triggerClassName = "") => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon"
+          className={`bg-card/90 hover:bg-card ${triggerClassName}`}
+          aria-label="Fund actions"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={5} className="min-w-[160px] shadow-xl">
+        <DropdownMenuItem
+          onClick={() => router.push(`/activities/new?id=${fund.id}`)}
+          className="cursor-pointer"
+        >
+          <Pencil className="h-4 w-4 mr-2" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => handleExportPDF(fund.id)}
+          className="cursor-pointer"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export PDF
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => setDeleteFundId(fund.id)}
+          className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 dark:focus:bg-red-900/20"
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -249,6 +384,28 @@ export default function FundsPage() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center border rounded-md flex-shrink-0 ml-auto bg-card">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSetViewMode('table')}
+              aria-label="Table view"
+              className={`rounded-r-none h-9 ${viewMode === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+            >
+              <TableIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSetViewMode('card')}
+              aria-label="Card view"
+              className={`rounded-l-none h-9 ${viewMode === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Fund Cards */}
@@ -299,7 +456,7 @@ export default function FundsPage() {
                 : 'Mark an activity as a pooled fund to see it here.'
             }
           />
-        ) : (
+        ) : viewMode === 'card' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredFunds.map(fund => {
               const balanceColor = fund.balance > 0 ? 'text-[hsl(var(--success-icon))]' : fund.balance < 0 ? 'text-destructive' : 'text-muted-foreground'
@@ -310,7 +467,7 @@ export default function FundsPage() {
               return (
                 <Card
                   key={fund.id}
-                  className="bg-card hover:border-border hover:shadow-card-hover transition-all duration-300 ease-in-out shadow-sm rounded-lg relative"
+                  className="group bg-card hover:border-border hover:shadow-card-hover transition-all duration-300 ease-in-out shadow-sm rounded-lg relative"
                 >
                   {fund.banner && (
                     <div className="relative h-32 w-full overflow-hidden rounded-t-lg">
@@ -375,41 +532,10 @@ export default function FundsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="bg-card/90 hover:bg-card"
-                              aria-label="Fund actions"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" sideOffset={5} className="min-w-[160px] shadow-xl">
-                            <DropdownMenuItem
-                              onClick={() => router.push(`/activities/new?id=${fund.id}`)}
-                              className="cursor-pointer"
-                            >
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleExportPDF(fund.id)}
-                              className="cursor-pointer"
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Export PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => setDeleteFundId(fund.id)}
-                              className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 dark:focus:bg-red-900/20"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {renderFundActions(
+                          fund,
+                          "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 transition-opacity"
+                        )}
                       </div>
                     </div>
 
@@ -588,6 +714,168 @@ export default function FundsPage() {
               )
             })}
           </div>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className={`min-w-[280px] ${sortableHeaderClasses}`} onClick={() => handleTableSort('title')}>
+                    <div className="flex items-center gap-1">Fund {getSortIcon('title', tableSortField, tableSortOrder)}</div>
+                  </TableHead>
+                  <TableHead className={`w-[140px] ${sortableHeaderClasses}`} onClick={() => handleTableSort('fundManager')}>
+                    <div className="flex items-center gap-1">Fund Manager {getSortIcon('fundManager', tableSortField, tableSortOrder)}</div>
+                  </TableHead>
+                  <TableHead className={`w-[140px] ${sortableHeaderClasses}`} onClick={() => handleTableSort('status')}>
+                    <div className="flex items-center gap-1">Status {getSortIcon('status', tableSortField, tableSortOrder)}</div>
+                  </TableHead>
+                  <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleTableSort('contributions')}>
+                    <div className="flex items-center justify-end gap-1">Contributions {getSortIcon('contributions', tableSortField, tableSortOrder)}</div>
+                  </TableHead>
+                  <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleTableSort('disbursed')}>
+                    <div className="flex items-center justify-end gap-1">Disbursed {getSortIcon('disbursed', tableSortField, tableSortOrder)}</div>
+                  </TableHead>
+                  <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleTableSort('balance')}>
+                    <div className="flex items-center justify-end gap-1">Balance {getSortIcon('balance', tableSortField, tableSortOrder)}</div>
+                  </TableHead>
+                  <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleTableSort('utilised')}>
+                    <div className="flex items-center justify-end gap-1">Utilised {getSortIcon('utilised', tableSortField, tableSortOrder)}</div>
+                  </TableHead>
+                  <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleTableSort('children')}>
+                    <div className="flex items-center justify-end gap-1">Children {getSortIcon('children', tableSortField, tableSortOrder)}</div>
+                  </TableHead>
+                  <TableHead className="w-10"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tableFunds.map(fund => {
+                  const balanceColor = fund.balance > 0 ? 'text-[hsl(var(--success-icon))]' : fund.balance < 0 ? 'text-destructive' : 'text-muted-foreground'
+                  const utilisation = fund.totalContributions > 0
+                    ? ((fund.totalDisbursements / fund.totalContributions) * 100).toFixed(0)
+                    : '0'
+                  const status = fund.status ? getActivityStatusDisplay(fund.status) : null
+                  const isExpanded = expandedChildrenIds.has(fund.id)
+                  const hasChildren = (fund.childActivities?.length ?? 0) > 0
+
+                  return (
+                    <React.Fragment key={fund.id}>
+                      <TableRow className="group">
+                        <TableCell>
+                          <div className="flex items-start gap-1.5">
+                            {hasChildren ? (
+                              <button
+                                type="button"
+                                onClick={() => toggleChildren(fund.id)}
+                                className="mt-0.5 shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                                aria-expanded={isExpanded}
+                                aria-label={isExpanded ? 'Collapse child activities' : 'Expand child activities'}
+                              >
+                                <ChevronRight className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                              </button>
+                            ) : (
+                              <span className="w-4 shrink-0" aria-hidden="true" />
+                            )}
+                            <h3 className="group/title font-medium text-foreground leading-tight [text-wrap:wrap]" title={fund.title}>
+                            {fund.identifier && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  copyToClipboard(fund.identifier, 'Activity ID')
+                                }}
+                                title="Click to copy Activity ID"
+                                className="mr-1.5 align-middle text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer whitespace-nowrap inline-flex items-center gap-1"
+                              >
+                                <span>{fund.identifier}</span>
+                              </button>
+                            )}
+                            <Link
+                              href={`/activities/${fund.id}?section=fund-overview`}
+                              className="text-foreground no-underline hover:underline"
+                            >
+                              {fund.title}
+                              {fund.acronym && (
+                                <span className="font-medium text-foreground"> ({fund.acronym})</span>
+                              )}
+                            </Link>
+                            </h3>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {fund.fundManager ? (
+                            <div className="flex items-center gap-2 min-w-0" title={fund.fundManager.name}>
+                              <OrganizationLogo
+                                logo={fund.fundManager.logo}
+                                name={fund.fundManager.name}
+                                size="sm"
+                                className="shrink-0"
+                              />
+                              <span className="text-helper text-foreground truncate">
+                                {fund.fundManager.acronym || fund.fundManager.name}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {status ? (
+                            <span className="text-helper text-foreground">{status.label}</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums whitespace-nowrap"><UsdAmount value={fund.totalContributions} /></TableCell>
+                        <TableCell className="text-right tabular-nums whitespace-nowrap"><UsdAmount value={fund.totalDisbursements} /></TableCell>
+                        <TableCell className={`text-right tabular-nums whitespace-nowrap font-medium ${balanceColor}`}><UsdAmount value={fund.balance} /></TableCell>
+                        <TableCell className="text-right tabular-nums">{utilisation}%</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          <span className={hasChildren ? 'text-foreground' : 'text-muted-foreground'}>{fund.childCount}</span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {renderFundActions(
+                            fund,
+                            "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 transition-opacity"
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded && fund.childActivities.map(child => (
+                        <TableRow key={child.id} className="bg-surface-muted/30 hover:bg-surface-muted/50">
+                          <TableCell colSpan={9} className="py-2">
+                            <div className="flex items-center gap-1.5 pl-6 border-l-2 border-border ml-2">
+                              <span className="text-helper text-foreground leading-tight whitespace-nowrap" title={child.title}>
+                                {child.identifier && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      copyToClipboard(child.identifier, 'Activity ID')
+                                    }}
+                                    title="Click to copy Activity ID"
+                                    className="mr-1.5 align-middle text-xs font-mono font-normal bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer whitespace-nowrap inline-flex items-center gap-1"
+                                  >
+                                    <span>{child.identifier}</span>
+                                  </button>
+                                )}
+                                <Link
+                                  href={`/activities/${child.id}`}
+                                  className="text-foreground no-underline hover:underline"
+                                >
+                                  {child.title}
+                                  {child.acronym && (
+                                    <span className="text-muted-foreground ml-0.5">({child.acronym})</span>
+                                  )}
+                                </Link>
+                              </span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </React.Fragment>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
 
         {/* Delete confirmation dialog */}
