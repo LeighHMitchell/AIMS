@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
     const { data: activities, error: activitiesError } = await supabase
       .from('activities')
       .select('id, title_narrative, iati_identifier')
+      .is('deleted_at', null)
       .eq('reporting_org_id', organizationId)
       .order('updated_at', { ascending: false });
 

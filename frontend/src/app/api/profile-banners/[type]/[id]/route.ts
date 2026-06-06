@@ -3,7 +3,7 @@ import { requireAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
-const VALID_TYPES = ['sdg', 'sector', 'location', 'policy_marker'] as const
+const VALID_TYPES = ['sdg', 'sector', 'location', 'policy_marker', 'tag'] as const
 
 // Columns that hold per-profile customizations alongside the banner.
 const OPTIONAL_COLS = ['description', 'color', 'icon'] as const

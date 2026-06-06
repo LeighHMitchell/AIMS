@@ -44,6 +44,9 @@ export interface LegacySearchResult {
     activity_id?: string
     activity_title?: string
     position?: string
+    job_title?: string
+    department?: string
+    role?: string
     organisation?: string
     email?: string
     phone?: string
@@ -199,6 +202,9 @@ function normalizeContact(result: LegacySearchResult): ContactSearchResult {
       activity_id: result.metadata?.activity_id,
       activity_title: result.metadata?.activity_title,
       position: result.metadata?.position,
+      job_title: result.metadata?.job_title,
+      department: result.metadata?.department,
+      role: result.metadata?.role,
       organisation: result.metadata?.organisation,
       email: result.metadata?.email,
       phone: result.metadata?.phone,

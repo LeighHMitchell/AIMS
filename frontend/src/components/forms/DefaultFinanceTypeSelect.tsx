@@ -70,7 +70,7 @@ export function DefaultFinanceTypeSelect({
                 value={code}
                 className="cursor-pointer hover:bg-accent focus:bg-accent"
               >
-                <span className="font-mono text-xs mr-2">{code}</span>
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{code}</span>
                 {label}
               </SelectItem>
             ))}

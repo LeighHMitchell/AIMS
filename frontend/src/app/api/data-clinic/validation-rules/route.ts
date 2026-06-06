@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const { data: implementationPastEndDate, error: rule1Error } = await supabase
       .from('activities')
       .select('id, title_narrative, iati_identifier, activity_status, planned_end_date, updated_at')
+      .is('deleted_at', null)
       .eq('reporting_org_id', organizationId)
       .eq('activity_status', '2') // Implementation
       .lt('planned_end_date', today)
@@ -61,6 +62,7 @@ export async function GET(request: NextRequest) {
     const { data: implementationWithActualEnd, error: rule2Error } = await supabase
       .from('activities')
       .select('id, title_narrative, iati_identifier, activity_status, actual_end_date, updated_at')
+      .is('deleted_at', null)
       .eq('reporting_org_id', organizationId)
       .eq('activity_status', '2') // Implementation
       .not('actual_end_date', 'is', null);
@@ -74,6 +76,7 @@ export async function GET(request: NextRequest) {
     const { data: missingPlannedStart, error: rule3Error } = await supabase
       .from('activities')
       .select('id, title_narrative, iati_identifier, activity_status, created_at, updated_at')
+      .is('deleted_at', null)
       .eq('reporting_org_id', organizationId)
       .is('planned_start_date', null);
 
@@ -86,6 +89,7 @@ export async function GET(request: NextRequest) {
     const { data: missingPlannedEnd, error: rule4Error } = await supabase
       .from('activities')
       .select('id, title_narrative, iati_identifier, planned_start_date, activity_status, updated_at')
+      .is('deleted_at', null)
       .eq('reporting_org_id', organizationId)
       .is('planned_end_date', null);
 
@@ -98,6 +102,7 @@ export async function GET(request: NextRequest) {
     const { data: closedWithoutActualEnd, error: rule5Error } = await supabase
       .from('activities')
       .select('id, title_narrative, iati_identifier, planned_end_date, activity_status, updated_at')
+      .is('deleted_at', null)
       .eq('reporting_org_id', organizationId)
       .eq('activity_status', '4') // Closed
       .is('actual_end_date', null);
@@ -116,6 +121,7 @@ export async function GET(request: NextRequest) {
     const { data: allActivities, error: activitiesError } = await supabase
       .from('activities')
       .select('id, title_narrative, iati_identifier, activity_status, updated_at')
+      .is('deleted_at', null)
       .eq('reporting_org_id', organizationId);
 
     if (activitiesError) {
@@ -131,6 +137,7 @@ export async function GET(request: NextRequest) {
       const { data: commitments, error: commitmentsError } = await supabase
         .from('transactions')
         .select('activity_id')
+        .is('deleted_at', null)
         .in('activity_id', activityIds)
         .in('transaction_type', ['1', '2']); // Incoming and Outgoing Commitments
 
@@ -145,7 +152,8 @@ export async function GET(request: NextRequest) {
     // Get transaction counts for all activities
     const { data: transactionCounts, error: txCountError } = await supabase
       .from('transactions')
-      .select('activity_id');
+      .select('activity_id')
+      .is('deleted_at', null);
 
     if (txCountError) {
       console.error('[Validation Rules] Transaction count error:', txCountError);

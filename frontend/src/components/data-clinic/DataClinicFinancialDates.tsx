@@ -29,48 +29,70 @@ export function DataClinicFinancialDates() {
       setLoading(true)
       setError(null)
 
-      // Fetch all transactions with their organization info
-      const { data: transactions, error: fetchError } = await supabase
-        .from('transactions')
-        .select(`
-          transaction_date,
-          activities!inner(
-            participating_orgs
-          )
-        `)
-        .not('transaction_date', 'is', null)
+      // Org type isn't stored on the activity directly — it's resolved through
+      // participating organisations → the organisation record's type. So we
+      // fetch three sets and join them in memory:
+      //   transactions (date)  →  activity_participating_organizations (org id)  →  organizations (type)
+      const [txRes, apoRes, orgRes] = await Promise.all([
+        supabase
+          .from('transactions')
+          .select('activity_id, transaction_date')
+          .is('deleted_at', null)
+          .not('transaction_date', 'is', null),
+        supabase
+          .from('activity_participating_organizations')
+          .select('activity_id, organization_id')
+          .is('deleted_at', null),
+        supabase
+          .from('organizations')
+          .select('id, type')
+          .is('deleted_at', null),
+      ])
 
-      if (fetchError) {
-        console.error('[FinancialDates] Error fetching transactions:', fetchError)
+      if (txRes.error || apoRes.error || orgRes.error) {
+        console.error('[FinancialDates] Error fetching data:', txRes.error || apoRes.error || orgRes.error)
         setError('Failed to fetch transaction data')
         return
       }
 
-      if (!transactions || transactions.length === 0) {
+      const transactions = txRes.data || []
+      if (transactions.length === 0) {
         setRangeData([])
         return
+      }
+
+      // organisation id → IATI org type code
+      const orgTypeById = new Map<string, string>()
+      for (const org of orgRes.data || []) {
+        if (org.type) orgTypeById.set(org.id, org.type)
+      }
+
+      // activity id → set of org type codes (via its participating organisations)
+      const activityOrgTypes = new Map<string, Set<string>>()
+      for (const po of apoRes.data || []) {
+        if (!po.activity_id || !po.organization_id) continue
+        const type = orgTypeById.get(po.organization_id)
+        if (!type) continue
+        if (!activityOrgTypes.has(po.activity_id)) activityOrgTypes.set(po.activity_id, new Set())
+        activityOrgTypes.get(po.activity_id)!.add(type)
       }
 
       // Map to track earliest and latest transaction years per org type
       const orgTypeMap = new Map<string, { earliest: number; latest: number; count: number }>()
 
       transactions.forEach((transaction: any) => {
-        const activity = transaction.activities
-        const participatingOrgs = activity?.participating_orgs || []
+        const types = activityOrgTypes.get(transaction.activity_id)
+        if (!types) return
+        const year = new Date(transaction.transaction_date).getFullYear()
 
-        // Extract organization types from participating_orgs
-        participatingOrgs.forEach((org: any) => {
-          if (org.type) {
-            const year = new Date(transaction.transaction_date).getFullYear()
-
-            if (!orgTypeMap.has(org.type)) {
-              orgTypeMap.set(org.type, { earliest: year, latest: year, count: 1 })
-            } else {
-              const existing = orgTypeMap.get(org.type)!
-              existing.earliest = Math.min(existing.earliest, year)
-              existing.latest = Math.max(existing.latest, year)
-              existing.count++
-            }
+        types.forEach((orgType) => {
+          if (!orgTypeMap.has(orgType)) {
+            orgTypeMap.set(orgType, { earliest: year, latest: year, count: 1 })
+          } else {
+            const existing = orgTypeMap.get(orgType)!
+            existing.earliest = Math.min(existing.earliest, year)
+            existing.latest = Math.max(existing.latest, year)
+            existing.count++
           }
         })
       })

@@ -4,35 +4,7 @@ import React from 'react'
 import { Building2, UserCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CodePill } from './CodePill'
-import { format } from 'date-fns'
-import type {
-  SearchResult,
-  ActivitySearchResult,
-  OrganisationSearchResult,
-  SectorSearchResult,
-  TagSearchResult,
-  UserSearchResult,
-  ContactSearchResult,
-  SearchResultType,
-  SECTOR_HIERARCHY_LABELS
-} from '@/types/search'
-
-// Sector hierarchy labels
-const sectorHierarchyLabels = {
-  'category': 'Sector category',
-  'sector': 'Sector',
-  'sub-sector': 'Sub-sector'
-} as const
-
-// Result type display labels
-const resultTypeLabels: Record<SearchResultType, string> = {
-  activity: 'Activity',
-  organisation: 'Organisation',
-  sector: 'Sector',
-  tag: 'Tag',
-  user: 'User',
-  contact: 'Contact'
-}
+import type { SearchResult } from '@/types/search'
 
 interface SearchResultRowProps {
   /** The search result to render */
@@ -82,11 +54,11 @@ function ResultAvatar({
   size = 'md'
 }: {
   result: SearchResult
-  size?: 'xs' | 'sm' | 'md'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
 }) {
-  const sizeClasses = size === 'xs' ? 'w-5 h-5' : size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'
-  const iconSize = size === 'xs' ? 'h-3 w-3' : size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'
-  const textSize = size === 'xs' ? 'text-[10px]' : 'text-body'
+  const sizeClasses = size === 'xs' ? 'w-5 h-5' : size === 'sm' ? 'w-8 h-8' : size === 'lg' ? 'w-12 h-12' : 'w-10 h-10'
+  const iconSize = size === 'xs' ? 'h-3 w-3' : size === 'sm' ? 'h-4 w-4' : size === 'lg' ? 'h-6 w-6' : 'h-5 w-5'
+  const textSize = size === 'xs' ? 'text-[10px]' : size === 'lg' ? 'text-lg' : 'text-body'
 
   // Sectors and Tags: NO icons per specification
   if (result.type === 'sector' || result.type === 'tag') {
@@ -176,57 +148,6 @@ function ResultAvatar({
 }
 
 /**
- * Get updated_at from result metadata
- */
-function getUpdatedAt(result: SearchResult): string | undefined {
-  return result.metadata?.updated_at
-}
-
-/**
- * Get the subtitle/description for a result
- * Falls back to constructed descriptions for some types
- */
-function getResultSubtitle(result: SearchResult): string | undefined {
-  // Use explicit subtitle if available
-  if (result.subtitle) return result.subtitle
-  
-  // Construct fallback descriptions based on type
-  switch (result.type) {
-    case 'activity':
-      if (result.metadata.reporting_org) {
-        return result.metadata.reporting_org_acronym 
-          ? `${result.metadata.reporting_org} (${result.metadata.reporting_org_acronym})`
-          : result.metadata.reporting_org
-      }
-      break
-    case 'organisation':
-      const orgParts: string[] = []
-      if (result.metadata.organisation_type) orgParts.push(result.metadata.organisation_type)
-      if (result.metadata.geography) orgParts.push(result.metadata.geography)
-      if (orgParts.length > 0) return orgParts.join(' • ')
-      break
-    case 'sector':
-      return sectorHierarchyLabels[result.metadata.hierarchy_level] || 'Sector'
-    case 'tag':
-      const count = result.metadata.activity_count ?? 0
-      return `${count} ${count === 1 ? 'activity' : 'activities'}`
-    case 'user':
-      const userParts: string[] = []
-      if (result.metadata.position) userParts.push(result.metadata.position)
-      if (result.metadata.organisation) userParts.push(result.metadata.organisation)
-      if (userParts.length > 0) return userParts.join(' • ')
-      break
-    case 'contact':
-      const contactParts: string[] = []
-      if (result.metadata.position) contactParts.push(result.metadata.position)
-      if (result.metadata.organisation) contactParts.push(result.metadata.organisation)
-      if (contactParts.length > 0) return contactParts.join(' • ')
-      break
-  }
-  return undefined
-}
-
-/**
  * Get the code/identifier for a result (for the code pill)
  */
 function getResultCode(result: SearchResult): string | undefined {
@@ -240,6 +161,28 @@ function getResultCode(result: SearchResult): string | undefined {
     default:
       return undefined
   }
+}
+
+/**
+ * Build the detail line for a contact result: job title / role, department,
+ * and organisation, joined with bullets (only the parts that exist).
+ */
+function getContactDetail(result: SearchResult): string | undefined {
+  if (result.type !== 'contact') return undefined
+  const m = result.metadata
+  const seen = new Set<string>()
+  const parts = [
+    m.job_title || m.position || m.role,
+    m.department,
+    m.organisation,
+  ].filter((p): p is string => {
+    if (!p || !p.trim()) return false
+    const key = p.trim().toLowerCase()
+    if (seen.has(key)) return false // drop duplicates (e.g. org repeated in department)
+    seen.add(key)
+    return true
+  })
+  return parts.length > 0 ? parts.join(' • ') : result.subtitle || undefined
 }
 
 /**
@@ -262,16 +205,15 @@ export function SearchResultRow({
 }: SearchResultRowProps) {
   const hasAvatar = result.type !== 'sector' && result.type !== 'tag'
   const isTag = result.type === 'tag'
-  const subtitle = getResultSubtitle(result)
   const code = getResultCode(result)
-  const updatedAt = getUpdatedAt(result)
+  const contactDetail = getContactDetail(result)
 
   // Compact variant - used in typeahead dropdowns
   if (variant === 'compact') {
     return (
       <div
         className={cn(
-          'flex items-center gap-2 w-full',
+          'flex items-start gap-2 w-full',
           onClick && 'cursor-pointer',
           className
         )}
@@ -279,86 +221,62 @@ export function SearchResultRow({
       >
         {/* Small avatar for compact */}
         {hasAvatar && (
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 mt-0.5">
             <ResultAvatar result={result} size="sm" />
           </div>
         )}
-        
+
         {/* Tag hash for tags */}
         {isTag && (
           <span className="text-purple-600 font-semibold text-body">#</span>
         )}
 
-        {/* Code pill + Title */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {code && <CodePill code={code} />}
-          <span className="font-medium text-body text-foreground truncate">
-            {highlightText(result.title, searchQuery)}
-            {result.type === 'activity' && result.metadata.acronym && (
-              <span className="text-muted-foreground"> ({result.metadata.acronym})</span>
-            )}
-          </span>
+        {/* Code pill + Title + acronym — all inline on one line, wrapping as needed */}
+        <div className="flex-1 min-w-0 font-medium text-body text-foreground break-words">
+          {code && <CodePill code={code} className="mr-1.5 align-middle" />}
+          {highlightText(result.title, searchQuery)}
+          {(result.type === 'activity' || result.type === 'organisation') && result.metadata.acronym && (
+            <> ({result.metadata.acronym})</>
+          )}
         </div>
       </div>
     )
   }
 
-  // Full variant - Google-style layout for search results page
+  // Full variant - single-line result for the search results page
   return (
     <div
       className={cn(
-        'flex items-start gap-3 w-full group',
+        'flex items-center gap-3 w-full group',
         onClick && 'cursor-pointer',
         className
       )}
       onClick={onClick}
     >
-      {/* Favicon-sized avatar */}
+      {/* Larger avatar/logo for the results page */}
       {hasAvatar && (
-        <div className="flex-shrink-0 mt-1">
-          <ResultAvatar result={result} size="xs" />
+        <div className="flex-shrink-0">
+          <ResultAvatar result={result} size="lg" />
         </div>
       )}
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        {/* Title row - Google blue, larger, hover underline */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Tag hash prefix */}
-          {isTag && (
-            <span className="text-purple-600 font-semibold">#</span>
+      {/* Tag hash prefix */}
+      {isTag && (
+        <span className="text-purple-600 font-semibold">#</span>
+      )}
+
+      {/* Code pill + title + acronym — all on one line, wrapping if needed.
+          Contacts append their role / department / org inline on the same line. */}
+      <div className="flex-1 min-w-0 text-base font-medium text-foreground break-words">
+        {code && <CodePill code={code} className="mr-1.5 align-middle" />}
+        <span className="group-hover:underline">
+          {highlightText(result.title, searchQuery)}
+          {(result.type === 'activity' || result.type === 'organisation') && result.metadata.acronym && (
+            <> ({result.metadata.acronym})</>
           )}
-          
-          {/* Code pill */}
-          {code && <CodePill code={code} />}
-          
-          {/* Title - Google style */}
-          <h3 className="text-base text-blue-800 group-hover:underline font-medium">
-            {highlightText(result.title, searchQuery)}
-            {result.type === 'activity' && result.metadata.acronym && (
-              <span className="text-muted-foreground font-normal"> ({result.metadata.acronym})</span>
-            )}
-            {result.type === 'organisation' && result.metadata.acronym && (
-              <span className="text-muted-foreground font-normal"> ({result.metadata.acronym})</span>
-            )}
-          </h3>
-        </div>
-
-        {/* Subtitle/description */}
-        {subtitle && (
-          <p className="text-body text-muted-foreground mt-0.5 line-clamp-2">
-            {highlightText(subtitle, searchQuery)}
-          </p>
-        )}
-
-        {/* Type indicator + Updated date (subtle) */}
-        {showTypeIndicator && (
-          <div className="text-helper text-muted-foreground mt-1.5">
-            {resultTypeLabels[result.type]}
-            {updatedAt && (
-              <span> • Updated {format(new Date(updatedAt), 'MMM d, yyyy')}</span>
-            )}
-          </div>
+        </span>
+        {result.type === 'contact' && contactDetail && (
+          <> • {highlightText(contactDetail, searchQuery)}</>
         )}
       </div>
     </div>

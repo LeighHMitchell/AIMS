@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Check, HelpCircle, MessageSquare, ExternalLink, Calendar, ClipboardList, AlertTriangle, CheckCircle2, ArrowRightLeft, Share2, UserPlus, Download } from 'lucide-react';
+import { Bell, Check, HelpCircle, MessageSquare, ExternalLink, Calendar, ClipboardList, AlertTriangle, CheckCircle2, ArrowRightLeft, Share2, UserPlus, Download } from "@/components/icons/hugeicons";
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';

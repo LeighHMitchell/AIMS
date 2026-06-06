@@ -12,7 +12,6 @@ import {
   AlertCircle,
   Search,
   RefreshCw,
-  Pencil,
   Save,
   X,
   Calendar,
@@ -25,10 +24,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { format } from "date-fns";
 import { useUser } from "@/hooks/useUser";
 import { BUDGET_TYPE_LABELS, BUDGET_STATUS_LABELS } from "@/types/budget";
 import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
+import { renderMoney, formatClinicDate } from "./formatters";
 
 type Budget = {
   id: string;
@@ -46,11 +45,6 @@ type Budget = {
   [key: string]: any;
 };
 
-type DataGap = {
-  field: string;
-  label: string;
-  count: number;
-};
 
 export function DataClinicBudgets() {
   const { user } = useUser();
@@ -64,7 +58,6 @@ export function DataClinicBudgets() {
   const [editingValue, setEditingValue] = useState<string>('');
   const [bulkEditField, setBulkEditField] = useState<string>('');
   const [bulkEditValue, setBulkEditValue] = useState<string>('');
-  const [dataGaps, setDataGaps] = useState<DataGap[]>([]);
   const [sortField, setSortField] = useState<'activity' | 'start' | 'end' | 'type' | 'status' | 'currency' | 'value' | 'valueDate' | 'usd'>('activity');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -122,7 +115,6 @@ export function DataClinicBudgets() {
 
       const data = await res.json();
       setBudgets(data.budgets || []);
-      setDataGaps(data.dataGaps || []);
     } catch (error) {
       console.error('Error fetching budgets:', error);
       toast.error('Failed to load budgets');
@@ -351,57 +343,25 @@ export function DataClinicBudgets() {
               field === 'status' && BUDGET_STATUS_LABELS[String(value) as keyof typeof BUDGET_STATUS_LABELS] ?
                 BUDGET_STATUS_LABELS[String(value) as keyof typeof BUDGET_STATUS_LABELS] :
                 field.includes('date') && value ? formatDate(value) :
-                  field === 'value' || field === 'value_usd' ? formatCurrency(Number(value), budget.currency) :
+                  field === 'value' || field === 'value_usd' ? renderMoney(Number(value), budget.currency) :
                     value
             }
           </span>
         ) : (
-          <Badge variant="destructive" className="text-helper">
+          <Badge
+            variant="outline"
+            className={`text-helper border border-red-500 text-red-600 bg-transparent ${isSuperUser ? 'cursor-pointer hover:bg-red-50' : ''}`}
+            onClick={isSuperUser ? () => startEditing(budget.id, field, String(value || '')) : undefined}
+          >
             <AlertCircle className="h-3 w-3 mr-1" />
             Missing
           </Badge>
-        )}
-        {isSuperUser && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => startEditing(budget.id, field, String(value || ''))}
-          >
-            <Pencil className="h-3 w-3 text-muted-foreground" />
-          </Button>
         )}
       </div>
     );
   };
 
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return '—';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '—';
-      return format(date, "dd MMM yyyy");
-    } catch (error) {
-      return '—';
-    }
-  };
-
-  const formatCurrency = (value: number, currency: string = "USD") => {
-    if (value == null) return '—';
-    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase())
-      ? currency.toUpperCase()
-      : "USD";
-
-    try {
-      const formattedValue = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-
-      return `${safeCurrency} ${formattedValue}`;
-    } catch (error) {
-      return `${safeCurrency} ${value}`;
-    }
-  };
+  const formatDate = (dateString: string | null | undefined) => formatClinicDate(dateString) || '—';
 
   if (loading) {
     return (
@@ -414,27 +374,6 @@ export function DataClinicBudgets() {
 
   return (
     <div className="space-y-6">
-      {/* Data Gaps Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Gaps Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {dataGaps.map((gap) => (
-              <div
-                key={gap.field}
-                className="p-4 rounded-lg border cursor-pointer hover:bg-muted/50"
-                onClick={() => setSelectedFilter(gap.field)}
-              >
-                <p className="text-body text-muted-foreground">{gap.label}</p>
-                <p className="text-2xl font-semibold">{gap.count}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Filters and Search */}
       <Card>
         <CardContent className="p-6">
@@ -607,7 +546,7 @@ export function DataClinicBudgets() {
                         {budget.currency ? (
                           <span className="text-sm font-mono">{budget.currency}</span>
                         ) : (
-                          <Badge variant="destructive" className="text-helper">
+                          <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>
@@ -622,10 +561,10 @@ export function DataClinicBudgets() {
                       <td className="p-4 text-right">
                         {budget.value_usd || budget.usd_value ? (
                           <span className="text-body font-medium">
-                            {formatCurrency(budget.value_usd || budget.usd_value || 0, 'USD')}
+                            {renderMoney(budget.value_usd || budget.usd_value || 0, 'USD')}
                           </span>
                         ) : (
-                          <Badge variant="destructive" className="text-helper">
+                          <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>

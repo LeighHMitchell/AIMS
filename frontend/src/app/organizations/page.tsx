@@ -23,7 +23,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Search, Plus, Pencil, Eye, Trash2, ExternalLink, Globe, MapPin, Users, Activity, DollarSign, Building2, AlertTriangle, Copy, Upload, X, ImageIcon, Info, TableIcon, LayoutGrid, Calendar, Mail, Phone, HelpCircle, User, Lock, MoreVertical, Download, FileText, FileSpreadsheet } from 'lucide-react'
+import { Search, Plus, Pencil, Eye, Trash2, ExternalLink, Globe, MapPin, Users, Activity, DollarSign, Building2, AlertTriangle, Copy, Upload, X, ImageIcon, Info, List, LayoutGrid, Calendar, Mail, Phone, HelpCircle, User, Lock, MoreVertical, Download, FileText, FileSpreadsheet } from 'lucide-react'
 import { exportOrganizationToPDF, exportOrganizationToExcel } from '@/lib/organization-export'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -1850,22 +1850,22 @@ function OrganizationsPageContent() {
             </div>
             
             {/* View Toggle */}
-            <div className="flex items-center border rounded-md">
+            <div className="flex items-center border rounded-md flex-shrink-0">
               <Button
-                variant="ghost"
+                variant={viewMode === 'table' ? 'default' : 'ghost'}
                 size="sm"
-                className={`rounded-r-none ${viewMode === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+                className="rounded-r-none h-9"
                 onClick={() => {
                   setViewMode('table')
                   localStorage.setItem('organizationViewMode', 'table')
                 }}
               >
-                <TableIcon className="h-4 w-4" />
+                <List className="h-4 w-4" />
               </Button>
               <Button
-                variant="ghost"
+                variant={viewMode === 'card' ? 'default' : 'ghost'}
                 size="sm"
-                className={`rounded-l-none ${viewMode === 'card' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+                className="rounded-l-none h-9"
                 onClick={() => {
                   setViewMode('card')
                   localStorage.setItem('organizationViewMode', 'card')
@@ -2133,9 +2133,6 @@ function OrganizationsPageContent() {
                           onDelete={handleDeleteOrganization}
                           onExportPDF={handleExportOrgPDF}
                           onExportExcel={handleExportOrgExcel}
-                          selectable
-                          selected={selectedOrgIds.has(organization.id)}
-                          onToggleSelect={toggleSelectOrg}
                         />
                       ))}
                     </div>

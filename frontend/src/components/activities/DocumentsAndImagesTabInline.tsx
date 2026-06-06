@@ -1074,28 +1074,119 @@ export function DocumentsAndImagesTabInline({
                         )}
                         
                         {linkedDocs.length > 0 && (
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             <div className="flex items-center gap-2 pb-2 border-b">
                               <ExternalLink className="w-5 h-5 text-muted-foreground" />
                               <h4 className="font-medium text-foreground">Linked Documents</h4>
                             </div>
-                            <div className="space-y-3">
-                              {linkedDocs.map((doc, index) => (
-                                <div
-                                  key={doc.url}
-                                  className="bg-white border border-border rounded-lg p-1"
-                                >
-                                  <DocumentCardInlineFixed
-                                    document={doc}
-                                    onSave={handleSaveDocument}
-                                    onDelete={handleDeleteDocument}
-                                    fetchHead={fetchHead}
-                                    locale={locale}
-                                    isUploaded={false}
-                                  />
-                                </div>
-                              ))}
-                            </div>
+
+                            {/* Linked Documents Table */}
+                            <TableContainer>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-20">Type</TableHead>
+                                    <TableHead>Title</TableHead>
+                                    <TableHead>Category</TableHead>
+                                    <TableHead>Languages</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="w-40" />
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {linkedDocs.map((doc) => (
+                                    <TableRow key={doc.url}>
+                                      <TableCell className="align-top text-left">
+                                        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                          {getDocumentExtension(doc)}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell className="align-top text-left">
+                                        <div className="max-w-xs">
+                                          <a
+                                            href={doc.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="font-medium text-foreground hover:underline truncate block"
+                                            title={doc.title[0]?.text || doc.url}
+                                          >
+                                            {doc.title[0]?.text || 'Untitled Document'}
+                                          </a>
+                                          {doc.description?.[0]?.text && (
+                                            <div className="text-body text-muted-foreground truncate">
+                                              {doc.description[0].text}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell className="align-top text-left">
+                                        {doc.categoryCode && (
+                                          <div className="flex items-start gap-2">
+                                            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap">
+                                              {doc.categoryCode}
+                                            </span>
+                                            <span className="text-body">
+                                              {DOCUMENT_CATEGORIES.find(cat => cat.code === doc.categoryCode)?.name || doc.categoryCode}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="align-top text-left">
+                                        {doc.languageCodes && doc.languageCodes.length > 0 && (
+                                          <div className="flex flex-wrap gap-1">
+                                            {doc.languageCodes.map(code => {
+                                              const lang = (customLanguages || COMMON_LANGUAGES).find(l => l.code === code);
+                                              return (
+                                                <span key={code} className="text-helper text-body">
+                                                  <span className="font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{code.toUpperCase()}</span>
+                                                  {lang && <span className="ml-1 text-foreground">{lang.name}</span>}
+                                                </span>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="align-top text-left">
+                                        {doc.documentDate && (
+                                          <span className="text-body text-muted-foreground">
+                                            {new Date(doc.documentDate).toLocaleDateString()}
+                                          </span>
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="align-top text-left">
+                                        <div className="flex gap-2 items-center">
+                                          <a
+                                            href={doc.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-2 rounded hover:bg-muted inline-flex"
+                                            title="Open link"
+                                          >
+                                            <ExternalLink style={{ width: 18, height: 18 }} className="text-muted-foreground" />
+                                          </a>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleEditDocument(doc)}
+                                            className="p-2 rounded hover:bg-muted"
+                                            title="Edit"
+                                          >
+                                            <Pencil style={{ width: 18, height: 18 }} className="text-muted-foreground" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteDocument(doc.url)}
+                                            className="p-2 rounded hover:bg-muted"
+                                            title="Delete"
+                                          >
+                                            <Trash2 style={{ width: 18, height: 18 }} className="text-destructive" />
+                                          </button>
+                                        </div>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </TableContainer>
                           </div>
                         )}
                       </>

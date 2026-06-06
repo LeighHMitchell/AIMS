@@ -1,7 +1,24 @@
 {
-  "currentVersion": "4.0.3",
-  "narrativeSummary": "This update is all about understanding data quality and timeliness at a glance. New analytics surface how on-time your activities and disbursements are, how spending is classified, where the unusual outliers sit, and how government contributions stack up. A pair of new detailed reports cover budgets and planned disbursements, and there's a new workbook-style report card for richer exports. The organisation dashboard, hero cards and data-quality view got a polish, the editor navigation is cleaner, and a new nightly clean-up keeps abandoned imports from piling up. Faster, clearer, and easier to trust.",
+  "currentVersion": "4.0.4",
+  "narrativeSummary": "This update gives the Data Clinic a major upgrade for finding and fixing incomplete data. Eight new tabs — Planned Disbursements, People, Sectors, SDGs, Locations, Policy Markers, Tags and Working Groups — each list exactly the records that are missing a field, so gaps are easy to spot and fix. Across the clinic, recycled (deleted) records are now excluded, money shows a clean currency code, dates read consistently, IATI codes appear next to their labels, and you can edit a value right where it's missing. Plus a round of polish across the app.",
   "releases": [
+    {
+      "version": "4.0.4",
+      "date": "2026-06-07",
+      "narrativeSummary": "This update gives the Data Clinic a major upgrade for finding and fixing incomplete data. Eight new tabs — Planned Disbursements, People, Sectors, SDGs, Locations, Policy Markers, Tags and Working Groups — each list exactly the records that are missing a field, so gaps are easy to spot and fix. Across the clinic, recycled (deleted) records are now excluded, money shows a clean currency code, dates read consistently, IATI codes appear next to their labels, and you can edit a value right where it's missing. Plus a round of polish across the app.",
+      "changes": [
+        "<b>Eight new Data Clinic tabs</b>",
+        "&nbsp;&nbsp;Planned Disbursements, People, Sectors, SDGs, Locations, Policy Markers, Tags and Working Groups each show the key fields as columns and list only the records that are missing one. Why it helps: you can pinpoint and fix incomplete data across every part of an activity, fast.",
+        "<b>The Data Clinic only shows real gaps</b>",
+        "&nbsp;&nbsp;Recycled (deleted) records are now excluded everywhere, and a row only appears when a visible field is actually missing. Why it helps: no more chasing records that are already complete or were deleted.",
+        "<b>Cleaner, more consistent tables</b>",
+        "&nbsp;&nbsp;Sortable columns throughout, money shown as “USD 750,000”, dates as “1 Jul 2023”, and IATI codes shown next to their labels. Why it helps: everything is easier to read and compare at a glance.",
+        "<b>Edit right where it's missing</b>",
+        "&nbsp;&nbsp;Click a “Missing” badge to fix that field inline — and the edit option only appears where there's a gap. Why it helps: less clicking and fewer mistakes when cleaning up data.",
+        "<b>Behind the scenes</b>",
+        "&nbsp;&nbsp;A round of polish and refinements across the app. Why it helps: a smoother, steadier platform."
+      ]
+    },
     {
       "version": "4.0.3",
       "date": "2026-06-05",

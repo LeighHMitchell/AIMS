@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/tooltip";
 import { EditOrganizationModal } from "@/components/organizations/EditOrganizationModal";
 import { getOrganizationTypeName } from "@/data/iati-organization-types";
+import { formatClinicDate } from "./formatters";
 import { getActivityStatusByCode } from "@/data/activity-status-types";
 
 interface DuplicatePair {
@@ -299,7 +300,7 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
           <Separator />
           <div className="px-4 py-3 flex items-center justify-between bg-muted/20">
             <div className="text-helper text-muted-foreground">
-              Detected: {new Date(pair.detected_at).toLocaleDateString()}
+              Detected: {formatClinicDate(pair.detected_at)}
             </div>
 
             <div className="flex items-center gap-2">

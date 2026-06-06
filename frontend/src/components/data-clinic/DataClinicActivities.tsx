@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,7 +15,6 @@ import {
   Filter, 
   Download,
   RefreshCw,
-  Pencil,
   Save,
   X
 } from "lucide-react";
@@ -28,8 +28,10 @@ import {
 import { AidTypeSelect } from "@/components/forms/AidTypeSelect";
 import { DefaultFinanceTypeSelect } from "@/components/forms/DefaultFinanceTypeSelect";
 import { ActivityStatusSelect } from "@/components/forms/ActivityStatusSelect";
+import { FlowTypeSelect } from "@/components/forms/FlowTypeSelect";
 import { useUser } from "@/hooks/useUser";
 import { apiFetch } from '@/lib/api-fetch';
+import { formatClinicDate } from './formatters';
 
 // Aid Type mappings
 const AID_TYPE_LABELS: Record<string, string> = {
@@ -70,6 +72,16 @@ const FLOW_TYPE_LABELS: Record<string, string> = {
   '50': 'Other flows'
 };
 
+// Render an IATI code + label as "[code] Label" with the code in a gray
+// monospace badge. The badge sits inline with the label text so they stay on
+// the same line and the label wraps naturally beside it when space is tight.
+const renderCodeLabel = (code: string, label?: string) => (
+  <span className="text-body">
+    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap align-middle mr-1.5">{code}</span>
+    {label}
+  </span>
+);
+
 type Activity = {
   id: string;
   title: string;
@@ -89,12 +101,6 @@ type Activity = {
   [key: string]: any;
 };
 
-type DataGap = {
-  field: string;
-  label: string;
-  count: number;
-};
-
 export function DataClinicActivities() {
   const { user } = useUser();
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -106,9 +112,46 @@ export function DataClinicActivities() {
   const [editingField, setEditingField] = useState<{ activityId: string; field: string } | null>(null);
   const [bulkEditField, setBulkEditField] = useState<string>('');
   const [bulkEditValue, setBulkEditValue] = useState<string>('');
-  const [dataGaps, setDataGaps] = useState<DataGap[]>([]);
   const [hasIatiFields, setHasIatiFields] = useState(true);
-  const [showAllActivities, setShowAllActivities] = useState(false);
+  const [sortField, setSortField] = useState<'title' | 'iati' | 'aid' | 'finance' | 'flow' | 'status' | 'start' | 'sectors'>('title');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedActivities = useMemo(() => {
+    const startDate = (a: Activity) =>
+      a.plannedStartDate || a.actualStartDate || a.planned_start_date || a.actual_start_date || '';
+    return [...filteredActivities].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      switch (sortField) {
+        case 'title':
+          return (a.title || '').localeCompare(b.title || '') * dir;
+        case 'iati':
+          return (a.iatiIdentifier || '').localeCompare(b.iatiIdentifier || '') * dir;
+        case 'aid':
+          return (a.default_aid_type || '').localeCompare(b.default_aid_type || '') * dir;
+        case 'finance':
+          return (a.default_finance_type || '').localeCompare(b.default_finance_type || '') * dir;
+        case 'flow':
+          return (a.default_flow_type || '').localeCompare(b.default_flow_type || '') * dir;
+        case 'status':
+          return (a.activityStatus || '').localeCompare(b.activityStatus || '') * dir;
+        case 'start':
+          return (String(startDate(a)) < String(startDate(b)) ? -1 : 1) * dir;
+        case 'sectors':
+          return ((a.sectors?.length || 0) - (b.sectors?.length || 0)) * dir;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredActivities, sortField, sortDirection]);
 
   const isSuperUser = user?.role === 'super_user';
 
@@ -122,9 +165,7 @@ export function DataClinicActivities() {
 
   const fetchActivitiesWithGaps = async () => {
     try {
-      const url = showAllActivities 
-        ? '/api/data-clinic/activities?missing_fields=true&show_all=true'
-        : '/api/data-clinic/activities?missing_fields=true';
+      const url = '/api/data-clinic/activities?missing_fields=true';
       const res = await fetch(url);
       
       if (!res.ok) {
@@ -136,7 +177,6 @@ export function DataClinicActivities() {
       const data = await res.json();
       
       setActivities(data.activities || []);
-      setDataGaps(data.dataGaps || []);
       setHasIatiFields(data.hasIatiFields !== false); // Default to true if not specified
       
       if (data.message) {
@@ -281,6 +321,22 @@ export function DataClinicActivities() {
               </Button>
             </div>
           );
+        case 'default_flow_type':
+          return (
+            <div className="flex items-center gap-2">
+              <FlowTypeSelect
+                value={value || ''}
+                onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue || '')}
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditingField(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          );
         case 'activityStatus':
           return (
             <div className="flex items-center gap-2">
@@ -322,39 +378,64 @@ export function DataClinicActivities() {
     return (
       <div className="flex items-center gap-2">
         {value ? (
-          <span className="text-body">
-            {field === 'default_aid_type' && AID_TYPE_LABELS[value] ? 
-              `${value} - ${AID_TYPE_LABELS[value]}` : 
-              field === 'default_finance_type' && FINANCE_TYPE_LABELS[value] ?
-              `${value} - ${FINANCE_TYPE_LABELS[value]}` :
-                            field === 'default_flow_type' && FLOW_TYPE_LABELS[value] ?
-                `${value} - ${FLOW_TYPE_LABELS[value]}` :
-              value
-            }
-          </span>
+          field === 'default_aid_type' ? renderCodeLabel(value, AID_TYPE_LABELS[value]) :
+          field === 'default_finance_type' ? renderCodeLabel(value, FINANCE_TYPE_LABELS[value]) :
+          field === 'default_flow_type' ? renderCodeLabel(value, FLOW_TYPE_LABELS[value]) :
+          <span className="text-body">{value}</span>
         ) : (
-          <Badge variant="destructive" className="text-helper">
+          <Badge
+            variant="outline"
+            className={`text-helper border border-red-500 text-red-600 bg-transparent ${isSuperUser ? 'cursor-pointer hover:bg-red-50' : ''}`}
+            onClick={isSuperUser ? () => setEditingField({ activityId: activity.id, field }) : undefined}
+          >
             <AlertCircle className="h-3 w-3 mr-1" />
             Missing
           </Badge>
-        )}
-        {isSuperUser && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setEditingField({ activityId: activity.id, field })}
-          >
-            <Pencil className="h-3 w-3 text-muted-foreground" />
-          </Button>
         )}
       </div>
     );
   };
 
-  // Re-fetch when showAllActivities changes
-  useEffect(() => {
-    fetchActivitiesWithGaps();
-  }, [showAllActivities]);
+  // Start date spans two columns (planned OR actual) — show the effective date,
+  // edit writes to planned_start_date. Missing only when both are absent.
+  const renderStartDate = (activity: Activity) => {
+    const start = activity.plannedStartDate || activity.actualStartDate ||
+      activity.planned_start_date || activity.actual_start_date;
+
+    if (editingField?.activityId === activity.id && editingField?.field === 'planned_start_date') {
+      return (
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={start ? String(start).slice(0, 10) : ''}
+            onChange={(e) => handleInlineEdit(activity.id, 'planned_start_date', e.target.value)}
+            className="w-40"
+            autoFocus
+          />
+          <Button size="sm" variant="ghost" onClick={() => setEditingField(null)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-2">
+        {start ? (
+          <span className="text-body whitespace-nowrap">{formatClinicDate(String(start))}</span>
+        ) : (
+          <Badge
+            variant="outline"
+            className={`text-helper border border-red-500 text-red-600 bg-transparent ${isSuperUser ? 'cursor-pointer hover:bg-red-50' : ''}`}
+            onClick={isSuperUser ? () => setEditingField({ activityId: activity.id, field: 'planned_start_date' }) : undefined}
+          >
+            <AlertCircle className="h-3 w-3 mr-1" />
+            Missing
+          </Badge>
+        )}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -393,27 +474,6 @@ export function DataClinicActivities() {
         </Card>
       )}
 
-      {/* Data Gaps Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Gaps Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {dataGaps.map((gap) => (
-              <div
-                key={gap.field}
-                className="p-4 rounded-lg border cursor-pointer hover:bg-muted/50"
-                onClick={() => setSelectedFilter(gap.field)}
-              >
-                <p className="text-body text-muted-foreground">{gap.label}</p>
-                <p className="text-2xl font-semibold">{gap.count}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Filters and Search */}
       <Card>
         <CardContent className="p-6">
@@ -435,8 +495,8 @@ export function DataClinicActivities() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All activities</SelectItem>
-                <SelectItem value="missing_aid_type">Missing Aid Type</SelectItem>
-                <SelectItem value="missing_finance_type">Missing Finance Type</SelectItem>
+                <SelectItem value="missing_aid_type">Missing Default Aid Type</SelectItem>
+                <SelectItem value="missing_finance_type">Missing Default Finance Type</SelectItem>
                 <SelectItem value="missing_default_flow_type">Missing Default Flow Type</SelectItem>
                 <SelectItem value="missing_sector">Missing Sector</SelectItem>
                 <SelectItem value="missing_implementing_org">Missing Implementing Org</SelectItem>
@@ -444,13 +504,6 @@ export function DataClinicActivities() {
                 <SelectItem value="missing_status">Missing Status</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              variant="outline"
-              onClick={() => setShowAllActivities(!showAllActivities)}
-              className={showAllActivities ? "bg-blue-50" : ""}
-            >
-              {showAllActivities ? "Show Gaps Only" : "Show All"}
-            </Button>
             <Button
               variant="outline"
               onClick={() => fetchActivitiesWithGaps()}
@@ -472,8 +525,8 @@ export function DataClinicActivities() {
                     <SelectValue placeholder="Select field" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="default_aid_type">Aid Type</SelectItem>
-                    <SelectItem value="default_finance_type">Finance Type</SelectItem>
+                    <SelectItem value="default_aid_type">Default Aid Type</SelectItem>
+                    <SelectItem value="default_finance_type">Default Finance Type</SelectItem>
                     <SelectItem value="default_flow_type">Default Flow Type</SelectItem>
                     <SelectItem value="activityStatus">Activity Status</SelectItem>
                   </SelectContent>
@@ -515,24 +568,41 @@ export function DataClinicActivities() {
                       />
                     </th>
                   )}
-                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Title</th>
-                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">IATI ID</th>
-                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Aid Type</th>
-                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Finance Type</th>
-                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Flow Type</th>
-                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Status</th>
-                  <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">Sectors</th>
+                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
+                    <div className="flex items-center gap-1">Title {getSortIcon('title', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('iati')}>
+                    <div className="flex items-center gap-1">IATI ID {getSortIcon('iati', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('aid')}>
+                    <div className="flex items-center gap-1">Default Aid Type {getSortIcon('aid', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('finance')}>
+                    <div className="flex items-center gap-1">Default Finance Type {getSortIcon('finance', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('flow')}>
+                    <div className="flex items-center gap-1">Default Flow Type {getSortIcon('flow', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('status')}>
+                    <div className="flex items-center gap-1">Status {getSortIcon('status', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('start')}>
+                    <div className="flex items-center gap-1">Start Date {getSortIcon('start', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('sectors')}>
+                    <div className="flex items-center gap-1">Sectors {getSortIcon('sectors', sortField, sortDirection)}</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredActivities.length === 0 ? (
+                {sortedActivities.length === 0 ? (
                   <tr>
-                    <td colSpan={isSuperUser ? 8 : 7} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={isSuperUser ? 9 : 8} className="p-8 text-center text-muted-foreground">
                       No activities found with data gaps
                     </td>
                   </tr>
                 ) : (
-                  filteredActivities.map((activity) => (
+                  sortedActivities.map((activity) => (
                     <tr key={activity.id} className="border-b hover:bg-muted/50">
                       {isSuperUser && (
                         <td className="p-4">
@@ -583,10 +653,13 @@ export function DataClinicActivities() {
                         {renderFieldValue(activity, 'activityStatus')}
                       </td>
                       <td className="p-4">
+                        {renderStartDate(activity)}
+                      </td>
+                      <td className="p-4">
                         {activity.sectors && activity.sectors.length > 0 ? (
                           <span className="text-body">{activity.sectors.length} sectors</span>
                         ) : (
-                          <Badge variant="destructive" className="text-helper">
+                          <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>

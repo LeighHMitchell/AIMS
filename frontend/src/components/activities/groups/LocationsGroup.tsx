@@ -363,7 +363,7 @@ export function LocationsGroup({
           <section
             id="country-region"
             ref={countryRegionRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pb-16"
+            className="scroll-mt-20 pb-16"
             style={{ minHeight: getSectionMinHeight('country-region') }}
           >
             {isSectionActive('country-region') || activeSections.has('country-region') ? (
@@ -394,7 +394,7 @@ export function LocationsGroup({
           <section
             id="locations"
             ref={locationsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('locations') }}
           >
             {isSectionActive('locations') || activeSections.has('locations') ? (
@@ -422,7 +422,7 @@ export function LocationsGroup({
           <section
             id="subnational-allocation"
             ref={subnationalRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('subnational-allocation') || 400 }}
           >
             {isSectionActive('subnational-allocation') || activeSections.has('subnational-allocation') ? (

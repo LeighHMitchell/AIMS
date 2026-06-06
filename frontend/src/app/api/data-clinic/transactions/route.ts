@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
             title_narrative
           )
         `)
+        .is('deleted_at', null)
+        .is('activities.deleted_at', null)
         .order('transaction_date', { ascending: false })
         .limit(100);
 
@@ -67,6 +69,8 @@ export async function GET(request: NextRequest) {
             title_narrative
           )
         `)
+        .is('deleted_at', null)
+        .is('activities.deleted_at', null)
         .order('transaction_date', { ascending: false })
         .limit(100);
 

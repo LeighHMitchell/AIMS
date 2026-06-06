@@ -9,7 +9,7 @@ import { apiFetch } from '@/lib/api-fetch'
 import { toast } from 'sonner'
 
 interface ProfileBannerUploadProps {
-  profileType: 'sdg' | 'sector' | 'location' | 'policy_marker'
+  profileType: 'sdg' | 'sector' | 'location' | 'policy_marker' | 'tag'
   profileId: string
   onBannerChange?: (banner: string | null, position: number) => void
   /** When false, the banner still loads/displays but the edit button is hidden. Defaults to true. */

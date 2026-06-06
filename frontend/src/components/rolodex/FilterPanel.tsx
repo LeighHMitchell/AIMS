@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Popover,
   PopoverContent,
@@ -11,9 +10,7 @@ import {
   Search,
   X,
   Building2,
-  ChevronDown,
-  Briefcase,
-  Layers
+  ChevronDown
 } from 'lucide-react';
 import { RolodexFilters } from '@/app/api/rolodex/route';
 import { ROLE_CATEGORIES, getRolesByCategory, getOrgTypeCategories, ORG_TYPE_LABELS } from './utils/roleLabels';
@@ -37,7 +34,6 @@ export function FilterPanel({
 }: FilterPanelProps) {
   const [localSearch, setLocalSearch] = useState(filters.search || '');
   const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; acronym?: string; logo?: string }>>([]);
-  const [activities, setActivities] = useState<Array<{ id: string; title: string }>>([]);
   const [openPopover, setOpenPopover] = useState<string | null>(null);
   const [orgSearch, setOrgSearch] = useState('');
   const [orgSearchLoading, setOrgSearchLoading] = useState(false);
@@ -53,23 +49,6 @@ export function FilterPanel({
 
     return () => clearTimeout(timer);
   }, [localSearch, filters.search, onFiltersChange]);
-
-  // Fetch activities on mount
-  useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        const actResponse = await apiFetch('/api/activities');
-        if (actResponse.ok) {
-          const acts = await actResponse.json();
-          setActivities(acts.slice(0, 100)); // Limit for performance
-        }
-      } catch (error) {
-        console.error('Error fetching activities:', error);
-      }
-    };
-
-    fetchActivities();
-  }, []);
 
   // Fetch organizations with debounced search
   useEffect(() => {
@@ -128,20 +107,14 @@ export function FilterPanel({
           <Popover open={openPopover === 'type'} onOpenChange={(open) => setOpenPopover(open ? 'type' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 truncate">
                   {filters.source ? (
-                    <Badge
-                      variant="secondary"
-                      className="text-helper"
-                      style={{
-                        backgroundColor: filters.source === 'user' ? '#4C5568' : '#DC2625',
-                        color: 'white'
-                      }}
-                    >
-                      {filters.source === 'user' ? 'User Contact' : 'Activity Contact'}
-                    </Badge>
+                    <span className="flex items-center gap-1.5 truncate">
+                      <code className="font-mono text-xs bg-muted text-muted-foreground px-1 py-0.5 rounded">{filters.source === 'user' ? '1' : '2'}</code>
+                      <span>{filters.source === 'user' ? 'User Contact' : 'Activity Contact'}</span>
+                    </span>
                   ) : (
-                    <span className="text-muted-foreground">Select...</span>
+                    <span className="text-muted-foreground">All contact types</span>
                   )}
                 </span>
                 <span className="flex items-center gap-1">
@@ -163,9 +136,8 @@ export function FilterPanel({
                   className="w-full justify-start"
                   onClick={() => { onFiltersChange({ source: 'user' }); setOpenPopover(null); }}
                 >
-                  <Badge variant="secondary" className="text-helper" style={{ backgroundColor: '#4C5568', color: 'white' }}>
-                    User Contact
-                  </Badge>
+                  <code className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">1</code>
+                  User Contact
                 </Button>
                 <Button
                   variant={filters.source === 'activity_contact' ? "secondary" : "ghost"}
@@ -173,9 +145,8 @@ export function FilterPanel({
                   className="w-full justify-start"
                   onClick={() => { onFiltersChange({ source: 'activity_contact' }); setOpenPopover(null); }}
                 >
-                  <Badge variant="secondary" className="text-helper" style={{ backgroundColor: '#DC2625', color: 'white' }}>
-                    Activity Contact
-                  </Badge>
+                  <code className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">2</code>
+                  Activity Contact
                 </Button>
               </div>
             </PopoverContent>
@@ -188,13 +159,19 @@ export function FilterPanel({
           <Popover open={openPopover === 'role'} onOpenChange={(open) => setOpenPopover(open ? 'role' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 truncate">
                   {filters.role ? (
-                    <Badge variant="secondary" className="text-helper bg-muted text-foreground">
-                      {filters.role}
-                    </Badge>
+                    <span className="flex items-center gap-1.5 truncate">
+                      {(() => {
+                        const idx = getRolesByCategory(ROLE_CATEGORIES.SYSTEM).findIndex(r => r.label === filters.role);
+                        return idx >= 0 ? (
+                          <code className="font-mono text-xs bg-muted text-muted-foreground px-1 py-0.5 rounded">{idx + 1}</code>
+                        ) : null;
+                      })()}
+                      <span className="truncate">{filters.role}</span>
+                    </span>
                   ) : (
-                    <span className="text-muted-foreground">Select...</span>
+                    <span className="text-muted-foreground">All roles</span>
                   )}
                 </span>
                 <span className="flex items-center gap-1">
@@ -210,7 +187,7 @@ export function FilterPanel({
             </PopoverTrigger>
             <PopoverContent className="w-72 p-2" align="start">
               <div className="max-h-64 overflow-y-auto space-y-1">
-                {getRolesByCategory(ROLE_CATEGORIES.SYSTEM).map((role) => (
+                {getRolesByCategory(ROLE_CATEGORIES.SYSTEM).map((role, index) => (
                   <Button
                     key={role.key}
                     variant={filters.role === role.label ? "secondary" : "ghost"}
@@ -218,9 +195,8 @@ export function FilterPanel({
                     className="w-full justify-start"
                     onClick={() => { onFiltersChange({ role: role.label }); setOpenPopover(null); }}
                   >
-                    <Badge variant="secondary" className={`text-helper ${role.color}`}>
-                      {role.label}
-                    </Badge>
+                    <code className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">{index + 1}</code>
+                    {role.label}
                   </Button>
                 ))}
               </div>
@@ -241,16 +217,13 @@ export function FilterPanel({
           }}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
-                <span className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  <span className="truncate">
-                    {filters.organization
-                      ? (() => {
-                          const org = organizations.find(o => o.id === filters.organization);
-                          return org ? `${org.name}${org.acronym ? ` ${org.acronym}` : ''}`.substring(0, 25) : 'Selected';
-                        })()
-                      : 'Select...'}
-                  </span>
+                <span className="truncate">
+                  {filters.organization
+                    ? (() => {
+                        const org = organizations.find(o => o.id === filters.organization);
+                        return org ? `${org.name}${org.acronym ? ` ${org.acronym}` : ''}`.substring(0, 25) : 'Selected';
+                      })()
+                    : 'All organisations'}
                 </span>
                 <span className="flex items-center gap-1">
                   {filters.organization && (
@@ -311,15 +284,14 @@ export function FilterPanel({
           <Popover open={openPopover === 'orgType'} onOpenChange={(open) => setOpenPopover(open ? 'orgType' : null)}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
-                <span className="flex items-center gap-2">
-                  <Layers className="h-4 w-4" />
+                <span className="flex items-center gap-2 truncate">
                   {filters.orgType ? (
                     <span className="flex items-center gap-1.5 truncate">
                       <code className="font-mono text-xs bg-muted text-muted-foreground px-1 py-0.5 rounded">{filters.orgType}</code>
                       <span>{ORG_TYPE_LABELS[filters.orgType]?.label}</span>
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">Select...</span>
+                    <span className="text-muted-foreground">All types</span>
                   )}
                 </span>
                 <span className="flex items-center gap-1">
@@ -345,49 +317,6 @@ export function FilterPanel({
                   >
                     <code className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-2">{orgType.key}</code>
                     {orgType.label}
-                  </Button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {/* Activity Filter */}
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-helper font-medium text-muted-foreground mb-1">Activity</label>
-          <Popover open={openPopover === 'activity'} onOpenChange={(open) => setOpenPopover(open ? 'activity' : null)}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full h-9 px-3 justify-between">
-                <span className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
-                  <span className="truncate">
-                    {filters.activity
-                      ? activities.find(a => a.id === filters.activity)?.title?.substring(0, 25) || 'Selected'
-                      : 'Select...'}
-                  </span>
-                </span>
-                <span className="flex items-center gap-1">
-                  {filters.activity && (
-                    <X
-                      className="h-3 w-3 text-muted-foreground hover:text-muted-foreground"
-                      onClick={(e) => { e.stopPropagation(); onFiltersChange({ activity: undefined }); }}
-                    />
-                  )}
-                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
-                </span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[500px] p-2" align="start">
-              <div className="max-h-64 overflow-y-auto space-y-1">
-                {activities.map((activity) => (
-                  <Button
-                    key={activity.id}
-                    variant={filters.activity === activity.id ? "secondary" : "ghost"}
-                    size="sm"
-                    className="w-full justify-start h-auto py-2 text-left"
-                    onClick={() => { onFiltersChange({ activity: activity.id }); setOpenPopover(null); }}
-                  >
-                    {activity.title}
                   </Button>
                 ))}
               </div>

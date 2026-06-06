@@ -78,11 +78,11 @@ export function RailFocalPoints({
           <li key={fp.id} className="flex items-start gap-2 min-w-0">
             <FocalPointAvatar name={fp.name} photoUrl={fp.photoUrl} size="md" />
             <div className="flex-1 min-w-0">
-              <div className="font-medium text-foreground break-words">
-                {fp.title ? `${fp.title} ` : ''}{fp.name}
-              </div>
-              <div className="mt-0.5">
-                <span className="inline-flex items-center align-baseline px-2 h-5 text-caption font-medium rounded bg-muted text-foreground border border-border">
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-medium text-foreground truncate">
+                  {fp.title ? `${fp.title} ` : ''}{fp.name}
+                </div>
+                <span className="shrink-0 inline-flex items-center align-baseline px-2 h-5 text-caption font-medium rounded bg-muted text-foreground border border-border whitespace-nowrap">
                   {fp.role}
                 </span>
               </div>

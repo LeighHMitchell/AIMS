@@ -7,8 +7,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CardShell } from '@/components/ui/card-shell'
 import { Badge } from '@/components/ui/badge'
 import { PageHeaderSkeleton, CardGridSkeleton } from '@/components/ui/skeleton-loader'
-import { AlertCircle, ArrowRight, MapPin, LayoutGrid, Activity, List, Pencil } from 'lucide-react'
+import { AlertCircle, ArrowRight, MapPin, LayoutGrid, Activity, List, Pencil, Search as SearchIcon } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, getSortIcon, sortableHeaderClasses } from '@/components/ui/table'
+import { UsdAmount } from '@/components/ui/usd-amount'
 import { apiFetch } from '@/lib/api-fetch'
 import { useRouter } from 'next/navigation'
 import { useUserRole } from '@/hooks/useUserRole'
@@ -66,6 +69,26 @@ export default function LocationProfilesPage() {
   const router = useRouter()
   const { isSuperUser } = useUserRole()
   const canEdit = isSuperUser()
+  const [searchQuery, setSearchQuery] = useState('')
+  const locQuery = searchQuery.trim().toLowerCase()
+  const filteredRegions = locQuery
+    ? regions.filter(r => (r.name || '').toLowerCase().includes(locQuery) || (r.type || '').toLowerCase().includes(locQuery) || (r.st_pcode || '').toLowerCase().includes(locQuery))
+    : regions
+  const [sortField, setSortField] = useState<'name' | 'type' | 'activities' | 'committed' | 'disbursed'>('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const toggleSort = (field: typeof sortField) => {
+    if (sortField === field) setSortOrder(o => (o === 'asc' ? 'desc' : 'asc'))
+    else { setSortField(field); setSortOrder('asc') }
+  }
+  const sortedRegions = [...filteredRegions].sort((a, b) => {
+    let cmp = 0
+    if (sortField === 'name') cmp = (a.name || '').localeCompare(b.name || '')
+    else if (sortField === 'type') cmp = (a.type || '').localeCompare(b.type || '') || (a.name || '').localeCompare(b.name || '')
+    else if (sortField === 'activities') cmp = a.activityCount - b.activityCount
+    else if (sortField === 'committed') cmp = a.commitments - b.commitments
+    else cmp = a.disbursements - b.disbursements
+    return sortOrder === 'asc' ? cmp : -cmp
+  })
 
   useEffect(() => {
     const fetchRegions = async () => {
@@ -121,80 +144,115 @@ export default function LocationProfilesPage() {
       <div className="min-h-screen">
         <div className="w-full p-6">
           {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">Location Profiles</h1>
-                  <p className="text-muted-foreground mt-1">
-                    {totalActivities} activities across {regions.length} States, Regions &amp; Union Territories
-                  </p>
-                </div>
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-foreground">Location Profiles</h1>
+            <p className="text-muted-foreground mt-1">
+              {totalActivities} activities across {regions.length} States, Regions &amp; Union Territories
+            </p>
+          </div>
+
+          {/* Filters + View Toggle */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+                <Input
+                  aria-label="Search locations"
+                  placeholder="Search locations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-              <div className="flex items-center border rounded-md flex-shrink-0">
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="rounded-r-none h-9"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'card' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode("card")}
-                  className="rounded-l-none h-9"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-              </div>
+            </div>
+            <div className="flex items-center border rounded-md flex-shrink-0">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className="rounded-r-none h-9"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'card' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode("card")}
+                className="rounded-l-none h-9"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
           {/* List/Table View */}
           {viewMode === 'list' && (
             <Card>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-body">
-                    <thead className="bg-surface-muted">
-                      <tr className="border-b border-border bg-muted/50">
-                        <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Location</th>
-                        <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Type</th>
-                        <th className="text-right py-2.5 px-3 text-helper font-medium text-muted-foreground">Activities</th>
-                        <th className="text-right py-2.5 px-3 text-helper font-medium text-muted-foreground">Committed</th>
-                        <th className="text-right py-2.5 px-3 text-helper font-medium text-muted-foreground">Disbursed</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {regions.map(region => (
-                        <tr key={region.st_pcode} className="border-b border-border/50 hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = `/location-profiles/${region.st_pcode}`}>
-                          <td className="py-2.5 px-3">
-                            <Link href={`/location-profiles/${region.st_pcode}`} className="hover:underline">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-foreground">{region.name}</span>
-                                <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{region.st_pcode}</code>
-                              </div>
-                            </Link>
-                          </td>
-                          <td className="py-2.5 px-3 text-helper text-foreground">{region.type}</td>
-                          <td className="py-2.5 px-3 text-right text-foreground">{region.activityCount}</td>
-                          <td className="py-2.5 px-3 text-right">{region.commitments > 0 ? formatCurrencyShort(region.commitments) : <span className="text-muted-foreground">—</span>}</td>
-                          <td className="py-2.5 px-3 text-right">{region.disbursements > 0 ? formatCurrencyShort(region.disbursements) : <span className="text-muted-foreground">—</span>}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className={sortableHeaderClasses} onClick={() => toggleSort('name')}>
+                      <span className="inline-flex items-center gap-1">Location {getSortIcon('name', sortField, sortOrder)}</span>
+                    </TableHead>
+                    <TableHead className={sortableHeaderClasses} onClick={() => toggleSort('type')}>
+                      <span className="inline-flex items-center gap-1">Type {getSortIcon('type', sortField, sortOrder)}</span>
+                    </TableHead>
+                    <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => toggleSort('activities')}>
+                      <span className="inline-flex items-center gap-1 justify-end">Activities {getSortIcon('activities', sortField, sortOrder)}</span>
+                    </TableHead>
+                    <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => toggleSort('committed')}>
+                      <span className="inline-flex items-center gap-1 justify-end">Committed {getSortIcon('committed', sortField, sortOrder)}</span>
+                    </TableHead>
+                    <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => toggleSort('disbursed')}>
+                      <span className="inline-flex items-center gap-1 justify-end">Disbursed {getSortIcon('disbursed', sortField, sortOrder)}</span>
+                    </TableHead>
+                    {canEdit && <TableHead className="w-[60px]" />}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedRegions.map(region => (
+                    <TableRow
+                      key={region.st_pcode}
+                      className="group/row cursor-pointer"
+                      onClick={() => router.push(`/location-profiles/${region.st_pcode}`)}
+                    >
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span className="text-foreground">{region.name}</span>
+                          <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{region.st_pcode}</code>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{region.type}</TableCell>
+                      <TableCell className="text-right text-foreground">{region.activityCount}</TableCell>
+                      <TableCell className="text-right"><UsdAmount value={region.commitments} /></TableCell>
+                      <TableCell className="text-right"><UsdAmount value={region.disbursements} /></TableCell>
+                      {canEdit && (
+                        <TableCell className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => router.push(`/location-profiles/${region.st_pcode}/edit`)}
+                              title="Edit location"
+                              aria-label="Edit location"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </Card>
           )}
 
           {/* Grid/Card View */}
           {viewMode === 'card' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {regions.map(region => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {filteredRegions.map(region => (
                 <CardShell
                   key={region.st_pcode}
                   href={`/location-profiles/${region.st_pcode}`}
@@ -202,10 +260,10 @@ export default function LocationProfilesPage() {
                   bannerColor={TYPE_COLORS[region.type] || '#64748b'}
                   bannerActions={canEdit ? (
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/location-profiles/${region.st_pcode}/edit`) }}
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Edit location"
                       aria-label="Edit location"
                     >

@@ -119,6 +119,7 @@ export default function ActivityEditorNavigation({
       sections: [
         { id: "linked_activities", label: "Linked Activities" },
         { id: "results", label: "Results" },
+        { id: "program-logic", label: "Program Logic" },
         { id: "forward-spending-survey", label: "Forward Spend" },
         { id: "capital-spend", label: "Capital Spend" },
         { id: "financing-terms", label: "Financing Terms" },

@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
         reporting_org_id,
         created_by_org_name
       `)
+      .is('deleted_at', null)
       .not('planned_start_date', 'is', null)
       .not('planned_end_date', 'is', null);
 
@@ -87,7 +88,8 @@ export async function GET(request: NextRequest) {
     // Fetch all budgets
     const { data: budgets, error: budgetsError } = await supabase
       .from('activity_budgets')
-      .select('activity_id, usd_value, value, currency');
+      .select('activity_id, usd_value, value, currency')
+      .is('deleted_at', null);
 
     if (budgetsError) {
       console.error('[Financial Completeness API] Budgets error:', budgetsError);
@@ -99,7 +101,8 @@ export async function GET(request: NextRequest) {
       .from('transactions')
       .select('activity_id, value_usd, value, currency, transaction_type')
       .eq('transaction_type', '3')
-      .eq('status', 'actual');
+      .eq('status', 'actual')
+      .is('deleted_at', null);
 
     if (transactionsError) {
       console.error('[Financial Completeness API] Transactions error:', transactionsError);

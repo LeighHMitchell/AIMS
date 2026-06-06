@@ -27,7 +27,7 @@ import {
   ArrowLeft,
   MapPin,
   ShieldCheck,
-} from "lucide-react"
+} from "@/components/icons/hugeicons"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -154,6 +154,7 @@ export function SidebarNav({
         { name: "Sectors", href: "/sectors", show: true },
         { name: "Locations", href: "/location-profiles", show: true },
         { name: "Policy Markers", href: "/policy-markers", show: true },
+        { name: "Tags", href: "/tags", show: true },
         { name: "Working Groups", href: "/working-groups", show: true },
       ]
     },
@@ -491,7 +492,7 @@ export function SidebarNav({
                         : "text-foreground hover:bg-[hsl(var(--nav-hover-bg))] hover:text-[hsl(var(--nav-hover-fg))] dark:text-gray-200"
                     )}
                   >
-                    <ItemIcon className="h-4 w-4 flex-shrink-0" />
+                    <ItemIcon className="h-5 w-5 flex-shrink-0" />
                     <span
                       className={cn(
                         "whitespace-nowrap",
@@ -554,7 +555,7 @@ export function SidebarNav({
                           onClick={() => toggleGroup(group.label)}
                           className="flex w-full items-center justify-center px-3 py-2 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-[hsl(var(--nav-hover-bg))]"
                         >
-                          <GroupIcon className="h-4 w-4 flex-shrink-0" />
+                          <GroupIcon className="h-5 w-5 flex-shrink-0" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent side="right" className="font-semibold">
@@ -565,7 +566,7 @@ export function SidebarNav({
                     <CollapsibleTrigger asChild>
                       <button className="flex w-full items-center justify-between px-3 py-1.5 text-section-label font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-[hsl(var(--nav-hover-bg))] dark:hover:bg-gray-800/30">
                         <div className="flex items-center gap-2.5">
-                          <GroupIcon className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.75} />
+                          <GroupIcon className="h-5 w-5 flex-shrink-0" strokeWidth={1.75} />
                           <span>{group.label}</span>
                         </div>
                         <ChevronRight

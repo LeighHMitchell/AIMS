@@ -265,7 +265,7 @@ export function FundingDeliveryGroup({
           <section
             id="finances"
             ref={financesRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pb-16"
+            className="scroll-mt-20 pb-16"
             style={{ minHeight: getSectionMinHeight('finances') }}
           >
             {isSectionActive('finances') || activeSections.has('finances') ? (
@@ -299,7 +299,7 @@ export function FundingDeliveryGroup({
           <section
             id="planned-disbursements"
             ref={plannedDisbursementsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('planned-disbursements') }}
           >
             {isSectionActive('planned-disbursements') || activeSections.has('planned-disbursements') ? (
@@ -329,7 +329,7 @@ export function FundingDeliveryGroup({
           <section
             id="budgets"
             ref={budgetsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('budgets') }}
           >
             {isSectionActive('budgets') || activeSections.has('budgets') ? (

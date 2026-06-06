@@ -175,6 +175,7 @@ async function enrichDuplicatesWithDetails(
         created_by_org_acronym,
         icon
       `)
+      .is('deleted_at', null)
       .in('id', Array.from(activityIds));
 
     for (const activity of activities || []) {
@@ -204,6 +205,7 @@ async function enrichDuplicatesWithDetails(
     const { data: activityCounts } = await supabase
       .from('activities')
       .select('reporting_org_id')
+      .is('deleted_at', null)
       .in('reporting_org_id', Array.from(organizationIds));
 
     const orgActivityCounts = new Map<string, number>();

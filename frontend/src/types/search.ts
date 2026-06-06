@@ -63,6 +63,9 @@ export interface ContactSearchMetadata extends BaseMetadata {
   activity_id?: string
   activity_title?: string
   position?: string
+  job_title?: string
+  department?: string
+  role?: string
   organisation?: string
   email?: string
   phone?: string

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { CardShell } from '@/components/ui/card-shell'
-import { Badge } from '@/components/ui/badge'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, getSortIcon, sortableHeaderClasses } from '@/components/ui/table'
 import { PageHeaderSkeleton, CardGridSkeleton } from '@/components/ui/skeleton-loader'
 import { AlertCircle, List, LayoutGrid, Search, X, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -47,9 +47,16 @@ export default function PolicyMarkersListingPage() {
   const [viewMode, setViewMode] = useState<'list' | 'card'>('card')
   const [banners, setBanners] = useState<Record<string, { banner: string; banner_position: number }>>({})
   const [query, setQuery] = useState('')
+  const [sortField, setSortField] = useState<'name' | 'category' | 'activities'>('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const { isSuperUser } = useUserRole()
   const canEdit = isSuperUser()
   const router = useRouter()
+
+  const toggleSort = (field: 'name' | 'category' | 'activities') => {
+    if (sortField === field) setSortOrder(o => (o === 'asc' ? 'desc' : 'asc'))
+    else { setSortField(field); setSortOrder('asc') }
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -127,32 +134,42 @@ export default function PolicyMarkersListingPage() {
   GROUP_ORDER.forEach(g => { filteredGroups[g.key] = (data.groups[g.key] || []).filter(matchesQuery) })
   const filteredCount = Object.values(filteredGroups).reduce((sum, arr) => sum + arr.length, 0)
 
+  // Flat, sortable rows for the table view
+  const tableRows = GROUP_ORDER.flatMap(g => (filteredGroups[g.key] || []).map(m => ({ marker: m, category: g.label })))
+    .sort((a, b) => {
+      let cmp = 0
+      if (sortField === 'name') cmp = a.marker.name.localeCompare(b.marker.name)
+      else if (sortField === 'category') cmp = a.category.localeCompare(b.category) || a.marker.name.localeCompare(b.marker.name)
+      else cmp = a.marker.activityCount - b.marker.activityCount
+      return sortOrder === 'asc' ? cmp : -cmp
+    })
+
   return (
     <MainLayout>
       <div className="min-h-screen">
         <div className="w-full p-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">Policy Markers</h1>
-                <p className="text-muted-foreground mt-1">
-                  {q
-                    ? `${filteredCount} of ${totalMarkers} markers`
-                    : `${totalMarkers} markers across ${totalActivities} activity alignments`}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-foreground">Policy Markers</h1>
+            <p className="text-muted-foreground mt-1">
+              {q
+                ? `${filteredCount} of ${totalMarkers} markers`
+                : `${totalMarkers} markers across ${totalActivities} activity alignments`}
+            </p>
+          </div>
+
+          {/* Filters + View Toggle */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
                 <Input
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Filter markers…"
-                  className="h-9 pl-9 pr-8"
-                  aria-label="Filter policy markers"
+                  placeholder="Search policy markers..."
+                  className="pl-10 pr-9"
+                  aria-label="Search policy markers"
                 />
                 {query && (
                   <button
@@ -165,77 +182,79 @@ export default function PolicyMarkersListingPage() {
                   </button>
                 )}
               </div>
-              <div className="flex items-center border rounded-md">
-                <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-r-none h-9">
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button variant={viewMode === 'card' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('card')} className="rounded-l-none h-9">
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-              </div>
+            </div>
+            <div className="flex items-center border rounded-md flex-shrink-0">
+              <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-r-none h-9">
+                <List className="h-4 w-4" />
+              </Button>
+              <Button variant={viewMode === 'card' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('card')} className="rounded-l-none h-9">
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
           {/* List View */}
           {viewMode === 'list' && (
-            <div className="border border-border rounded-lg overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 border-b border-border text-section-label font-medium text-muted-foreground uppercase">
-                <div className="w-10 flex-shrink-0" />
-                <div className="flex-1">Name</div>
-                <div className="w-40 hidden md:block">Category</div>
-                <div className="w-16 text-center">IATI</div>
-                <div className="w-20 text-right">Activities</div>
-                {canEdit && <div className="w-10 flex-shrink-0" />}
-              </div>
-              {GROUP_ORDER.map(group => {
-                const markers = filteredGroups[group.key] || []
-                if (markers.length === 0) return null
-                return markers.map((marker: PolicyMarker) => {
-                  const IconComponent = getIconForMarker(marker.iati_code, marker.icon)
-                  return (
-                    <Link
-                      key={marker.uuid}
-                      href={`/policy-markers/${marker.uuid}`}
-                      className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center">
-                        <IconComponent className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground text-body truncate">{marker.name}</h3>
-                        <p className="text-helper text-muted-foreground truncate">{marker.description}</p>
-                      </div>
-                      <div className="w-40 hidden md:block">
-                        <span className="text-helper text-muted-foreground">{group.label}</span>
-                      </div>
-                      <div className="w-16 text-center">
-                        {marker.is_iati_standard && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-blue-300 bg-blue-50 text-blue-700">IATI</Badge>
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className={sortableHeaderClasses} onClick={() => toggleSort('name')}>
+                      <span className="inline-flex items-center gap-1">Name {getSortIcon('name', sortField, sortOrder)}</span>
+                    </TableHead>
+                    <TableHead className={`hidden md:table-cell ${sortableHeaderClasses}`} onClick={() => toggleSort('category')}>
+                      <span className="inline-flex items-center gap-1">Category {getSortIcon('category', sortField, sortOrder)}</span>
+                    </TableHead>
+                    <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => toggleSort('activities')}>
+                      <span className="inline-flex items-center gap-1 justify-end">Activities {getSortIcon('activities', sortField, sortOrder)}</span>
+                    </TableHead>
+                    {canEdit && <TableHead className="w-[60px]" />}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tableRows.map(({ marker, category }) => {
+                    const IconComponent = getIconForMarker(marker.iati_code, marker.icon)
+                    return (
+                      <TableRow
+                        key={marker.uuid}
+                        className="group/row cursor-pointer"
+                        onClick={() => router.push(`/policy-markers/${marker.uuid}`)}
+                      >
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center">
+                              <IconComponent className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-foreground truncate">{marker.name}</div>
+                              <div className="text-helper text-muted-foreground font-normal truncate">{marker.description}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">{category}</TableCell>
+                        <TableCell className="text-right text-foreground">{marker.activityCount}</TableCell>
+                        {canEdit && (
+                          <TableCell className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => router.push(`/policy-markers/${marker.uuid}/edit`)}
+                                title="Edit policy marker"
+                                aria-label="Edit policy marker"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         )}
-                      </div>
-                      <div className="w-20 text-right">
-                        {marker.activityCount > 0 && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{marker.activityCount}</Badge>
-                        )}
-                      </div>
-                      {canEdit && (
-                        <div className="w-10 flex-shrink-0 flex justify-end">
-                          <button
-                            type="button"
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/policy-markers/${marker.uuid}/edit`) }}
-                            className="h-7 w-7 rounded-md flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                            title="Edit policy marker"
-                            aria-label="Edit policy marker"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </Link>
-                  )
-                })
-              })}
-            </div>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </Card>
           )}
 
           {/* Card View - Grouped sections */}
@@ -246,7 +265,7 @@ export default function PolicyMarkersListingPage() {
             return (
               <div key={group.key} className="mb-8">
                 <h2 className="text-lg font-semibold text-foreground mb-3">{group.label}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                   {markers.map((marker: PolicyMarker) => {
                     const IconComponent = getIconForMarker(marker.iati_code, marker.icon)
                     const markerBanner = banners[String(marker.id)]
@@ -259,10 +278,10 @@ export default function PolicyMarkersListingPage() {
                         bannerColor={getMarkerColor(marker)}
                         bannerActions={canEdit ? (
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon"
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/policy-markers/${marker.uuid}/edit`) }}
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
                             title="Edit policy marker"
                             aria-label="Edit policy marker"
                           >

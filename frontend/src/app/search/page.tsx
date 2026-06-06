@@ -235,7 +235,7 @@ function SearchPageContent() {
         router.push(`/sectors/${encodeURIComponent(result.metadata.code)}`)
         break
       case 'tag':
-        router.push(`/activities?tag=${encodeURIComponent(result.title)}`)
+        router.push(`/tags/${result.id}`)
         break
       case 'contact':
         // Navigate to the activity that contains this contact
@@ -411,23 +411,57 @@ function SearchPageContent() {
                 </div>
               ) : (
                 <>
-                  {/* Results List - Google-style divider-separated */}
-                  <div className="divide-y divide-gray-100">
-                    {filteredResults.map((result) => (
-                      <div
-                        key={`${result.type}-${result.id}`}
-                        className="py-5 cursor-pointer hover:bg-muted/30 -mx-2 px-2 rounded transition-colors"
-                        onClick={() => handleResultClick(result)}
-                      >
-                        <SearchResultRow
-                          result={result}
-                          searchQuery={query}
-                          variant="full"
-                          showTypeIndicator={true}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {activeTab === 'all' ? (
+                    /* "All" tab — results grouped by type with section headers */
+                    <div className="space-y-8">
+                      {searchResultOrder.map((type) => {
+                        const groupResults = results.filter((r) => r.type === type)
+                        if (groupResults.length === 0) return null
+                        return (
+                          <section key={type}>
+                            <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border">
+                              <h2 className="text-section-label font-semibold text-foreground">
+                                {resultTypeLabels[type]}
+                              </h2>
+                              <span className="text-xs text-muted-foreground/70">{groupResults.length}</span>
+                            </div>
+                            <div className="divide-y divide-gray-100">
+                              {groupResults.map((result) => (
+                                <div
+                                  key={`${result.type}-${result.id}`}
+                                  className="py-5 cursor-pointer hover:bg-muted/30 -mx-2 px-2 rounded transition-colors"
+                                  onClick={() => handleResultClick(result)}
+                                >
+                                  <SearchResultRow
+                                    result={result}
+                                    searchQuery={query}
+                                    variant="full"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </section>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    /* Specific-type tab — flat divider-separated list */
+                    <div className="divide-y divide-gray-100">
+                      {filteredResults.map((result) => (
+                        <div
+                          key={`${result.type}-${result.id}`}
+                          className="py-5 cursor-pointer hover:bg-muted/30 -mx-2 px-2 rounded transition-colors"
+                          onClick={() => handleResultClick(result)}
+                        >
+                          <SearchResultRow
+                            result={result}
+                            searchQuery={query}
+                            variant="full"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Load More Button */}
                   {hasMore && (

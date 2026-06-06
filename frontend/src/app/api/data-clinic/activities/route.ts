@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at
       `)
+      .is('deleted_at', null)
       .order('updated_at', { ascending: false })
       .limit(100);
 
@@ -96,6 +97,7 @@ export async function GET(request: NextRequest) {
             percentage
           )
         `)
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false })
         .limit(100);
 

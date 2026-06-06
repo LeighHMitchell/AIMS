@@ -4,9 +4,10 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { PageHeaderSkeleton, CardGridSkeleton } from '@/components/ui/skeleton-loader'
-import { AlertCircle, Target, LayoutGrid, List, Pencil } from 'lucide-react'
+import { AlertCircle, Target, LayoutGrid, List, Pencil, Search as SearchIcon } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, getSortIcon, sortableHeaderClasses } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import SDGCardModern from '@/components/sdgs/SDGCardModern'
 import { SDG_GOALS } from '@/data/sdg-targets'
@@ -31,6 +32,13 @@ export default function SDGListingPage() {
   const router = useRouter()
   const { isSuperUser } = useUserRole()
   const canEdit = isSuperUser()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortField, setSortField] = useState<'goal' | 'name' | 'activities'>('goal')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const toggleSort = (field: 'goal' | 'name' | 'activities') => {
+    if (sortField === field) setSortOrder(o => (o === 'asc' ? 'desc' : 'asc'))
+    else { setSortField(field); setSortOrder('asc') }
+  }
 
   useEffect(() => {
     const fetchSDGs = async () => {
@@ -99,121 +107,135 @@ export default function SDGListingPage() {
   }
 
   const totalActivities = sdgs.reduce((sum, s) => sum + s.activityCount, 0)
+  const q = searchQuery.trim().toLowerCase()
+  const baseFilteredSdgs = q
+    ? sdgs.filter(s => `${s.id}`.includes(q) || (s.name || '').toLowerCase().includes(q) || (s.description || '').toLowerCase().includes(q))
+    : sdgs
+  const filteredSdgs = [...baseFilteredSdgs].sort((a, b) => {
+    let cmp = 0
+    if (sortField === 'goal') cmp = a.id - b.id
+    else if (sortField === 'name') cmp = (a.name || '').localeCompare(b.name || '')
+    else cmp = a.activityCount - b.activityCount
+    return sortOrder === 'asc' ? cmp : -cmp
+  })
 
   return (
     <MainLayout>
       <div className="min-h-screen">
         <div className="w-full p-6">
           {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">Sustainable Development Goals</h1>
-                  <p className="text-muted-foreground mt-1">
-                    {totalActivities} activities aligned across 17 SDGs
-                  </p>
-                </div>
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-foreground">Sustainable Development Goals</h1>
+            <p className="text-muted-foreground mt-1">
+              {totalActivities} activities aligned across 17 SDGs
+            </p>
+          </div>
+
+          {/* Filters + View Toggle */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+                <Input
+                  aria-label="Search SDGs"
+                  placeholder="Search SDGs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-              <div className="flex items-center border rounded-md flex-shrink-0">
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="rounded-r-none h-9"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'card' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode("card")}
-                  className="rounded-l-none h-9"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-              </div>
+            </div>
+            <div className="flex items-center border rounded-md flex-shrink-0">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className="rounded-r-none h-9"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'card' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode("card")}
+                className="rounded-l-none h-9"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
           {/* SDG Table View */}
           {viewMode === 'list' && (
             <Card>
-              <div className="overflow-x-auto">
-                <table className="w-full text-body">
-                  <thead className="bg-surface-muted">
-                    <tr className="border-b bg-muted/50">
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3 w-16"></th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3 w-20">Goal</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3">Name</th>
-                      <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">Description</th>
-                      <th className="text-right font-medium text-muted-foreground px-4 py-3 w-28">Activities</th>
-                      {canEdit && <th className="w-12 px-4 py-3" />}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sdgs.map(sdg => (
-                      <tr key={sdg.id} className="border-b last:border-b-0 hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3">
-                          <Link href={`/sdgs/${sdg.id}`}>
-                            <div className="w-10 h-10 rounded overflow-hidden shadow-sm">
-                              <img
-                                src={`/images/sdg/E_SDG_Icons-${sdg.id.toString().padStart(2, '0')}.jpg`}
-                                alt={`SDG ${sdg.id}`}
-                                className="object-cover w-full h-full"
-                              />
-                            </div>
-                          </Link>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-section-label font-bold uppercase" style={{ color: sdg.color }}>
-                            {sdg.id}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Link href={`/sdgs/${sdg.id}`} className="font-medium text-foreground hover:underline">
-                            {sdg.name}
-                          </Link>
-                        </td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
-                          <p className="text-muted-foreground line-clamp-2 max-w-md">
-                            {sdg.description}
-                          </p>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          {sdg.activityCount > 0 ? (
-                            <Badge variant="secondary" className="text-helper">
-                              {sdg.activityCount}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">0</span>
-                          )}
-                        </td>
-                        {canEdit && (
-                          <td className="px-4 py-3 text-right">
-                            <button
-                              type="button"
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16" />
+                    <TableHead className={`w-20 ${sortableHeaderClasses}`} onClick={() => toggleSort('goal')}>
+                      <span className="inline-flex items-center gap-1">Goal {getSortIcon('goal', sortField, sortOrder)}</span>
+                    </TableHead>
+                    <TableHead className={sortableHeaderClasses} onClick={() => toggleSort('name')}>
+                      <span className="inline-flex items-center gap-1">Name {getSortIcon('name', sortField, sortOrder)}</span>
+                    </TableHead>
+                    <TableHead className="hidden lg:table-cell">Description</TableHead>
+                    <TableHead className={`text-right w-28 ${sortableHeaderClasses}`} onClick={() => toggleSort('activities')}>
+                      <span className="inline-flex items-center gap-1 justify-end">Activities {getSortIcon('activities', sortField, sortOrder)}</span>
+                    </TableHead>
+                    {canEdit && <TableHead className="w-[60px]" />}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSdgs.map(sdg => (
+                    <TableRow
+                      key={sdg.id}
+                      className="group/row cursor-pointer"
+                      onClick={() => router.push(`/sdgs/${sdg.id}`)}
+                    >
+                      <TableCell>
+                        <div className="w-9 h-9 rounded overflow-hidden shadow-sm">
+                          <img
+                            src={`/images/sdg/E_SDG_Icons-${sdg.id.toString().padStart(2, '0')}.jpg`}
+                            alt={`SDG ${sdg.id}`}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-section-label font-bold uppercase" style={{ color: sdg.color }}>{sdg.id}</span>
+                      </TableCell>
+                      <TableCell className="font-medium text-foreground">{sdg.name}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">
+                        <p className="line-clamp-2 max-w-md">{sdg.description}</p>
+                      </TableCell>
+                      <TableCell className="text-right text-foreground">{sdg.activityCount}</TableCell>
+                      {canEdit && (
+                        <TableCell className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
                               onClick={() => router.push(`/sdgs/${sdg.id}/edit`)}
-                              className="h-7 w-7 rounded-md inline-flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                               title="Edit SDG"
                               aria-label="Edit SDG"
                             >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </Card>
           )}
 
           {/* SDG Grid/Card View */}
           {viewMode === 'card' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sdgs.map(sdg => {
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {filteredSdgs.map(sdg => {
                 const goal = SDG_GOALS.find(g => g.id === sdg.id) || {
                   id: sdg.id,
                   name: sdg.name,
@@ -228,10 +250,10 @@ export default function SDGListingPage() {
                     bannerImage={banners[String(sdg.id)]}
                     bannerActions={canEdit ? (
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/sdgs/${sdg.id}/edit`) }}
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="Edit SDG"
                         aria-label="Edit SDG"
                       >

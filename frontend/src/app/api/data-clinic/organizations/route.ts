@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
         total_budget,
         recipient_org_budget
       `)
+      .is('deleted_at', null)
       .order('name', { ascending: true });
 
     if (error) throw error;

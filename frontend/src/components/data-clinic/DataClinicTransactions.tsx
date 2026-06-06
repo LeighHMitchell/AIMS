@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,12 +15,12 @@ import {
   Filter, 
   Download,
   RefreshCw,
-  Pencil,
   Save,
   X,
   CalendarClock,
   Copy,
-  Check
+  Check,
+  Unlink
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -28,11 +29,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { format } from "date-fns";
 import { useUser } from "@/hooks/useUser";
 import { AidTypeSelect } from "@/components/forms/AidTypeSelect";
 import { DefaultFinanceTypeSelect } from "@/components/forms/DefaultFinanceTypeSelect";
+import { FlowTypeSelect } from "@/components/forms/FlowTypeSelect";
 import { apiFetch } from '@/lib/api-fetch';
+import { renderMoney, formatClinicDate } from './formatters';
 
 // Transaction Type mappings
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
@@ -71,6 +73,35 @@ const FLOW_TYPE_LABELS: Record<string, string> = {
   '50': 'Other flows'
 };
 
+// Aid Type mappings
+const AID_TYPE_LABELS: Record<string, string> = {
+  'A01': 'General budget support',
+  'A02': 'Sector budget support',
+  'B01': 'Core support to NGOs',
+  'B02': 'Core contributions to multilateral institutions',
+  'B03': 'Contributions to pooled programmes and funds',
+  'B04': 'Basket funds/pooled funding',
+  'C01': 'Project-type interventions',
+  'D01': 'Donor country personnel',
+  'D02': 'Other technical assistance',
+  'E01': 'Scholarships/training in donor country',
+  'E02': 'Imputed student costs',
+  'F01': 'Debt relief',
+  'G01': 'Administrative costs not included elsewhere',
+  'H01': 'Development awareness',
+  'H02': 'Refugees in donor countries'
+};
+
+// Render an IATI code + label as "[code] Label" with the code in a gray
+// monospace badge. The badge sits inline with the label text so they stay on
+// the same line and the label wraps naturally beside it when space is tight.
+const renderCodeLabel = (code: string, label?: string) => (
+  <span className="text-body">
+    <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap align-middle mr-1.5">{code}</span>
+    {label}
+  </span>
+);
+
 type Transaction = {
   id: string;
   activityId: string;
@@ -92,11 +123,6 @@ type Transaction = {
   [key: string]: any;
 };
 
-type DataGap = {
-  field: string;
-  label: string;
-  count: number;
-};
 
 export function DataClinicTransactions() {
   const { user } = useUser();
@@ -109,8 +135,46 @@ export function DataClinicTransactions() {
   const [editingField, setEditingField] = useState<{ transactionId: string; field: string } | null>(null);
   const [bulkEditField, setBulkEditField] = useState<string>('');
   const [bulkEditValue, setBulkEditValue] = useState<string>('');
-  const [dataGaps, setDataGaps] = useState<DataGap[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<'activity' | 'type' | 'date' | 'value' | 'financeType' | 'aidType' | 'flowType' | 'organisation'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedTransactions = useMemo(() => {
+    const orgName = (t: Transaction) =>
+      t.organizationName || t.providerOrgName || t.receiverOrgName || '';
+    return [...filteredTransactions].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      switch (sortField) {
+        case 'activity':
+          return (a.activityTitle || '').localeCompare(b.activityTitle || '') * dir;
+        case 'type':
+          return (a.transactionType || '').localeCompare(b.transactionType || '') * dir;
+        case 'date':
+          return ((a.transactionDate || '') < (b.transactionDate || '') ? -1 : 1) * dir;
+        case 'value':
+          return ((a.value || 0) - (b.value || 0)) * dir;
+        case 'financeType':
+          return (a.financeType || '').localeCompare(b.financeType || '') * dir;
+        case 'aidType':
+          return (a.aidType || '').localeCompare(b.aidType || '') * dir;
+        case 'flowType':
+          return (a.flowType || '').localeCompare(b.flowType || '') * dir;
+        case 'organisation':
+          return orgName(a).localeCompare(orgName(b)) * dir;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredTransactions, sortField, sortDirection]);
 
   const isSuperUser = user?.role === 'super_user';
 
@@ -141,7 +205,6 @@ export function DataClinicTransactions() {
       
       const data = await res.json();
       setTransactions(data.transactions || []);
-      setDataGaps(data.dataGaps || []);
     } catch (error) {
       console.error('Error fetching transactions:', error);
       toast.error('Failed to load transactions');
@@ -285,6 +348,22 @@ export function DataClinicTransactions() {
               </Button>
             </div>
           );
+        case 'flowType':
+          return (
+            <div className="flex items-center gap-2">
+              <FlowTypeSelect
+                value={value || ''}
+                onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue || '')}
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditingField(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          );
         case 'transactionType':
           return (
             <div className="flex items-center gap-2">
@@ -337,32 +416,20 @@ export function DataClinicTransactions() {
     return (
       <div className="flex items-center gap-2">
         {value ? (
-          <span className="text-body">
-            {field === 'transactionType' && TRANSACTION_TYPE_LABELS[value] ? 
-              TRANSACTION_TYPE_LABELS[value] : 
-              field === 'financeType' && FINANCE_TYPE_LABELS[value] ?
-              `${value} - ${FINANCE_TYPE_LABELS[value]}` :
-              field === 'aidType' ?
-              value :
-              field === 'flowType' && FLOW_TYPE_LABELS[value] ?
-              `${value} - ${FLOW_TYPE_LABELS[value]}` :
-              value
-            }
-          </span>
+          field === 'transactionType' ? renderCodeLabel(value, TRANSACTION_TYPE_LABELS[value]) :
+          field === 'financeType' ? renderCodeLabel(value, FINANCE_TYPE_LABELS[value]) :
+          field === 'aidType' ? renderCodeLabel(value, AID_TYPE_LABELS[value]) :
+          field === 'flowType' ? renderCodeLabel(value, FLOW_TYPE_LABELS[value]) :
+          <span className="text-body">{value}</span>
         ) : (
-          <Badge variant="destructive" className="text-helper">
+          <Badge
+            variant="outline"
+            className={`text-helper border border-red-500 text-red-600 bg-transparent ${isSuperUser ? 'cursor-pointer hover:bg-red-50' : ''}`}
+            onClick={isSuperUser ? () => setEditingField({ transactionId: transaction.id, field }) : undefined}
+          >
             <AlertCircle className="h-3 w-3 mr-1" />
             Missing
           </Badge>
-        )}
-        {isSuperUser && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setEditingField({ transactionId: transaction.id, field })}
-          >
-            <Pencil className="h-3 w-3 text-muted-foreground" />
-          </Button>
         )}
       </div>
     );
@@ -385,27 +452,6 @@ export function DataClinicTransactions() {
 
   return (
     <div className="space-y-6">
-      {/* Data Gaps Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Gaps Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {dataGaps.map((gap) => (
-              <div
-                key={gap.field}
-                className="p-4 rounded-lg border cursor-pointer hover:bg-muted/50"
-                onClick={() => setSelectedFilter(gap.field)}
-              >
-                <p className="text-body text-muted-foreground">{gap.label}</p>
-                <p className="text-2xl font-semibold">{gap.count}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Filters and Search */}
       <Card>
         <CardContent className="p-6">
@@ -484,11 +530,11 @@ export function DataClinicTransactions() {
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[1120px]">
               <thead className="border-b bg-surface-muted">
                 <tr>
                   {isSuperUser && (
-                    <th className="p-4 text-left">
+                    <th className="px-4 py-3 text-left w-10">
                       <Checkbox
                         checked={selectedTransactions.size === filteredTransactions.length && filteredTransactions.length > 0}
                         onCheckedChange={(checked) => {
@@ -501,27 +547,44 @@ export function DataClinicTransactions() {
                       />
                     </th>
                   )}
-                  <th className="p-4 text-left text-body font-medium">Activity</th>
-                  <th className="p-4 text-left text-body font-medium">Type</th>
-                  <th className="p-4 text-left text-body font-medium">Date</th>
-                  <th className="p-4 text-left text-body font-medium">Value</th>
-                  <th className="p-4 text-left text-body font-medium">Finance Type</th>
-                  <th className="p-4 text-left text-body font-medium">Aid Type</th>
-                  <th className="p-4 text-left text-body font-medium">Organisation</th>
+                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[240px] ${sortableHeaderClasses}`} onClick={() => handleSort('activity')}>
+                    <div className="flex items-center gap-1 whitespace-nowrap">Activity {getSortIcon('activity', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[140px] ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
+                    <div className="flex items-center gap-1 whitespace-nowrap">Type {getSortIcon('type', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[120px] ${sortableHeaderClasses}`} onClick={() => handleSort('date')}>
+                    <div className="flex items-center gap-1 whitespace-nowrap">Date {getSortIcon('date', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`px-4 py-3 text-right align-top text-body font-medium min-w-[130px] ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
+                    <div className="flex items-center justify-end gap-1 whitespace-nowrap">Value {getSortIcon('value', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[170px] ${sortableHeaderClasses}`} onClick={() => handleSort('financeType')}>
+                    <div className="flex items-center gap-1 whitespace-nowrap">Finance Type {getSortIcon('financeType', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[190px] ${sortableHeaderClasses}`} onClick={() => handleSort('aidType')}>
+                    <div className="flex items-center gap-1 whitespace-nowrap">Aid Type {getSortIcon('aidType', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[120px] ${sortableHeaderClasses}`} onClick={() => handleSort('flowType')}>
+                    <div className="flex items-center gap-1 whitespace-nowrap">Flow Type {getSortIcon('flowType', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('organisation')}>
+                    <div className="flex items-center gap-1 whitespace-nowrap">Organisation {getSortIcon('organisation', sortField, sortDirection)}</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredTransactions.length === 0 ? (
+                {sortedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={isSuperUser ? 8 : 7} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={isSuperUser ? 9 : 8} className="p-8 text-center text-muted-foreground">
                       No transactions found with data gaps
                     </td>
                   </tr>
                 ) : (
-                  filteredTransactions.map((transaction) => (
+                  sortedTransactions.map((transaction) => (
                     <tr key={transaction.id} className="border-b hover:bg-muted/50">
                       {isSuperUser && (
-                        <td className="p-4">
+                        <td className="px-4 py-3 align-top">
                           <Checkbox
                             checked={selectedTransactions.has(transaction.id)}
                             onCheckedChange={(checked) => {
@@ -536,28 +599,19 @@ export function DataClinicTransactions() {
                           />
                         </td>
                       )}
-                      <td className="p-4 group">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <p className="font-medium truncate max-w-xs">
-                                {transaction.activityTitle || 'Unknown Activity'}
-                              </p>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{transaction.activityTitle || 'Unknown Activity'}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                      <td className="px-4 py-3 align-top group">
+                        <p className="font-medium break-words">
+                          {transaction.activityTitle || 'Unknown Activity'}
+                        </p>
                       </td>
-                      <td className="p-4">
+                      <td className="px-4 py-3 align-top">
                         {renderFieldValue(transaction, 'transactionType')}
                       </td>
-                      <td className="p-4">
+                      <td className="px-4 py-3 align-top">
                         {transaction.transactionDate ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-body">
-                              {format(new Date(transaction.transactionDate), 'MMM d, yyyy')}
+                            <span className="text-body whitespace-nowrap">
+                              {formatClinicDate(transaction.transactionDate)}
                             </span>
                             {isFutureDisbursement(transaction) && (
                               <TooltipProvider>
@@ -573,48 +627,67 @@ export function DataClinicTransactions() {
                             )}
                           </div>
                         ) : (
-                          <Badge variant="destructive" className="text-helper">
+                          <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>
                         )}
                       </td>
-                      <td className="p-4">
+                      <td className="px-4 py-3 align-top text-right">
                         {transaction.value && transaction.currency ? (
                           <span className="text-body font-medium">
-                            {new Intl.NumberFormat('en-US', {
-                              style: 'currency',
-                              currency: transaction.currency
-                            }).format(transaction.value)}
+                            {renderMoney(transaction.value, transaction.currency)}
                           </span>
                         ) : (
-                          <Badge variant="destructive" className="text-helper">
+                          <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>
                         )}
                       </td>
-                      <td className="p-4">
+                      <td className="px-4 py-3 align-top">
                         {renderFieldValue(transaction, 'financeType')}
                       </td>
-                      <td className="p-4">
+                      <td className="px-4 py-3 align-top">
                         {renderFieldValue(transaction, 'aidType')}
                       </td>
-                      <td className="p-4">
-                        {transaction.organizationName || 
-                         transaction.providerOrgName || 
-                         transaction.receiverOrgName ? (
-                          <span className="text-body">
-                            {transaction.organizationName || 
-                             transaction.providerOrgName || 
-                             transaction.receiverOrgName}
-                          </span>
-                        ) : (
-                          <Badge variant="destructive" className="text-helper">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Missing
-                          </Badge>
-                        )}
+                      <td className="px-4 py-3 align-top">
+                        {renderFieldValue(transaction, 'flowType')}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        {(() => {
+                          const orgName = transaction.organizationName ||
+                            transaction.providerOrgName ||
+                            transaction.receiverOrgName;
+                          const isLinked = !!(transaction.providerOrgId ||
+                            transaction.receiverOrgId ||
+                            transaction.organizationId);
+                          if (orgName && isLinked) {
+                            return <span className="text-body break-words">{orgName}</span>;
+                          }
+                          if (orgName) {
+                            // Named but not linked to an organisation record
+                            return (
+                              <div className="flex items-start gap-2 flex-wrap">
+                                <span className="text-body break-words">{orgName}</span>
+                                <Badge
+                                  variant="outline"
+                                  className="text-helper border border-amber-500 text-amber-600 bg-transparent whitespace-nowrap"
+                                  title="This organisation is named but not linked to an organisation record"
+                                >
+                                  <Unlink className="h-3 w-3 mr-1" />
+                                  Unlinked
+                                </Badge>
+                              </div>
+                            );
+                          }
+                          return (
+                            <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Missing
+                            </Badge>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))

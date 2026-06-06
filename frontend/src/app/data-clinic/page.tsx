@@ -12,7 +12,15 @@ const DATA_CLINIC_TABS = [
   "activities",
   "transactions",
   "budgets",
+  "planned-disbursements",
   "organizations",
+  "people",
+  "sectors",
+  "sdg",
+  "locations",
+  "policy-markers",
+  "tags",
+  "working-groups",
   "duplicates",
   "timeliness",
   "financial-dates",
@@ -26,7 +34,8 @@ import { DataClinicFinancialDates } from "@/components/data-clinic/DataClinicFin
 import { DataClinicBudgets } from "@/components/data-clinic/DataClinicBudgets";
 import { DataClinicFinancialCompleteness } from "@/components/data-clinic/DataClinicFinancialCompleteness";
 import { DataClinicDuplicates } from "@/components/data-clinic/DataClinicDuplicates";
-import { Stethoscope, Bug, RefreshCw, Copy, FileText, ArrowLeftRight, Wallet, Building2, Clock, CalendarDays, PieChart } from "lucide-react";
+import { DataClinicEntity } from "@/components/data-clinic/DataClinicEntity";
+import { Stethoscope, Bug, RefreshCw, Copy, FileText, ArrowLeftRight, Wallet, Building2, Clock, CalendarDays, PieChart, Banknote, Users, Target, Layers, MapPin, Flag, Tag, Network } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { apiFetch } from '@/lib/api-fetch';
@@ -151,9 +160,41 @@ export default function DataClinicPage() {
                 <Wallet className="h-4 w-4" />
                 Budgets
               </TabsTrigger>
+              <TabsTrigger value="planned-disbursements" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <Banknote className="h-4 w-4" />
+                Planned Disbursements
+              </TabsTrigger>
               <TabsTrigger value="organizations" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 <Building2 className="h-4 w-4" />
                 Organizations
+              </TabsTrigger>
+              <TabsTrigger value="people" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <Users className="h-4 w-4" />
+                People
+              </TabsTrigger>
+              <TabsTrigger value="sectors" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <Layers className="h-4 w-4" />
+                Sectors
+              </TabsTrigger>
+              <TabsTrigger value="sdg" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <Target className="h-4 w-4" />
+                SDGs
+              </TabsTrigger>
+              <TabsTrigger value="locations" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <MapPin className="h-4 w-4" />
+                Locations
+              </TabsTrigger>
+              <TabsTrigger value="policy-markers" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <Flag className="h-4 w-4" />
+                Policy Markers
+              </TabsTrigger>
+              <TabsTrigger value="tags" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <Tag className="h-4 w-4" />
+                Tags
+              </TabsTrigger>
+              <TabsTrigger value="working-groups" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                <Network className="h-4 w-4" />
+                Working Groups
               </TabsTrigger>
               <TabsTrigger value="duplicates" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 <Copy className="h-4 w-4" />
@@ -185,8 +226,40 @@ export default function DataClinicPage() {
               <DataClinicBudgets />
             </TabsContent>
 
+            <TabsContent value="planned-disbursements">
+              <DataClinicEntity entity="planned-disbursements" />
+            </TabsContent>
+
             <TabsContent value="organizations">
               <DataClinicOrganizations />
+            </TabsContent>
+
+            <TabsContent value="people">
+              <DataClinicEntity entity="people" />
+            </TabsContent>
+
+            <TabsContent value="sectors">
+              <DataClinicEntity entity="sectors" />
+            </TabsContent>
+
+            <TabsContent value="sdg">
+              <DataClinicEntity entity="sdg" />
+            </TabsContent>
+
+            <TabsContent value="locations">
+              <DataClinicEntity entity="locations" />
+            </TabsContent>
+
+            <TabsContent value="policy-markers">
+              <DataClinicEntity entity="policy-markers" />
+            </TabsContent>
+
+            <TabsContent value="tags">
+              <DataClinicEntity entity="tags" />
+            </TabsContent>
+
+            <TabsContent value="working-groups">
+              <DataClinicEntity entity="working-groups" />
             </TabsContent>
 
             <TabsContent value="duplicates">

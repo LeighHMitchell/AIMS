@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/tooltip';
 import {
   LayoutGrid,
-  Table as TableIcon,
+  List,
   RefreshCw,
   Download,
   ChevronLeft,
@@ -78,6 +78,7 @@ export default function RolodexPage() {
   };
   
   const {
+    data,
     people,
     loading,
     error,
@@ -250,8 +251,12 @@ export default function RolodexPage() {
     />
   );
 
-  // Show skeleton loader during initial load
-  if (loading && people.length === 0 && !error && pagination.total === 0) {
+  // Show skeleton loader during the initial load ONLY (before any data has
+  // ever been fetched). Using `!data` instead of an empty-results check means
+  // later refetches that return zero people show the inline loading overlay +
+  // EmptyState, rather than ripping the whole page out and flashing the
+  // full-screen skeleton on every empty filter result.
+  if (loading && !data && !error) {
     return (
       <MainLayout>
         <RolodexSkeleton />
@@ -275,21 +280,21 @@ export default function RolodexPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <div className="flex border border-border rounded-md">
+            <div className="flex items-center border border-border rounded-md flex-shrink-0">
               <Button
-                variant="ghost"
+                variant={viewMode === 'table' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('table')}
-                className={`rounded-r-none ${viewMode === 'table' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
-                title="Table view"
+                className="rounded-r-none h-9"
+                title="List view"
               >
-                <TableIcon className="h-4 w-4" />
+                <List className="h-4 w-4" />
               </Button>
               <Button
-                variant="ghost"
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('grid')}
-                className={`rounded-l-none ${viewMode === 'grid' ? 'bg-muted text-foreground' : 'text-muted-foreground'}`}
+                className="rounded-l-none h-9"
                 title="Grid view"
               >
                 <LayoutGrid className="h-4 w-4" />

@@ -89,6 +89,7 @@ export function StaleTransactionsTable() {
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('activities')
         .select('id, title_narrative, iati_identifier, activity_status, created_by_org_name, created_by_org_acronym')
+        .is('deleted_at', null)
         .eq('activity_status', '2');
 
       if (activitiesError) throw activitiesError;
@@ -105,6 +106,7 @@ export function StaleTransactionsTable() {
       const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
         .select('activity_id, transaction_date, transaction_type, value, currency, value_usd')
+        .is('deleted_at', null)
         .in('activity_id', activityIds)
         .order('transaction_date', { ascending: false });
 
@@ -440,7 +442,7 @@ export function StaleTransactionsTable() {
                       {activity.last_transaction_date ? (
                         <div>
                           <span className="text-foreground">
-                            {format(parseISO(activity.last_transaction_date), 'MMM d, yyyy')}
+                            {format(parseISO(activity.last_transaction_date), 'd MMM yyyy')}
                           </span>
                           <span className="block text-helper text-muted-foreground">
                             {activity.days_since_transaction} days ago

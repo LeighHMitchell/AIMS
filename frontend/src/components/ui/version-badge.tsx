@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./hover-card"
 import { ScrollArea } from "./scroll-area"
-import { Calendar, ExternalLink } from "lucide-react"
+import { Calendar, ExternalLink } from "@/components/icons/hugeicons"
 import releases from "@/data/releases.json"
 import { sanitizeMinimal } from "@/lib/sanitize"
 

@@ -245,7 +245,7 @@ export function StakeholdersGroup({
           <section
             id="organisations"
             ref={organisationsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pb-16"
+            className="scroll-mt-20 pb-16"
             style={{ minHeight: getSectionMinHeight('organisations') }}
           >
             {isSectionActive('organisations') || activeSections.has('organisations') ? (
@@ -267,7 +267,7 @@ export function StakeholdersGroup({
           <section
             id="contacts"
             ref={contactsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('contacts') }}
           >
             {isSectionActive('contacts') || activeSections.has('contacts') ? (
@@ -293,7 +293,7 @@ export function StakeholdersGroup({
           <section
             id="focal_points"
             ref={focalPointsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('focal_points') }}
           >
             {isSectionActive('focal_points') || activeSections.has('focal_points') ? (

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { searchCache, cacheKeys } from '@/lib/search-cache'
 import { highlightSearchResults, extractSearchTerms } from '@/lib/search-highlighting'
 import { escapeIlikeWildcards, sanitizeSearchInput } from '@/lib/security-utils'
@@ -159,6 +160,7 @@ export async function GET(request: NextRequest) {
             reporting_org_acronym: result.metadata?.reporting_org_acronym || undefined,
             partner_id: result.metadata?.partner_id || undefined,
             iati_id: result.metadata?.iati_id || undefined,
+            iati_identifier: result.metadata?.iati_identifier || result.metadata?.iati_id || undefined,
             updated_at: result.metadata?.updated_at || undefined,
             activity_icon_url: result.metadata?.activity_icon_url || undefined
           }),
@@ -201,6 +203,39 @@ export async function GET(request: NextRequest) {
         }
       }))
     ]
+
+    // Enrich contact results with richer display fields (job title, department,
+    // role, organisation) that the search RPC does not return. Uses the admin
+    // client because activity_contacts is RLS-restricted; the route already
+    // requires authentication.
+    const contactIds = formattedResults.filter((r) => r.type === 'contact').map((r) => r.id)
+    if (contactIds.length > 0) {
+      try {
+        const admin = getSupabaseAdmin()
+        if (admin) {
+          const { data: contactRows } = await admin
+            .from('activity_contacts')
+            .select('id, position, job_title, department, role, type, organisation, organisation_name')
+            .in('id', contactIds)
+          const contactMap = new Map<string, any>((contactRows || []).map((c: any) => [c.id, c]))
+          for (const r of formattedResults as any[]) {
+            if (r.type !== 'contact') continue
+            const c = contactMap.get(r.id)
+            if (!c) continue
+            r.metadata = {
+              ...r.metadata,
+              position: c.position || r.metadata?.position || undefined,
+              job_title: c.job_title || undefined,
+              department: c.department || undefined,
+              role: c.role || c.type || undefined,
+              organisation: c.organisation || c.organisation_name || r.metadata?.organisation || undefined,
+            }
+          }
+        }
+      } catch (enrichError) {
+        console.warn('[AIMS API] Failed to enrich contact results:', enrichError)
+      }
+    }
 
     // Sort by rank (highest first)
     formattedResults.sort((a, b) => (b.rank || 0) - (a.rank || 0))
@@ -393,6 +428,7 @@ async function fallbackLegacySearch(
           reporting_org_acronym: activity.created_by_org_acronym || undefined,
           partner_id: activity.other_identifier || undefined,
           iati_id: activity.iati_identifier || undefined,
+          iati_identifier: activity.iati_identifier || undefined,
           updated_at: activity.updated_at,
           activity_icon_url: (activity.icon && !activity.icon.includes('unsplash.com')) ? activity.icon : undefined
         }

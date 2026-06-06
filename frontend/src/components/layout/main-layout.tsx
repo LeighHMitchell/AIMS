@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useEffect } from "react"
+import React, { useRef, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { AuthGuard } from "@/components/AuthGuard"
@@ -46,27 +46,51 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
   // Get the home route based on whether user has an organization
   const homeRoute = getHomeRoute(user);
 
-  // Persist sidebar scroll position across navigations
-  const sidebarScrollRef = useRef<HTMLDivElement>(null);
+  // Persist sidebar scroll position across navigations.
+  //
+  // MainLayout is mounted per-page (87 pages) and the scroll container lives
+  // inside <AuthGuard>, which renders its own loading state before children.
+  // That means a normal mount effect runs while the <aside> doesn't exist yet
+  // (ref is null) and never re-runs when it finally mounts — so save/restore
+  // silently never happen. A *callback ref* fixes this: React invokes it exactly
+  // when the scroll <div> attaches (after its nav content has mounted) and again
+  // with null on unmount, so restore + the scroll listener are wired up reliably
+  // regardless of AuthGuard timing. Restoring inside the ref callback runs during
+  // the commit phase (before paint), so the sidebar is never shown at the top.
+  const sidebarScrollRef = useRef<HTMLDivElement | null>(null);
+  const scrollHandlerRef = useRef<(() => void) | null>(null);
   const SIDEBAR_SCROLL_KEY = 'sidebar-scroll-top';
 
-  useEffect(() => {
-    const el = sidebarScrollRef.current;
+  const setSidebarScrollEl = useCallback((el: HTMLDivElement | null) => {
+    // Detach from any previous element first.
+    if (sidebarScrollRef.current && scrollHandlerRef.current) {
+      sidebarScrollRef.current.removeEventListener('scroll', scrollHandlerRef.current);
+      scrollHandlerRef.current = null;
+    }
+    sidebarScrollRef.current = el;
     if (!el) return;
 
-    // Restore scroll position on mount
+    // Restore the saved position as soon as the element (and its nav content) mount.
     const saved = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
-    if (saved) {
-      el.scrollTop = Number(saved);
-    }
+    if (saved) el.scrollTop = Number(saved);
 
-    // Save scroll position on scroll
+    // Save position on user scroll.
     const handleScroll = () => {
       sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(el.scrollTop));
     };
-    el.addEventListener('scroll', handleScroll);
-    return () => el.removeEventListener('scroll', handleScroll);
+    scrollHandlerRef.current = handleScroll;
+    el.addEventListener('scroll', handleScroll, { passive: true });
   }, []);
+
+  // Safety net for the very first load, where the nav may mount as a short
+  // skeleton (isLoading) and then grow: re-apply the saved position when loading
+  // finishes, but only if the user hasn't scrolled away from the top yet.
+  useEffect(() => {
+    const el = sidebarScrollRef.current;
+    if (!el || isLoading) return;
+    const saved = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+    if (saved && el.scrollTop === 0) el.scrollTop = Number(saved);
+  }, [isLoading]);
 
   const content = (
     <div className="flex h-screen overflow-hidden bg-background border-0">
@@ -98,7 +122,7 @@ export function MainLayout({ children, requireAuth = true }: MainLayoutProps) {
         </div>
 
         {/* Hydration-safe Navigation - flex-1 to take remaining space */}
-        <div ref={sidebarScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div ref={setSidebarScrollEl} className="flex-1 overflow-y-auto overflow-x-hidden">
           <SidebarNav
             userRole={user?.role}
             canManageUsers={permissions.canManageUsers}

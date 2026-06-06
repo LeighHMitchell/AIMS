@@ -261,7 +261,7 @@ export function ActivityOverviewGroup({
       <section 
         id="general" 
         ref={generalRef as React.RefObject<HTMLElement>}
-        className="scroll-mt-0 pb-16"
+        className="scroll-mt-20 pb-16"
       >
         {renderGeneralSection()}
       </section>
@@ -273,7 +273,7 @@ export function ActivityOverviewGroup({
           <section
             id="sectors"
             ref={sectorsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('sectors') }}
           >
             {isSectionActive('sectors') || activeSections.has('sectors') ? (
@@ -305,7 +305,7 @@ export function ActivityOverviewGroup({
           <section
             id="humanitarian"
             ref={humanitarianRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('humanitarian') }}
           >
             {isSectionActive('humanitarian') || activeSections.has('humanitarian') ? (

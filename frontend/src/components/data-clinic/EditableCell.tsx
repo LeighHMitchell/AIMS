@@ -217,7 +217,7 @@ export function EditableCell({
   const renderDisplayValue = () => {
     if (!value) {
       return (
-        <Badge variant="destructive" className="text-helper">
+        <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
           <AlertCircle className="h-3 w-3 mr-1" />
           Missing
         </Badge>
@@ -565,8 +565,15 @@ export function EditableCell({
     }
   };
 
+  // Only offer editing where there's a data gap: a missing value, or an
+  // identifier present but in an invalid format. Filled, valid fields render
+  // as plain (non-editable) text — no edit affordance.
+  const isInvalidIdentifier =
+    field === 'iati_org_id' && !!value && isValidIdentifier ? !isValidIdentifier(value) : false;
+  const hasGap = !value || isInvalidIdentifier;
+
   // Non-editable display
-  if (!isEditable) {
+  if (!isEditable || !hasGap) {
     return <div className="flex items-center">{renderDisplayValue()}</div>;
   }
 

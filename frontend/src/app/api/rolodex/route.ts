@@ -137,8 +137,19 @@ export async function GET(request: NextRequest) {
       usersQuery = usersQuery.or(`email.ilike.%${escapedSearch}%,first_name.ilike.%${escapedSearch}%,last_name.ilike.%${escapedSearch}%`);
     }
     if (filters.role) {
-      const escapedRole = escapeIlikeWildcards(filters.role);
-      usersQuery = usersQuery.ilike('role', `%${escapedRole}%`);
+      // The filter UI sends a human-readable role LABEL (e.g. "Government
+      // Manager"), but users.role stores keys (e.g. "gov_partner_tier_1").
+      // Map the label back to every key that resolves to it so the users
+      // query actually matches; fall back to a text match for free-text roles.
+      const matchingRoleKeys = Object.entries(ROLE_LABELS)
+        .filter(([, label]) => label === filters.role)
+        .map(([key]) => key);
+      if (matchingRoleKeys.length > 0) {
+        usersQuery = usersQuery.in('role', matchingRoleKeys);
+      } else {
+        const escapedRole = escapeIlikeWildcards(filters.role);
+        usersQuery = usersQuery.ilike('role', `%${escapedRole}%`);
+      }
     }
     if (filters.organization) {
       usersQuery = usersQuery.eq('organization_id', filters.organization);

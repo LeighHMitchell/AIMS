@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuthOrVisitor } from '@/lib/auth'
 import { createSupabaseClient } from '@/lib/supabase-simple'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { searchCache, cacheKeys } from '@/lib/search-cache'
 import { highlightSearchResults, extractSearchTerms } from '@/lib/search-highlighting'
 import { escapeIlikeWildcards } from '@/lib/security-utils'
@@ -12,10 +13,7 @@ interface SearchSuggestion {
   type: 'activity' | 'organization' | 'sector' | 'tag' | 'user' | 'contact'
   title: string
   subtitle?: string
-  metadata?: {
-    count?: number
-    category?: string
-  }
+  metadata?: Record<string, any>
 }
 
 interface RPCSuggestion {
@@ -115,6 +113,13 @@ export async function GET(request: NextRequest) {
         }
       }))
 
+      // Enrich org/activity suggestions with logos and IATI identifiers so the
+      // dropdown can render organisation logos and activity code pills.
+      // Uses the admin client because the anon client used above is blocked by
+      // RLS on organizations/activities (the suggestions RPC is SECURITY DEFINER,
+      // so titles come through, but a direct anon SELECT returns no rows).
+      await enrichSuggestions(getSupabaseAdmin() || supabase, suggestions)
+
       const responseTime = Date.now() - startTime
 
       // Extract search terms for highlighting
@@ -160,6 +165,60 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Enriches suggestion metadata in place with the extra fields the dropdown
+ * needs but the lightweight `search_suggestions` RPC does not return:
+ *  - organisations get their logo URL + acronym (rendered as an avatar)
+ *  - activities get their IATI identifier + icon (rendered as a code pill)
+ */
+async function enrichSuggestions(supabase: any, suggestions: SearchSuggestion[]) {
+  const orgIds = suggestions.filter(s => s.type === 'organization').map(s => s.id)
+  const activityIds = suggestions.filter(s => s.type === 'activity').map(s => s.id)
+
+  if (orgIds.length === 0 && activityIds.length === 0) return
+
+  try {
+    const [orgsRes, actsRes] = await Promise.all([
+      orgIds.length
+        ? supabase.from('organizations').select('id, logo, acronym').in('id', orgIds)
+        : Promise.resolve({ data: [] }),
+      activityIds.length
+        ? supabase.from('activities').select('id, iati_identifier, other_identifier, acronym, icon').in('id', activityIds)
+        : Promise.resolve({ data: [] }),
+    ])
+
+    const orgMap = new Map<string, any>((orgsRes.data || []).map((o: any) => [o.id, o]))
+    const actMap = new Map<string, any>((actsRes.data || []).map((a: any) => [a.id, a]))
+
+    for (const s of suggestions) {
+      if (s.type === 'organization') {
+        const o = orgMap.get(s.id)
+        if (o) {
+          s.metadata = {
+            ...s.metadata,
+            logo_url: o.logo || undefined,
+            acronym: o.acronym || undefined,
+          }
+        }
+      } else if (s.type === 'activity') {
+        const a = actMap.get(s.id)
+        if (a) {
+          s.metadata = {
+            ...s.metadata,
+            iati_identifier: a.iati_identifier || undefined,
+            partner_id: a.other_identifier || undefined,
+            acronym: a.acronym || undefined,
+            activity_icon_url: (a.icon && !a.icon.includes('unsplash.com')) ? a.icon : undefined,
+          }
+        }
+      }
+    }
+  } catch (error) {
+    // Enrichment is best-effort — never fail the suggestions request over it.
+    console.warn('[AIMS API] Failed to enrich search suggestions:', error)
+  }
+}
+
 // Fallback to legacy ILIKE search if RPC is not available
 async function fallbackLegacySuggestions(
   request: NextRequest,
@@ -169,7 +228,11 @@ async function fallbackLegacySuggestions(
   startTime: number
 ) {
   try {
-    const supabase = createSupabaseClient()
+    // Use the admin client: this fallback runs when the SECURITY DEFINER RPC
+    // is unavailable/errors (e.g. sector-matching queries), and the anon client
+    // is blocked by RLS on these tables (it would return nothing). Only
+    // non-PII tables (activities/organizations/activity_sectors) are queried.
+    const supabase = getSupabaseAdmin() || createSupabaseClient()
     if (!supabase) {
       throw new Error('Failed to create Supabase client')
     }
@@ -181,15 +244,15 @@ async function fallbackLegacySuggestions(
       // Activities
       supabase
         .from('activities')
-        .select('id, title_narrative, acronym, other_identifier, iati_identifier')
+        .select('id, title_narrative, acronym, other_identifier, iati_identifier, icon')
         .or(`title_narrative.ilike.${searchTerm},acronym.ilike.${searchTerm},other_identifier.ilike.${searchTerm},iati_identifier.ilike.${searchTerm}`)
         .limit(Math.ceil(limit / 2))
         .order('updated_at', { ascending: false }),
-      
+
       // Organizations
       supabase
         .from('organizations')
-        .select('id, name, acronym, iati_org_id, type, country')
+        .select('id, name, acronym, iati_org_id, type, country, logo')
         .or(`name.ilike.${searchTerm},acronym.ilike.${searchTerm},iati_org_id.ilike.${searchTerm}`)
         .limit(Math.ceil(limit / 3))
         .order('name'),
@@ -211,7 +274,13 @@ async function fallbackLegacySuggestions(
           id: activity.id,
           type: 'activity',
           title: activity.title_narrative || 'Untitled Activity',
-          subtitle: [activity.other_identifier, activity.iati_identifier].filter(Boolean).join(' • ') || undefined
+          subtitle: [activity.other_identifier, activity.iati_identifier].filter(Boolean).join(' • ') || undefined,
+          metadata: {
+            iati_identifier: activity.iati_identifier || undefined,
+            partner_id: activity.other_identifier || undefined,
+            acronym: activity.acronym || undefined,
+            activity_icon_url: (activity.icon && !activity.icon.includes('unsplash.com')) ? activity.icon : undefined,
+          }
         })
       })
     }
@@ -223,7 +292,11 @@ async function fallbackLegacySuggestions(
           id: org.id,
           type: 'organization',
           title: org.name,
-          subtitle: [org.acronym, org.type, org.country].filter(Boolean).join(' • ') || undefined
+          subtitle: [org.acronym, org.type, org.country].filter(Boolean).join(' • ') || undefined,
+          metadata: {
+            logo_url: org.logo || undefined,
+            acronym: org.acronym || undefined,
+          }
         })
       })
     }

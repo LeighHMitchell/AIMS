@@ -164,6 +164,7 @@ export function ActivityFreshnessChart() {
           updated_at,
           created_at
         `)
+        .is('deleted_at', null)
         .order('updated_at', { ascending: true });
 
       if (fetchError) throw fetchError;

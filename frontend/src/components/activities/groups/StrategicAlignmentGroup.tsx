@@ -278,7 +278,7 @@ export function StrategicAlignmentGroup({
           <section
             id="national_plans"
             ref={nationalPlansRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 pb-16"
+            className="scroll-mt-20 pb-16"
             style={{ minHeight: getSectionMinHeight('national_plans') }}
           >
             {isSectionActive('national_plans') || activeSections.has('national_plans') ? (
@@ -304,7 +304,7 @@ export function StrategicAlignmentGroup({
           <section
             id="sdg"
             ref={sdgRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('sdg') }}
           >
             {isSectionActive('sdg') || activeSections.has('sdg') ? (
@@ -330,7 +330,7 @@ export function StrategicAlignmentGroup({
           <section
             id="policy_markers"
             ref={policyMarkersRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('policy_markers') }}
           >
             {isSectionActive('policy_markers') || activeSections.has('policy_markers') ? (
@@ -357,7 +357,7 @@ export function StrategicAlignmentGroup({
           <section
             id="tags"
             ref={tagsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('tags') }}
           >
             {isSectionActive('tags') || activeSections.has('tags') ? (
@@ -383,7 +383,7 @@ export function StrategicAlignmentGroup({
           <section
             id="working_groups"
             ref={workingGroupsRef as React.RefObject<HTMLElement>}
-            className="scroll-mt-0 mt-16 pb-16"
+            className="scroll-mt-20 mt-16 pb-16"
             style={{ minHeight: getSectionMinHeight('working_groups') }}
           >
             {isSectionActive('working_groups') || activeSections.has('working_groups') ? (

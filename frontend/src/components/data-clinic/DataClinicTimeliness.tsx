@@ -60,6 +60,7 @@ export function DataClinicTimeliness() {
           actual_end_date,
           activity_status
         `)
+        .is('deleted_at', null)
 
       if (fetchError) {
         console.error('[Timeliness] Error fetching activities:', fetchError)

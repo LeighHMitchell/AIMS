@@ -216,6 +216,11 @@ export default function WorkingGroupsPage() {
     }
   }
 
+  const hasAnySubGroups = Array.from(subGroupsMap.values()).some(arr => arr.length > 0)
+  const allExpanded = topLevelGroups
+    .filter(wg => (subGroupsMap.get(wg.id)?.length || 0) > 0)
+    .every(wg => expandedGroups.has(wg.id))
+
   // Pagination
   const totalItems = filteredGroups.length
   const totalPages = Math.ceil(totalItems / pageLimit)
@@ -334,6 +339,19 @@ export default function WorkingGroupsPage() {
             </SelectContent>
           </Select>
 
+          {viewMode === 'list' && hasAnySubGroups && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 h-9 flex-shrink-0"
+              onClick={toggleExpandAll}
+              aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
+            >
+              {allExpanded ? <ChevronsDownUp className="h-4 w-4" /> : <ChevronsUpDown className="h-4 w-4" />}
+              {allExpanded ? 'Collapse All' : 'Expand All'}
+            </Button>
+          )}
+
           <div className="flex items-center border rounded-md flex-shrink-0">
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
@@ -356,7 +374,7 @@ export default function WorkingGroupsPage() {
 
         {/* Card View */}
         {viewMode === 'card' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             {paginatedCards.map((wg) => (
               <WorkingGroupCardModern
                 key={wg.id}
@@ -383,32 +401,13 @@ export default function WorkingGroupsPage() {
         {/* Table View */}
         {viewMode === 'list' && (
           <Card>
-            {/* Expand/Collapse All */}
-            {Array.from(subGroupsMap.values()).some(arr => arr.length > 0) && (() => {
-              const allExpanded = topLevelGroups
-                .filter(wg => (subGroupsMap.get(wg.id)?.length || 0) > 0)
-                .every(wg => expandedGroups.has(wg.id))
-              return (
-                <div className="px-4 py-2 border-b flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1.5 text-helper text-muted-foreground"
-                    onClick={toggleExpandAll}
-                    aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
-                  >
-                    {allExpanded ? <ChevronsDownUp className="h-3.5 w-3.5" /> : <ChevronsUpDown className="h-3.5 w-3.5" />}
-                    {allExpanded ? 'Collapse All' : 'Expand All'}
-                  </Button>
-                </div>
-              )
-            })()}
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Sub-groups</TableHead>
                   <TableHead className="text-right">Members</TableHead>
                   <TableHead className="text-right">Meetings</TableHead>
                   <TableHead className="text-right">Activities</TableHead>
@@ -443,9 +442,6 @@ export default function WorkingGroupsPage() {
                             {wg.code && (
                               <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{wg.code}</code>
                             )}
-                            {hasChildren && (
-                              <span className="text-[10px] text-muted-foreground font-normal">{children.length} sub-groups</span>
-                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -459,6 +455,9 @@ export default function WorkingGroupsPage() {
                         </TableCell>
                         <TableCell className="text-body text-muted-foreground">
                           {wg.status ? wg.status.charAt(0).toUpperCase() + wg.status.slice(1) : '-'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {hasChildren ? children.length : <span className="text-muted-foreground">–</span>}
                         </TableCell>
                         <TableCell className="text-right">{wg.member_count || 0}</TableCell>
                         <TableCell className="text-right">{wg.meetings_count || 0}</TableCell>
@@ -496,7 +495,7 @@ export default function WorkingGroupsPage() {
                       {isExpanded && children.map((sg) => (
                         <TableRow
                           key={sg.id}
-                          className="cursor-pointer bg-muted/30"
+                          className="group/row cursor-pointer bg-muted/30"
                           onClick={() => router.push(`/working-groups/${sg.id}`)}
                         >
                           <TableCell className="font-medium">
@@ -520,11 +519,12 @@ export default function WorkingGroupsPage() {
                           <TableCell className="text-body text-muted-foreground">
                             {sg.status ? sg.status.charAt(0).toUpperCase() + sg.status.slice(1) : '-'}
                           </TableCell>
+                          <TableCell className="text-right"><span className="text-muted-foreground">–</span></TableCell>
                           <TableCell className="text-right">{sg.member_count || 0}</TableCell>
                           <TableCell className="text-right">{sg.meetings_count || 0}</TableCell>
                           <TableCell className="text-right">{sg.activities_count || 0}</TableCell>
                           {isSuperUser() && (
-                            <TableCell>
+                            <TableCell className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">
                               <div onClick={(e) => e.stopPropagation()}>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>

@@ -15,6 +15,7 @@ import { apiFetch } from '@/lib/api-fetch'
 import { useRouter } from 'next/navigation'
 import { useUserRole } from '@/hooks/useUserRole'
 import { formatCurrencyShort } from '@/lib/format'
+import { UsdAmount } from '@/components/ui/usd-amount'
 
 // Color palette for sector groups
 const SECTOR_COLORS: Record<string, string> = {
@@ -266,13 +267,58 @@ export default function SectorsListingPage() {
           {viewMode === 'card' && (
             <div className="space-y-8">
               {filteredGroups.map(group => (
-                <div key={group.code}>
-                  <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5">{group.code}</code>
-                    {group.name}
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {group.categories.map(cat => (
+                <div key={group.code} className="space-y-4">
+                  {/* Group card — the whole sector (e.g. 110 Education), full width */}
+                  <CardShell
+                    href={`/sectors/${group.code}`}
+                    ariaLabel={`${group.code}: ${group.name}`}
+                    bannerColor={getSectorColor(group.code)}
+                    bannerActions={canEdit ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/sectors/${group.code}/edit`) }}
+                        className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Edit sector"
+                        aria-label="Edit sector"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    ) : undefined}
+                    bannerImage={banners[group.code]}
+                    bannerContent={!banners[group.code] ? (
+                      <div className="h-full w-full flex items-center justify-center pointer-events-none">
+                        <span className="text-6xl font-bold text-white/15 font-mono">{group.code}</span>
+                      </div>
+                    ) : undefined}
+                    bannerOverlay={
+                      <h2 className="text-xl font-bold text-white leading-tight">
+                        {group.name}
+                      </h2>
+                    }
+                  >
+                    <div className="relative flex-1 p-5 flex items-center justify-between bg-card">
+                      <div className="flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-body font-medium">
+                          {group.activityCount} {group.activityCount === 1 ? 'activity' : 'activities'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-helper text-muted-foreground">
+                        {group.totalValue > 0 ? (
+                          <span className="font-semibold text-foreground">{formatCurrencyShort(group.totalValue)}</span>
+                        ) : (
+                          <span>No financial data</span>
+                        )}
+                        <span>{group.categories.length} sub-sector{group.categories.length === 1 ? '' : 's'}</span>
+                      </div>
+                    </div>
+                  </CardShell>
+
+                  {/* Sub-sector cards — narrower + indented under the group card to show nesting */}
+                  <div className="ml-4 pl-5 border-l-2 border-border">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                      {group.categories.map(cat => (
                       <CardShell
                         key={cat.code}
                         href={`/sectors/${cat.code}`}
@@ -280,10 +326,10 @@ export default function SectorsListingPage() {
                         bannerColor={getSectorColor(group.code)}
                         bannerActions={canEdit ? (
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon"
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/sectors/${cat.code}/edit`) }}
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
                             title="Edit sector"
                             aria-label="Edit sector"
                           >
@@ -323,9 +369,10 @@ export default function SectorsListingPage() {
                           </div>
                         </div>
                       </CardShell>
-                    ))}
+                      ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
               ))}
               {filteredGroups.length === 0 && (
                 <div className="p-8 text-center">
@@ -340,7 +387,7 @@ export default function SectorsListingPage() {
           {/* Hierarchical tree */}
           {viewMode === 'list' && <div className="border border-border rounded-lg overflow-hidden">
             {/* Header row */}
-            <div className="flex items-center gap-3 px-3 py-2 bg-muted/50 border-b border-border text-section-label font-medium text-muted-foreground uppercase">
+            <div className="flex items-center gap-3 px-3 py-2 bg-surface-muted border-b border-border text-section-label font-medium text-muted-foreground uppercase">
               <div className="w-4 flex-shrink-0" />
               <div className="w-12 flex-shrink-0">Code</div>
               <div className="flex-1">Name</div>
@@ -374,16 +421,14 @@ export default function SectorsListingPage() {
                       </Link>
                     </div>
                     <div className="w-24 text-right flex-shrink-0">
-                      {group.activityCount > 0 && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                          {group.activityCount}
-                        </Badge>
+                      {group.activityCount > 0 ? (
+                        <span className="text-body text-foreground">{group.activityCount}</span>
+                      ) : (
+                        <span className="text-muted-foreground">–</span>
                       )}
                     </div>
                     <div className="w-24 text-right flex-shrink-0">
-                      {group.totalValue > 0 && (
-                        <span className="text-helper font-medium text-muted-foreground">{formatCurrencyShort(group.totalValue)}</span>
-                      )}
+                      <UsdAmount value={group.totalValue} />
                     </div>
                   </div>
 
@@ -421,14 +466,14 @@ export default function SectorsListingPage() {
                                 </Link>
                               </div>
                               <div className="w-24 text-right flex-shrink-0">
-                                {cat.activityCount > 0 && (
-                                  <span className="text-helper text-muted-foreground">{cat.activityCount}</span>
+                                {cat.activityCount > 0 ? (
+                                  <span className="text-body text-foreground">{cat.activityCount}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">–</span>
                                 )}
                               </div>
                               <div className="w-24 text-right flex-shrink-0">
-                                {cat.totalValue > 0 && (
-                                  <span className="text-helper text-muted-foreground">{formatCurrencyShort(cat.totalValue)}</span>
-                                )}
+                                <UsdAmount value={cat.totalValue} />
                               </div>
                             </div>
 
@@ -447,14 +492,14 @@ export default function SectorsListingPage() {
                                       <span className="text-body text-muted-foreground">{sector.name}</span>
                                     </div>
                                     <div className="w-24 text-right flex-shrink-0">
-                                      {sector.activityCount > 0 && (
-                                        <span className="text-[10px] text-muted-foreground">{sector.activityCount}</span>
+                                      {sector.activityCount > 0 ? (
+                                        <span className="text-body text-foreground">{sector.activityCount}</span>
+                                      ) : (
+                                        <span className="text-muted-foreground">–</span>
                                       )}
                                     </div>
                                     <div className="w-24 text-right flex-shrink-0">
-                                      {sector.totalValue > 0 && (
-                                        <span className="text-helper text-muted-foreground">{formatCurrencyShort(sector.totalValue)}</span>
-                                      )}
+                                      <UsdAmount value={sector.totalValue} />
                                     </div>
                                   </Link>
                                 ))}

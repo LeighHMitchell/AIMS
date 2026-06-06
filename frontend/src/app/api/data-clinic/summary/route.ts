@@ -15,6 +15,7 @@ async function nullCount(
     const { count, error } = await supabase
       .from(table)
       .select('*', { count: 'exact', head: true })
+      .is('deleted_at', null)
       .is(column, null);
     if (error) {
       console.error(`[data-clinic/summary] nullCount ${table}.${column}:`, error);
@@ -33,6 +34,7 @@ async function activitiesMissingDates(supabase: SupabaseClient): Promise<number>
     const { count, error } = await supabase
       .from('activities')
       .select('*', { count: 'exact', head: true })
+      .is('deleted_at', null)
       .is('planned_start_date', null)
       .is('actual_start_date', null);
     if (error) {
@@ -59,7 +61,8 @@ async function activitiesMissingChild(
   try {
     const { count: totalActivities, error: totalErr } = await supabase
       .from('activities')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .is('deleted_at', null);
     if (totalErr) {
       console.error(`[data-clinic/summary] total activities for ${childTable}:`, totalErr);
       return 0;
@@ -67,7 +70,8 @@ async function activitiesMissingChild(
 
     const { data: childRows, error: childErr } = await supabase
       .from(childTable)
-      .select('activity_id');
+      .select('activity_id')
+      .is('deleted_at', null);
     if (childErr) {
       console.error(`[data-clinic/summary] ${childTable} fetch:`, childErr);
       return 0;

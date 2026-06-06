@@ -159,7 +159,8 @@ export async function POST(request: NextRequest) {
           planned_end_date,
           actual_start_date,
           actual_end_date
-        `);
+        `)
+        .is('deleted_at', null);
 
       if (activities && activities.length > 0) {
         // 1. Exact IATI ID matches
@@ -318,7 +319,8 @@ export async function POST(request: NextRequest) {
       
       const { data: organizations } = await supabase
         .from('organizations')
-        .select('id, name, acronym, iati_org_id');
+        .select('id, name, acronym, iati_org_id')
+        .is('deleted_at', null);
 
       if (organizations && organizations.length > 0) {
         // 1. Exact IATI org ID matches

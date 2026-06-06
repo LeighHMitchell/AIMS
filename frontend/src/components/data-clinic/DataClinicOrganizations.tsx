@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
+import { renderMoney } from "./formatters";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +14,10 @@ import {
   RefreshCw,
   Save,
   Building2,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/hooks/useUser";
 import { EditableCell } from "./EditableCell";
@@ -33,11 +37,6 @@ type Organization = {
   [key: string]: any;
 };
 
-type DataGap = {
-  field: string;
-  label: string;
-  count: number;
-};
 
 export function DataClinicOrganizations() {
   const { user } = useUser();
@@ -49,7 +48,42 @@ export function DataClinicOrganizations() {
   const [selectedOrganizations, setSelectedOrganizations] = useState<Set<string>>(new Set());
   const [bulkEditField, setBulkEditField] = useState<string>('');
   const [bulkEditValue, setBulkEditValue] = useState<string>('');
-  const [dataGaps, setDataGaps] = useState<DataGap[]>([]);
+  const [sortField, setSortField] = useState<'name' | 'acronym' | 'identifier' | 'type' | 'country' | 'currency' | 'budget'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const sortedOrganizations = useMemo(() => {
+    const budget = (o: Organization) => o.totalBudget || o.recipientOrgBudget || 0;
+    return [...filteredOrganizations].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      switch (sortField) {
+        case 'name':
+          return (a.name || '').localeCompare(b.name || '') * dir;
+        case 'acronym':
+          return (a.acronym || '').localeCompare(b.acronym || '') * dir;
+        case 'identifier':
+          return (a.iati_org_id || '').localeCompare(b.iati_org_id || '') * dir;
+        case 'type':
+          return (a.type || '').localeCompare(b.type || '') * dir;
+        case 'country':
+          return (a.country_represented || '').localeCompare(b.country_represented || '') * dir;
+        case 'currency':
+          return (a.default_currency || '').localeCompare(b.default_currency || '') * dir;
+        case 'budget':
+          return (budget(a) - budget(b)) * dir;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredOrganizations, sortField, sortDirection]);
 
   const isSuperUser = user?.role === 'super_user';
 
@@ -68,7 +102,6 @@ export function DataClinicOrganizations() {
       
       const data = await res.json();
       setOrganizations(data.organizations || []);
-      setDataGaps(data.dataGaps || []);
     } catch (error) {
       console.error('Error fetching organizations:', error);
       toast.error('Failed to load organisations');
@@ -215,27 +248,6 @@ export function DataClinicOrganizations() {
 
   return (
     <div className="space-y-6">
-      {/* Data Gaps Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Gaps Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {dataGaps.map((gap) => (
-              <div
-                key={gap.field}
-                className="p-4 rounded-lg border cursor-pointer hover:bg-muted/50"
-                onClick={() => setSelectedFilter(gap.field)}
-              >
-                <p className="text-body text-muted-foreground">{gap.label}</p>
-                <p className="text-2xl font-semibold">{gap.count}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Filters and Search */}
       <Card>
         <CardContent className="p-6">
@@ -328,23 +340,38 @@ export function DataClinicOrganizations() {
                       />
                     </th>
                   )}
-                  <th className="p-4 text-left text-body font-medium">Name</th>
-                  <th className="p-4 text-left text-body font-medium">Acronym</th>
-                  <th className="p-4 text-left text-body font-medium">Identifier</th>
-                  <th className="p-4 text-left text-body font-medium">Type</th>
-                  <th className="p-4 text-left text-body font-medium">Location Represented</th>
-                  <th className="p-4 text-left text-body font-medium">Currency</th>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('name')}>
+                    <div className="flex items-center gap-1">Name {getSortIcon('name', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('acronym')}>
+                    <div className="flex items-center gap-1">Acronym {getSortIcon('acronym', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('identifier')}>
+                    <div className="flex items-center gap-1">Identifier {getSortIcon('identifier', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
+                    <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('country')}>
+                    <div className="flex items-center gap-1">Location Represented {getSortIcon('country', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('currency')}>
+                    <div className="flex items-center gap-1">Currency {getSortIcon('currency', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('budget')}>
+                    <div className="flex items-center gap-1">Budget {getSortIcon('budget', sortField, sortDirection)}</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredOrganizations.length === 0 ? (
+                {sortedOrganizations.length === 0 ? (
                   <tr>
-                    <td colSpan={isSuperUser ? 7 : 6} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={isSuperUser ? 8 : 7} className="p-8 text-center text-muted-foreground">
                       No organizations found with data gaps
                     </td>
                   </tr>
                 ) : (
-                  filteredOrganizations.map((organization) => (
+                  sortedOrganizations.map((organization) => (
                     <tr key={organization.id} className="border-b hover:bg-muted/50">
                       {isSuperUser && (
                         <td className="p-4">
@@ -418,6 +445,21 @@ export function DataClinicOrganizations() {
                           onSave={saveFieldValue}
                           isEditable={isSuperUser}
                         />
+                      </td>
+                      <td className="p-4">
+                        {organization.totalBudget || organization.recipientOrgBudget ? (
+                          <span className="text-body">
+                            {renderMoney(
+                              (organization.totalBudget || organization.recipientOrgBudget)!,
+                              organization.default_currency,
+                            )}
+                          </span>
+                        ) : (
+                          <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Missing
+                          </Badge>
+                        )}
                       </td>
                     </tr>
                   ))

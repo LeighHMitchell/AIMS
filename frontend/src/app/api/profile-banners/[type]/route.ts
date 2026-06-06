@@ -3,7 +3,7 @@ import { requireAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
-const VALID_TYPES = ['sdg', 'sector', 'location', 'policy_marker'] as const
+const VALID_TYPES = ['sdg', 'sector', 'location', 'policy_marker', 'tag'] as const
 
 export async function GET(
   request: NextRequest,

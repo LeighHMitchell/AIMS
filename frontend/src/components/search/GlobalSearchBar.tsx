@@ -3,11 +3,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { debounce } from 'lodash'
-import { Search, X, Loader2 } from 'lucide-react'
+import { Search, X, Loader2 } from "@/components/icons/hugeicons"
 import { Button } from '@/components/ui/button'
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandItem,
   CommandList,
@@ -20,28 +19,9 @@ import {
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SearchResultRow } from './SearchResultRow'
-import type { SearchResult, SearchResultType, SEARCH_RESULT_ORDER, RESULT_TYPE_LABELS } from '@/types/search'
-import { normalizeSearchResults, type LegacySearchResult } from '@/lib/search-normalizer'
+import type { SearchResult } from '@/types/search'
+import { normalizeSearchResults } from '@/lib/search-normalizer'
 import { apiFetch } from '@/lib/api-fetch';
-
-// Result type ordering and labels
-const searchResultOrder: SearchResultType[] = [
-  'activity',
-  'organisation',
-  'sector',
-  'tag',
-  'user',
-  'contact'
-]
-
-const resultTypeLabels: Record<SearchResultType, string> = {
-  activity: 'Activities',
-  organisation: 'Organisations',
-  sector: 'Sectors',
-  tag: 'Tags',
-  user: 'Users',
-  contact: 'Contacts'
-}
 
 interface GlobalSearchBarProps {
   className?: string
@@ -84,20 +64,20 @@ export function GlobalSearchBar({
   }
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<SearchResult[]>([])
-  const [loading, setLoading] = useState(false)
-  const [isSearching, setIsSearching] = useState(false)
-  const [hasSearched, setHasSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<SearchResult[]>([])
   const [popularSearches, setPopularSearches] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const abortControllerRef = useRef<AbortController | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+
+  // In-session cache of suggestion responses (keyed by lowercased query) so
+  // repeats and backspacing are instant — no spinner, no network round-trip.
+  const suggestionsCacheRef = useRef<Map<string, { suggestions: SearchResult[]; popularSearches: string[] }>>(new Map())
+  // Tracks the in-flight suggestions request so stale responses can be aborted.
+  const suggestionsAbortRef = useRef<AbortController | null>(null)
 
   // Handle expand
   const handleExpand = useCallback(() => {
@@ -113,19 +93,9 @@ export function GlobalSearchBar({
     setIsExpanded(false)
     setOpen(false)
     setQuery('')
-    setResults([])
     setError(null)
-    setLoading(false)
-    setIsSearching(false)
-    setHasSearched(false)
     setSuggestions([])
     setShowSuggestions(false)
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current)
-    }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
   }, [])
 
   // Click outside handler (only for nav mode)
@@ -157,9 +127,22 @@ export function GlobalSearchBar({
     }
   }, [isPageMode, autoFocus])
 
-  // Fetch search suggestions
+  // Apply a cached suggestions response instantly (no spinner, no network).
+  // Returns true on a cache hit.
+  const applyCachedSuggestions = useCallback((searchQuery: string): boolean => {
+    const cached = suggestionsCacheRef.current.get(searchQuery.trim().toLowerCase())
+    if (!cached) return false
+    setSuggestions(cached.suggestions)
+    setPopularSearches(cached.popularSearches)
+    setShowSuggestions(true)
+    setIsLoadingSuggestions(false)
+    return true
+  }, [])
+
+  // Fetch search suggestions (cache-first, stale-while-revalidate, abortable)
   const fetchSuggestions = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim() || searchQuery.length < 2) {
+    const q = searchQuery.trim()
+    if (q.length < 2) {
       setSuggestions([])
       setPopularSearches([])
       setShowSuggestions(false)
@@ -167,12 +150,23 @@ export function GlobalSearchBar({
       return
     }
 
-    setIsLoadingSuggestions(true)
+    // Instant cache hit — done, no request.
+    if (applyCachedSuggestions(q)) return
+
+    // Cache miss: keep any existing suggestions visible while we fetch
+    // (stale-while-revalidate) and only show the spinner.
     setShowSuggestions(true)
+    setIsLoadingSuggestions(true)
+
+    // Cancel any in-flight request so only the latest query's result renders.
+    if (suggestionsAbortRef.current) suggestionsAbortRef.current.abort()
+    const controller = new AbortController()
+    suggestionsAbortRef.current = controller
 
     try {
-      const response = await apiFetch(`/api/search/suggestions?q=${encodeURIComponent(searchQuery)}&limit=8`,
+      const response = await apiFetch(`/api/search/suggestions?q=${encodeURIComponent(q)}&limit=8`,
         {
+          signal: controller.signal,
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -187,154 +181,58 @@ export function GlobalSearchBar({
       const data = await response.json()
       // Normalize suggestions to the new type format
       const normalizedSuggestions = normalizeSearchResults(data.suggestions || [])
+      const popular: string[] = data.popularSearches || []
+      suggestionsCacheRef.current.set(q.toLowerCase(), { suggestions: normalizedSuggestions, popularSearches: popular })
+
+      // Ignore if a newer request superseded this one.
+      if (controller.signal.aborted) return
       setSuggestions(normalizedSuggestions)
-      setPopularSearches(data.popularSearches || [])
+      setPopularSearches(popular)
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return
       console.error('Suggestions error:', err)
       setSuggestions([])
       setPopularSearches([])
     } finally {
-      setIsLoadingSuggestions(false)
+      // Only clear the spinner if this is still the latest request.
+      if (suggestionsAbortRef.current === controller) {
+        setIsLoadingSuggestions(false)
+      }
     }
-  }, [])
+  }, [applyCachedSuggestions])
 
-  // Debounced suggestions function
+  // Debounced suggestions function (snappy now that repeats are cached)
   const debouncedFetchSuggestions = useCallback(
-    debounce((query: string) => fetchSuggestions(query), 300),
+    debounce((query: string) => fetchSuggestions(query), 180),
     [fetchSuggestions]
   )
-
-  // Debounced search function
-  const performSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setResults([])
-      setError(null)
-      setLoading(false)
-      setIsSearching(false)
-      setHasSearched(false)
-      return
-    }
-
-    // Cancel any previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
-
-    // Create new abort controller for this request
-    abortControllerRef.current = new AbortController()
-
-    try {
-      setIsSearching(true)
-      setError(null)
-
-      const response = await apiFetch(`/api/search?q=${encodeURIComponent(searchQuery)}`,
-        {
-          signal: abortControllerRef.current.signal,
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          }
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Search failed')
-      }
-
-      const data = await response.json()
-      // Normalize results to the new type format
-      const normalizedResults = normalizeSearchResults(data.results || [])
-      setResults(normalizedResults)
-      setHasSearched(true)
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        // Request was cancelled, ignore
-        return
-      }
-      console.error('Search error:', err)
-      setError('Failed to perform search')
-      setResults([])
-      setHasSearched(true)
-    } finally {
-      setLoading(false)
-      setIsSearching(false)
-    }
-  }, [])
 
   // Handle input change with debounce
   const handleInputChange = useCallback((value: string) => {
     setQuery(value)
     setOpen(true) // Always open when typing
+    setError(null)
 
-    // Clear previous timeouts
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current)
-    }
-
-    // Fetch suggestions for queries with 2+ characters
+    // While typing, the dropdown shows ONLY lightweight, fully-indexed
+    // suggestions (the fast `/api/search/suggestions` endpoint). The heavier
+    // full search runs only when the user submits (Enter) or clicks
+    // "View all results" — this keeps the typeahead snappy and halves the
+    // backend work per keystroke.
     if (value.trim().length >= 2) {
-      debouncedFetchSuggestions(value)
+      // Serve cached results immediately (e.g. on backspace/retype) without
+      // waiting for the debounce; otherwise debounce a fresh fetch.
+      if (applyCachedSuggestions(value)) {
+        debouncedFetchSuggestions.cancel()
+      } else {
+        debouncedFetchSuggestions(value)
+      }
     } else {
+      debouncedFetchSuggestions.cancel()
       setShowSuggestions(false)
       setSuggestions([])
       setPopularSearches([])
     }
-
-    // Search immediately with 1 character
-    if (value.trim().length >= 1) {
-      // Set loading state immediately when user starts typing
-      setLoading(true)
-      setError(null)
-      setResults([]) // Clear previous results immediately
-      setHasSearched(false) // Reset search state when starting new search
-
-      // Set new timeout for debounced search with very fast delay
-      searchTimeoutRef.current = setTimeout(() => {
-        performSearch(value)
-      }, 150) // Reduced to 150ms for snappier feel
-    } else {
-      // Clear results if no input
-      setResults([])
-      setError(null)
-      setLoading(false)
-      setIsSearching(false)
-      setHasSearched(false)
-      setShowSuggestions(false)
-    }
-  }, [performSearch, debouncedFetchSuggestions])
-
-  // Navigate to result
-  const handleResultClick = useCallback((result: SearchResult) => {
-    setOpen(false)
-    setQuery('')
-    setResults([])
-    setIsExpanded(false)
-
-    switch (result.type) {
-      case 'activity':
-        router.push(`/activities/${result.id}`)
-        break
-      case 'organisation':
-        router.push(`/organizations/${result.id}`)
-        break
-      case 'user':
-        router.push(`/users/${result.id}`)
-        break
-      case 'sector':
-        // Navigate to dedicated sector detail page using the code
-        router.push(`/sectors/${encodeURIComponent(result.metadata.code)}`)
-        break
-      case 'tag':
-        router.push(`/activities?tag=${encodeURIComponent(result.title)}`)
-        break
-      case 'contact':
-        // Navigate to the activity that contains this contact
-        if (result.metadata?.activity_id) {
-          router.push(`/activities/${result.metadata.activity_id}#contacts`)
-        }
-        break
-    }
-  }, [router])
+  }, [debouncedFetchSuggestions, applyCachedSuggestions])
 
   // Handle suggestion click
   const handleSuggestionClick = useCallback((suggestion: SearchResult) => {
@@ -359,20 +257,30 @@ export function GlobalSearchBar({
         router.push(`/tags/${suggestion.id}`)
         break
       default:
-        // For other types, set the query and let normal search handle it
+        // For other types, run the full search for the suggestion's title
         setQuery(suggestion.title)
-        setOpen(true)
-        setIsExpanded(true)
+        if (onSearch) {
+          onSearch(suggestion.title)
+        } else {
+          setIsExpanded(false)
+          router.push(`/search?q=${encodeURIComponent(suggestion.title)}`)
+        }
     }
-  }, [router])
+  }, [router, onSearch])
 
-  // Handle popular search click
+  // Handle popular search click — run the full search (page mode) or navigate
+  // to the search results page (nav mode).
   const handlePopularSearchClick = useCallback((searchTerm: string) => {
     setQuery(searchTerm)
-    setOpen(true)
+    setOpen(false)
     setShowSuggestions(false)
-    performSearch(searchTerm)
-  }, [performSearch])
+    if (onSearch) {
+      onSearch(searchTerm)
+    } else {
+      setIsExpanded(false)
+      router.push(`/search?q=${encodeURIComponent(searchTerm)}`)
+    }
+  }, [onSearch, router])
 
   // Navigate to full search results page or call onSearch callback
   const handleSearchSubmit = useCallback(() => {
@@ -392,17 +300,9 @@ export function GlobalSearchBar({
   // Clear search
   const handleClear = useCallback(() => {
     setQuery('')
-    setResults([])
     setError(null)
-    setLoading(false)
-    setIsSearching(false)
-    setHasSearched(false)
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current)
-    }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
+    setSuggestions([])
+    setShowSuggestions(false)
     // Notify parent to clear results (for page mode)
     if (onSearch) {
       onSearch('')
@@ -426,17 +326,13 @@ export function GlobalSearchBar({
     }
   }, [handleSearchSubmit, handleCollapse, isPageMode, handleClear])
 
-  // Cleanup on unmount
+  // Cleanup on unmount — cancel pending debounce and any in-flight request
   useEffect(() => {
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current)
-      }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
+      debouncedFetchSuggestions.cancel()
+      suggestionsAbortRef.current?.abort()
     }
-  }, [])
+  }, [debouncedFetchSuggestions])
 
   // Size-based styles
   const inputHeight = size === "large" ? "h-14" : "h-10"
@@ -466,10 +362,10 @@ export function GlobalSearchBar({
               "flex-1 bg-transparent px-3 outline-none placeholder:text-muted-foreground focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 border-none"
             )}
           />
-          {(loading || isSearching) && (
+          {isLoadingSuggestions && (
             <Loader2 className={cn("mr-3", iconSize, "text-muted-foreground animate-spin")} />
           )}
-          {!loading && !isSearching && query && (
+          {!isLoadingSuggestions && query && (
             <button
               type="button"
               onClick={handleClear}
@@ -497,7 +393,7 @@ export function GlobalSearchBar({
             </motion.button>
           )}
           {/* Add padding on right when in page mode with no query */}
-          {isPageMode && !query && !loading && !isSearching && (
+          {isPageMode && !query && !isLoadingSuggestions && (
             <div className={size === "large" ? "w-5" : "w-3"} />
           )}
         </div>
@@ -509,24 +405,20 @@ export function GlobalSearchBar({
       >
                   <Command className="border border-border rounded-lg bg-popover shadow-lg">
                     <CommandList className="max-h-80 overflow-y-auto">
-                      {(loading || isSearching) && (
+                      {isLoadingSuggestions && suggestions.length === 0 && (
                         <div className="p-4 text-center text-body text-muted-foreground">
                           Searching...
                         </div>
                       )}
 
-                      {!loading && !isSearching && error && (
+                      {!isLoadingSuggestions && error && (
                         <div className="p-4 text-center text-body text-destructive">
                           {error}
                         </div>
                       )}
 
-                      {!loading && !isSearching && !error && query && results.length === 0 && hasSearched && query.trim().length > 0 && (
-                        <CommandEmpty>No results found for "{query}"</CommandEmpty>
-                      )}
-
-                      {/* Show suggestions when typing */}
-                      {!loading && !isSearching && !error && query && query.trim().length >= 2 && showSuggestions && (
+                      {/* Typeahead suggestions (fast, indexed) */}
+                      {!error && query && query.trim().length >= 2 && showSuggestions && (
                         <>
                           {/* Show suggestions if available */}
                           {suggestions.length > 0 && (
@@ -550,7 +442,7 @@ export function GlobalSearchBar({
                             </CommandGroup>
                           )}
 
-                          {/* Show popular searches if available */}
+                          {/* Show popular searches if there are no suggestions */}
                           {popularSearches.length > 0 && suggestions.length === 0 && (
                             <CommandGroup>
                               <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground border-b border-border">
@@ -576,48 +468,18 @@ export function GlobalSearchBar({
                               ))}
                             </CommandGroup>
                           )}
+
+                          {/* Empty state — no quick matches, but full search is still one click away */}
+                          {!isLoadingSuggestions && suggestions.length === 0 && popularSearches.length === 0 && (
+                            <div className="px-2 py-3 text-center text-body text-muted-foreground">
+                              No quick matches — press Enter to search everything
+                            </div>
+                          )}
                         </>
-                      )}
-
-                      {!loading && !error && results.length > 0 && (
-                        <>
-                          {/* Group results by type in specified order */}
-                          {searchResultOrder.map((type) => {
-                            const typeResults = results.filter(r => r.type === type)
-                            if (typeResults.length === 0) return null
-
-                            return (
-                              <CommandGroup key={type}>
-                                <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground border-b border-border">
-                                  {resultTypeLabels[type]}
-                                </div>
-                                {typeResults.map((result) => (
-                                  <CommandItem
-                                    key={`${result.type}-${result.id}`}
-                                    onSelect={() => handleResultClick(result)}
-                                    className="cursor-pointer py-3 px-2 hover:bg-muted"
-                                  >
-                                    <SearchResultRow
-                                      result={result}
-                                      searchQuery={query}
-                                      variant="compact"
-                                    />
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            )
-                          })}
-                        </>
-                      )}
-
-                      {!loading && query.length > 0 && query.length < 1 && (
-                        <div className="p-4 text-center text-body text-muted-foreground">
-                          Start typing to search
-                        </div>
                       )}
                     </CommandList>
-                    {/* Add "View All Results" option at bottom if there are results */}
-                    {!loading && !error && query.trim() && results.length > 0 && (
+                    {/* Run the full search across all entity types */}
+                    {!error && query.trim().length >= 1 && (
                       <div className="border-t border-border p-2">
                         <Button
                           variant="ghost"

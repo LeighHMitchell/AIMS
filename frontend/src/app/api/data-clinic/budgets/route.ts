@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
           iati_identifier
         )
       `)
+      .is('deleted_at', null)
       .order('period_start', { ascending: false });
 
     if (error) throw error;
