@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { fetchTransactionSectorLinesChunked } from '@/lib/sector-spend'
 import { requireAuth } from '@/lib/auth';
 import { SectorMetrics, SectorAnalyticsResponse } from '@/types/sector-analytics'
+import { getBroadCategoryForCode } from '@/lib/sector-hierarchy'
 
 // Force dynamic rendering to allow request.url access
 export const dynamic = 'force-dynamic'
@@ -442,22 +443,11 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Get high-level group name for 1-digit DAC codes
+ * Get high-level (broad OECD category) name for a 1-digit DAC group code.
+ * Delegates to the shared single source of truth so names match the /sectors
+ * page and the 9xx non-sector-allocable codes are labelled correctly.
  */
 function getGroupName(groupCode: string | undefined): string {
-  if (!groupCode) return 'Other'
-  
-  const groupNames: Record<string, string> = {
-    '1': 'Social Infrastructure & Services',
-    '2': 'Economic Infrastructure & Services',
-    '3': 'Production Sectors',
-    '4': 'Multi-Sector / Cross-Cutting',
-    '5': 'Commodity Aid / General Programme Assistance',
-    '6': 'Debt-Related Actions',
-    '7': 'Humanitarian Aid',
-    '8': 'Administrative Costs of Donors',
-    '9': 'Refugees in Donor Countries'
-  }
-  
-  return groupNames[groupCode] || 'Other'
+  if (!groupCode) return 'Other / Non-Sector Allocable'
+  return getBroadCategoryForCode(groupCode).name
 }

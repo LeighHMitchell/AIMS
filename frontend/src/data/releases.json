@@ -1,7 +1,22 @@
 {
-  "currentVersion": "4.0.4",
-  "narrativeSummary": "This update gives the Data Clinic a major upgrade for finding and fixing incomplete data. Eight new tabs — Planned Disbursements, People, Sectors, SDGs, Locations, Policy Markers, Tags and Working Groups — each list exactly the records that are missing a field, so gaps are easy to spot and fix. Across the clinic, recycled (deleted) records are now excluded, money shows a clean currency code, dates read consistently, IATI codes appear next to their labels, and you can edit a value right where it's missing. Plus a round of polish across the app.",
+  "currentVersion": "4.0.5",
+  "narrativeSummary": "This update makes the Data Clinic's new tabs far more useful for cleaning up data. Transactions and Planned Disbursements now show Provider and Receiver as separate columns, each clearly marked Linked, Unlinked or Missing — and you can link an organisation (or fix a typo'd name) right from the table. Transactions gain a USD Value column alongside the original, budgets now carry their USD values, and the Duplicates tab (and every tab) correctly ignores anything in the recycle bin. Throughout, IATI codes now show their names, dates read as “1 Jul 2023”, locations and the planned-disbursement type are editable, and country flags appear next to organisations.",
   "releases": [
+    {
+      "version": "4.0.5",
+      "date": "2026-06-07",
+      "narrativeSummary": "This update makes the Data Clinic's new tabs far more useful for cleaning up data. Transactions and Planned Disbursements now show Provider and Receiver as separate columns, each clearly marked Linked, Unlinked or Missing — and you can link an organisation (or fix a typo'd name) right from the table. Transactions gain a USD Value column alongside the original, budgets now carry their USD values, and the Duplicates tab (and every tab) correctly ignores anything in the recycle bin. Throughout, IATI codes now show their names, dates read as “1 Jul 2023”, locations and the planned-disbursement type are editable, and country flags appear next to organisations.",
+      "changes": [
+        "<b>Link organisations from the table</b>",
+        "&nbsp;&nbsp;Transactions and Planned Disbursements now show Provider and Receiver as separate columns, each marked Linked, Unlinked or Missing. Click an Unlinked or Missing one to pick the right organisation — handy for fixing a mistyped name like “UNFPAB” → “UNFPA”. Why it helps: you can connect transactions and disbursements to real organisation records without leaving the clinic.",
+        "<b>USD values everywhere</b>",
+        "&nbsp;&nbsp;Transactions now show a USD Value column next to the original amount, and budgets carry their USD values too. Why it helps: figures are comparable at a glance, in one currency.",
+        "<b>Recycle bin is respected</b>",
+        "&nbsp;&nbsp;The Duplicates tab — and every Data Clinic tab — now excludes records that are in the recycle bin. Why it helps: you only see and act on live data, not things you've already deleted.",
+        "<b>Clearer, editable fields</b>",
+        "&nbsp;&nbsp;IATI codes now appear with their names (sectors, SDGs, locations, policy markers, planned-disbursement type), dates read as “1 Jul 2023”, organisations show country flags, and you can edit locations' coordinates and the planned-disbursement type inline. Why it helps: less decoding, and quick fixes right where the gap is."
+      ]
+    },
     {
       "version": "4.0.4",
       "date": "2026-06-07",

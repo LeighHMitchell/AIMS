@@ -23,6 +23,8 @@ interface DatePickerProps {
   id?: string
   dropdownId?: string // Unique ID for exclusive open behavior
   endAdornment?: React.ReactNode // Element rendered at the right end of the trigger
+  open?: boolean // Controlled open state (takes precedence over dropdownId/local state)
+  onOpenChange?: (open: boolean) => void // Controlled open change handler
 }
 
 export function DatePicker({
@@ -35,14 +37,22 @@ export function DatePicker({
   id,
   dropdownId,
   endAdornment,
+  open: controlledOpen,
+  onOpenChange,
 }: DatePickerProps) {
   // Use shared dropdown state if dropdownId is provided
   const sharedState = useDropdownState(dropdownId || 'date-picker-default')
   const [localOpen, setLocalOpen] = React.useState(false)
 
-  // Use shared state when dropdownId is provided, otherwise use local state
-  const open = dropdownId ? sharedState.isOpen : localOpen
-  const setOpen = dropdownId ? sharedState.setOpen : setLocalOpen
+  const isControlled = controlledOpen !== undefined
+
+  // Controlled open takes precedence, then shared state (dropdownId), then local state
+  const open = isControlled ? controlledOpen : dropdownId ? sharedState.isOpen : localOpen
+  const setOpen = isControlled
+    ? (next: boolean) => onOpenChange?.(next)
+    : dropdownId
+    ? sharedState.setOpen
+    : setLocalOpen
 
   const [date, setDate] = React.useState<Date | undefined>(
     value ? new Date(value) : undefined

@@ -215,6 +215,8 @@ export function LibraryFiltersPanel({
           }
           placeholder="Start date"
           className="w-[180px]"
+          open={openDropdown === 'dateFrom'}
+          onOpenChange={handleDropdownOpenChange('dateFrom')}
         />
       </div>
       <div className="flex flex-col gap-1">
@@ -229,6 +231,8 @@ export function LibraryFiltersPanel({
           }
           placeholder="End date"
           className="w-[180px]"
+          open={openDropdown === 'dateTo'}
+          onOpenChange={handleDropdownOpenChange('dateTo')}
         />
       </div>
     </FilterBar>

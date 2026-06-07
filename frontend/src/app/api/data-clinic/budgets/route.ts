@@ -62,6 +62,11 @@ export async function GET(request: NextRequest) {
     for (const budget of budgets || []) {
       let hasGap = false;
 
+      // A USD-denominated budget needs no conversion — its USD value IS its
+      // value. Derive it so these don't show a false "Missing USD Value".
+      const effectiveUsdValue =
+        budget.usd_value == null && budget.currency === 'USD' ? budget.value : budget.usd_value;
+
       if (!budget.type) {
         missingType++;
         hasGap = true;
@@ -90,7 +95,7 @@ export async function GET(request: NextRequest) {
         missingValueDate++;
         hasGap = true;
       }
-      if (!budget.usd_value && budget.usd_value !== 0) {
+      if (!effectiveUsdValue && effectiveUsdValue !== 0) {
         missingUsdValue++;
         hasGap = true;
       }
@@ -107,8 +112,8 @@ export async function GET(request: NextRequest) {
           value: budget.value,
           currency: budget.currency,
           value_date: budget.value_date,
-          usd_value: budget.usd_value,
-          value_usd: budget.usd_value
+          usd_value: effectiveUsdValue,
+          value_usd: effectiveUsdValue
         });
       }
     }

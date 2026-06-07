@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { buildSectorTree, getSectorInfo } from '@/lib/sector-hierarchy';
+import { buildSectorTree, getSectorInfo, getBroadCategoryForGroup, BROAD_CATEGORY_ORDER } from '@/lib/sector-hierarchy';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +65,11 @@ export async function GET(request: NextRequest) {
     // Build the tree with stats
     const tree = buildSectorTree();
 
+    // Broad-category (OECD top tier) aggregation. Activity IDs are unioned so
+    // an activity spanning two groups within the same broad category is counted
+    // once at the broad level.
+    const broadStats = new Map<string, { activityIds: Set<string>; totalValue: number }>();
+
     // Aggregate stats up through the tree
     const groupsWithStats = tree.map(group => {
       let groupActivityIds = new Set<string>();
@@ -99,8 +104,30 @@ export async function GET(request: NextRequest) {
         return { code: cat.code, name: cat.name, activityCount: catActivityIds.size, totalValue: catTotalValue, sectors };
       });
 
+      // Roll this group up into its broad category
+      const broad = getBroadCategoryForGroup(group.code);
+      if (!broadStats.has(broad.code)) {
+        broadStats.set(broad.code, { activityIds: new Set(), totalValue: 0 });
+      }
+      const bStat = broadStats.get(broad.code)!;
+      groupActivityIds.forEach(id => bStat.activityIds.add(id));
+      bStat.totalValue += groupTotalValue;
+
       return { code: group.code, name: group.name, activityCount: groupActivityIds.size, totalValue: groupTotalValue, categories };
     });
+
+    // Broad-category summary rows (canonical order, drop empties)
+    const broadCategories = BROAD_CATEGORY_ORDER
+      .map(b => {
+        const s = broadStats.get(b.code);
+        return {
+          code: b.code,
+          name: b.name,
+          activityCount: s?.activityIds.size || 0,
+          totalValue: s?.totalValue || 0,
+        };
+      })
+      .filter(b => b.activityCount > 0 || b.totalValue > 0);
 
     // Calculate totals
     const totalActivities = allActivityIds.size;
@@ -110,6 +137,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       groups: groupsWithStats,
+      broadCategories,
       totals: {
         totalActivities,
         totalFunding,

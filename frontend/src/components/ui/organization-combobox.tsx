@@ -93,6 +93,8 @@ interface OrganizationComboboxProps {
   open?: boolean
   /** Callback when open state changes */
   onOpenChange?: (open: boolean) => void
+  /** Popover alignment relative to the trigger (default "start") */
+  contentAlign?: 'start' | 'center' | 'end'
 }
 
 export function OrganizationCombobox({
@@ -108,7 +110,8 @@ export function OrganizationCombobox({
   fallbackRef,
   onLegacyTypeDetected,
   open: externalOpen,
-  onOpenChange: externalOnOpenChange
+  onOpenChange: externalOnOpenChange,
+  contentAlign = 'start'
 }: OrganizationComboboxProps) {
   const [internalOpen, setInternalOpen] = React.useState(false)
   
@@ -366,9 +369,10 @@ export function OrganizationCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        align="start"
+        align={contentAlign}
         sideOffset={4}
-        className="p-0 w-[600px]"
+        collisionPadding={8}
+        className="p-0 w-[600px] max-w-[var(--radix-popover-content-available-width)]"
       >
         <div className="flex flex-col">
           <div className="flex items-center border-b px-3">

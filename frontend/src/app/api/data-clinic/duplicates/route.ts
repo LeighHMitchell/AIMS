@@ -199,6 +199,7 @@ async function enrichDuplicatesWithDetails(
         description,
         created_at
       `)
+      .is('deleted_at', null)
       .in('id', Array.from(organizationIds));
 
     // Get activity counts for each organization
@@ -241,35 +242,37 @@ async function enrichDuplicatesWithDetails(
     }
   }
 
-  // Enrich duplicates with entity details
-  return duplicates.map((dup: any) => {
-    if (dup.entity_type === 'activity') {
-      const entity1 = activityMap.get(dup.entity_id_1);
-      const entity2 = activityMap.get(dup.entity_id_2);
-      
-      return {
-        ...dup,
-        entity1: entity1 || { id: dup.entity_id_1, title_narrative: 'Unknown' },
-        entity2: entity2 || { id: dup.entity_id_2, title_narrative: 'Unknown' },
-      };
-    } else if (dup.entity_type === 'organization') {
-      const entity1 = organizationMap.get(dup.entity_id_1);
-      const entity2 = organizationMap.get(dup.entity_id_2);
-      
-      // Calculate scores for primary recommendation
-      const score1 = calculateOrgScore(entity1);
-      const score2 = calculateOrgScore(entity2);
-      
-      return {
-        ...dup,
-        entity1: entity1 ? { ...entity1, score: score1 } : { id: dup.entity_id_1, name: 'Unknown', score: 0 },
-        entity2: entity2 ? { ...entity2, score: score2 } : { id: dup.entity_id_2, name: 'Unknown', score: 0 },
-        recommendedPrimaryId: score1 >= score2 ? dup.entity_id_1 : dup.entity_id_2,
-      };
-    }
-    
-    return dup;
-  });
+  // Enrich duplicates with entity details. Pairs where either entity is missing
+  // from the map have been recycled (deleted_at set, filtered out of the fetch
+  // above) or no longer exist — drop them so the recycle bin is never surfaced.
+  return duplicates
+    .map((dup: any) => {
+      if (dup.entity_type === 'activity') {
+        const entity1 = activityMap.get(dup.entity_id_1);
+        const entity2 = activityMap.get(dup.entity_id_2);
+        if (!entity1 || !entity2) return null;
+
+        return { ...dup, entity1, entity2 };
+      } else if (dup.entity_type === 'organization') {
+        const entity1 = organizationMap.get(dup.entity_id_1);
+        const entity2 = organizationMap.get(dup.entity_id_2);
+        if (!entity1 || !entity2) return null;
+
+        // Calculate scores for primary recommendation
+        const score1 = calculateOrgScore(entity1);
+        const score2 = calculateOrgScore(entity2);
+
+        return {
+          ...dup,
+          entity1: { ...entity1, score: score1 },
+          entity2: { ...entity2, score: score2 },
+          recommendedPrimaryId: score1 >= score2 ? dup.entity_id_1 : dup.entity_id_2,
+        };
+      }
+
+      return dup;
+    })
+    .filter(Boolean);
 }
 
 /**

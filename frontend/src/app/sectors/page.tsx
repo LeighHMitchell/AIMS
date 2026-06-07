@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation'
 import { useUserRole } from '@/hooks/useUserRole'
 import { formatCurrencyShort } from '@/lib/format'
 import { UsdAmount } from '@/components/ui/usd-amount'
+import { getBroadCategoryForGroup, BROAD_CATEGORY_ORDER } from '@/lib/sector-hierarchy'
 
 // Color palette for sector groups
 const SECTOR_COLORS: Record<string, string> = {
@@ -48,8 +49,16 @@ interface GroupNode extends SectorNode {
   categories: CategoryNode[]
 }
 
+interface BroadCategoryStat {
+  code: string
+  name: string
+  activityCount: number
+  totalValue: number
+}
+
 interface SummaryData {
   groups: GroupNode[]
+  broadCategories?: BroadCategoryStat[]
   totals: {
     totalActivities: number
     totalFunding: number
@@ -65,6 +74,7 @@ export default function SectorsListingPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [collapsedBroad, setCollapsedBroad] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'list' | 'card'>('card')
   const [banners, setBanners] = useState<Record<string, string>>({})
   const router = useRouter()
@@ -124,6 +134,15 @@ export default function SectorsListingPage() {
     })
   }
 
+  const toggleBroad = (code: string) => {
+    setCollapsedBroad(prev => {
+      const next = new Set(prev)
+      if (next.has(code)) next.delete(code)
+      else next.add(code)
+      return next
+    })
+  }
+
   // Filter groups based on search
   const filteredGroups = useMemo(() => {
     if (!data) return []
@@ -153,6 +172,36 @@ export default function SectorsListingPage() {
       })
       .filter(Boolean) as GroupNode[]
   }, [data, searchTerm])
+
+  // Group the visible groups under their OECD broad category for the card view.
+  // Header aggregates come from the API's distinct broad rollup (single source
+  // of truth); groups within a section and sections themselves sort by $ desc.
+  const broadSections = useMemo(() => {
+    const lookup = new Map<string, BroadCategoryStat>()
+    ;(data?.broadCategories || []).forEach(b => lookup.set(b.code, b))
+
+    const byBroad = new Map<string, GroupNode[]>()
+    filteredGroups.forEach(g => {
+      const broad = getBroadCategoryForGroup(g.code)
+      if (!byBroad.has(broad.code)) byBroad.set(broad.code, [])
+      byBroad.get(broad.code)!.push(g)
+    })
+
+    return Array.from(byBroad.entries())
+      .map(([code, groups]) => {
+        const meta = BROAD_CATEGORY_ORDER.find(b => b.code === code)
+        const stat = lookup.get(code)
+        const groupsSorted = [...groups].sort((a, b) => b.totalValue - a.totalValue)
+        return {
+          code,
+          name: meta?.name || 'Other / Non-Sector Allocable',
+          groups: groupsSorted,
+          activityCount: stat?.activityCount ?? 0,
+          totalValue: stat?.totalValue ?? groupsSorted.reduce((s, g) => s + g.totalValue, 0),
+        }
+      })
+      .sort((a, b) => b.totalValue - a.totalValue)
+  }, [filteredGroups, data])
 
   const allExpanded = expandedGroups.size >= filteredGroups.length && filteredGroups.length > 0
 
@@ -215,6 +264,195 @@ export default function SectorsListingPage() {
     )
   }
 
+  // Full-width panel listing a category's funded 5-digit purpose codes ($ desc).
+  const renderSectorPanel = (sectors: SectorNode[] = [], keyPrefix: string) => {
+    const funded = sectors
+      .filter(s => s.totalValue > 0 || s.activityCount > 0)
+      .sort((a, b) => b.totalValue - a.totalValue)
+    if (funded.length === 0) return null
+    return (
+      <div className="rounded-2xl border border-border bg-surface-muted/40 overflow-hidden">
+        <div className="px-4 py-2 bg-surface-muted border-b border-border text-section-label font-medium text-muted-foreground uppercase">
+          Purpose codes
+        </div>
+        <div className="divide-y divide-border/50">
+          {funded.map(s => (
+            <Link
+              key={`${keyPrefix}-${s.code}`}
+              href={`/sectors/${s.code}`}
+              className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors"
+            >
+              <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{s.code}</code>
+              <span className="flex-1 min-w-0 truncate text-body text-foreground">{s.name}</span>
+              <span className="w-28 text-right text-helper text-muted-foreground flex-shrink-0">
+                {s.activityCount} {s.activityCount === 1 ? 'activity' : 'activities'}
+              </span>
+              <span className="w-24 text-right flex-shrink-0"><UsdAmount value={s.totalValue} /></span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // Render a single group: full-width banner + either its category-card grid
+  // (each card inline-expandable to its 5-digit codes) or, for single-child
+  // duplicate groups like 130, an expandable banner straight to the 5-digit codes.
+  const renderGroupCard = (group: GroupNode) => {
+    const cats = group.categories || []
+    const isDuplicate = cats.length === 1 && cats[0].code === group.code
+    const dupExpanded = isDuplicate && expandedCategories.has(group.code)
+    const dupFunded = isDuplicate
+      ? cats[0].sectors.filter(s => s.totalValue > 0 || s.activityCount > 0).length
+      : 0
+
+    return (
+      <div key={group.code} className="space-y-4">
+        {/* Group card — the whole sector (e.g. 110 Education), full width */}
+        <CardShell
+          href={`/sectors/${group.code}`}
+          ariaLabel={`${group.code}: ${group.name}`}
+          bannerColor={getSectorColor(group.code)}
+          bannerActions={canEdit ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/sectors/${group.code}/edit`) }}
+              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Edit sector"
+              aria-label="Edit sector"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          ) : undefined}
+          bannerImage={banners[group.code]}
+          bannerContent={!banners[group.code] ? (
+            <div className="h-full w-full flex items-center justify-center pointer-events-none">
+              <span className="text-6xl font-bold text-white/15 font-mono">{group.code}</span>
+            </div>
+          ) : undefined}
+          bannerOverlay={
+            <h2 className="text-xl font-bold text-white leading-tight">
+              {group.name}
+            </h2>
+          }
+        >
+          <div className="relative flex-1 p-5 flex items-center justify-between bg-card">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-muted-foreground" />
+              <span className="text-body font-medium">
+                {group.activityCount} {group.activityCount === 1 ? 'activity' : 'activities'}
+              </span>
+            </div>
+            <div className="flex items-center gap-4 text-helper text-muted-foreground">
+              {group.totalValue > 0 ? (
+                <span className="font-semibold text-foreground">{formatCurrencyShort(group.totalValue)}</span>
+              ) : (
+                <span>No financial data</span>
+              )}
+              {isDuplicate ? (
+                dupFunded > 0 ? (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleCategory(group.code) }}
+                    className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    aria-label={dupExpanded ? 'Hide purpose codes' : 'Show purpose codes'}
+                  >
+                    {dupExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    {dupFunded} code{dupFunded === 1 ? '' : 's'}
+                  </button>
+                ) : (
+                  <span>No purpose codes</span>
+                )
+              ) : (
+                <span>{cats.length} sub-sector{cats.length === 1 ? '' : 's'}</span>
+              )}
+            </div>
+          </div>
+        </CardShell>
+
+        {/* Single-child duplicate (e.g. 130): expand the banner straight to 5-digit */}
+        {isDuplicate && dupExpanded && renderSectorPanel(cats[0].sectors, group.code)}
+
+        {/* Sub-sector cards — narrower + indented under the group card to show nesting */}
+        {!isDuplicate && (
+          <div className="ml-4 pl-5 border-l-2 border-border">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+              {[...cats].sort((a, b) => b.totalValue - a.totalValue).map(cat => {
+                const expanded = expandedCategories.has(cat.code)
+                const funded = (cat.sectors || []).filter(s => s.totalValue > 0 || s.activityCount > 0).length
+                return (
+                  <React.Fragment key={cat.code}>
+                    <CardShell
+                      href={`/sectors/${cat.code}`}
+                      ariaLabel={`${cat.code}: ${cat.name}`}
+                      bannerColor={getSectorColor(group.code)}
+                      bannerActions={canEdit ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/sectors/${cat.code}/edit`) }}
+                          className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Edit sector"
+                          aria-label="Edit sector"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      ) : undefined}
+                      bannerImage={banners[cat.code]}
+                      bannerContent={!banners[cat.code] ? (
+                        <div className="h-full w-full flex items-center justify-center pointer-events-none">
+                          <span className="text-5xl font-bold text-white/15 font-mono">{cat.code}</span>
+                        </div>
+                      ) : undefined}
+                      bannerOverlay={
+                        <h2 className="text-body font-bold text-white leading-tight">
+                          {cat.name}
+                        </h2>
+                      }
+                    >
+                      <div className="relative flex-1 p-5 flex flex-col bg-card">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Activity className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-body font-medium">
+                              {cat.activityCount} {cat.activityCount === 1 ? 'activity' : 'activities'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-helper text-muted-foreground mt-auto pt-3 border-t border-border">
+                          {cat.totalValue > 0 ? (
+                            <span className="font-semibold text-foreground">{formatCurrencyShort(cat.totalValue)}</span>
+                          ) : (
+                            <span>No financial data</span>
+                          )}
+                          {funded > 0 && (
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleCategory(cat.code) }}
+                              className="flex items-center gap-1 hover:text-foreground transition-colors"
+                              aria-label={expanded ? 'Hide purpose codes' : 'Show purpose codes'}
+                            >
+                              {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                              {funded} code{funded === 1 ? '' : 's'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </CardShell>
+                    {expanded && funded > 0 && (
+                      <div className="col-span-full mb-2">
+                        {renderSectorPanel(cat.sectors, cat.code)}
+                      </div>
+                    )}
+                  </React.Fragment>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <MainLayout>
       <div className="w-full">
@@ -265,115 +503,43 @@ export default function SectorsListingPage() {
 
           {/* Card View */}
           {viewMode === 'card' && (
-            <div className="space-y-8">
-              {filteredGroups.map(group => (
-                <div key={group.code} className="space-y-4">
-                  {/* Group card — the whole sector (e.g. 110 Education), full width */}
-                  <CardShell
-                    href={`/sectors/${group.code}`}
-                    ariaLabel={`${group.code}: ${group.name}`}
-                    bannerColor={getSectorColor(group.code)}
-                    bannerActions={canEdit ? (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/sectors/${group.code}/edit`) }}
-                        className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Edit sector"
-                        aria-label="Edit sector"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    ) : undefined}
-                    bannerImage={banners[group.code]}
-                    bannerContent={!banners[group.code] ? (
-                      <div className="h-full w-full flex items-center justify-center pointer-events-none">
-                        <span className="text-6xl font-bold text-white/15 font-mono">{group.code}</span>
-                      </div>
-                    ) : undefined}
-                    bannerOverlay={
-                      <h2 className="text-xl font-bold text-white leading-tight">
-                        {group.name}
-                      </h2>
-                    }
-                  >
-                    <div className="relative flex-1 p-5 flex items-center justify-between bg-card">
-                      <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-body font-medium">
-                          {group.activityCount} {group.activityCount === 1 ? 'activity' : 'activities'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-helper text-muted-foreground">
-                        {group.totalValue > 0 ? (
-                          <span className="font-semibold text-foreground">{formatCurrencyShort(group.totalValue)}</span>
-                        ) : (
-                          <span>No financial data</span>
+            <div className="space-y-10">
+              {broadSections.map(section => {
+                const collapsed = collapsedBroad.has(section.code)
+                return (
+                  <section key={section.code}>
+                    {/* Broad-category section header (OECD top tier) */}
+                    <button
+                      onClick={() => toggleBroad(section.code)}
+                      className="w-full flex items-center gap-3 pb-3 mb-5 border-b-2 text-left"
+                      style={{ borderColor: getSectorColor(section.code) }}
+                      aria-expanded={!collapsed}
+                    >
+                      {collapsed ? (
+                        <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      )}
+                      <span className="text-xs font-mono text-muted-foreground bg-muted rounded px-2 py-1 flex-shrink-0">{section.code}</span>
+                      <h2 className="text-2xl font-bold text-foreground flex-1 min-w-0 truncate">{section.name}</h2>
+                      <div className="flex items-center gap-4 text-helper text-muted-foreground flex-shrink-0">
+                        {section.activityCount > 0 && (
+                          <span>{section.activityCount} {section.activityCount === 1 ? 'activity' : 'activities'}</span>
                         )}
-                        <span>{group.categories.length} sub-sector{group.categories.length === 1 ? '' : 's'}</span>
+                        {section.totalValue > 0 && (
+                          <span className="font-semibold text-foreground text-base">{formatCurrencyShort(section.totalValue)}</span>
+                        )}
                       </div>
-                    </div>
-                  </CardShell>
+                    </button>
 
-                  {/* Sub-sector cards — narrower + indented under the group card to show nesting */}
-                  <div className="ml-4 pl-5 border-l-2 border-border">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                      {group.categories.map(cat => (
-                      <CardShell
-                        key={cat.code}
-                        href={`/sectors/${cat.code}`}
-                        ariaLabel={`${cat.code}: ${cat.name}`}
-                        bannerColor={getSectorColor(group.code)}
-                        bannerActions={canEdit ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/sectors/${cat.code}/edit`) }}
-                            className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Edit sector"
-                            aria-label="Edit sector"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        ) : undefined}
-                        bannerImage={banners[cat.code]}
-                        bannerContent={!banners[cat.code] ? (
-                          <div className="h-full w-full flex items-center justify-center pointer-events-none">
-                            <span className="text-5xl font-bold text-white/15 font-mono">{cat.code}</span>
-                          </div>
-                        ) : undefined}
-                        bannerOverlay={
-                          <h2 className="text-body font-bold text-white leading-tight">
-                            {cat.name}
-                          </h2>
-                        }
-                      >
-                        <div className="relative flex-1 p-5 flex flex-col bg-card">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <Activity className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-body font-medium">
-                                {cat.activityCount} {cat.activityCount === 1 ? 'activity' : 'activities'}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between text-helper text-muted-foreground mt-auto pt-3 border-t border-border">
-                            {cat.totalValue > 0 ? (
-                              <span className="font-semibold text-foreground">{formatCurrencyShort(cat.totalValue)}</span>
-                            ) : (
-                              <span>No financial data</span>
-                            )}
-                            {cat.sectors && cat.sectors.length > 0 && (
-                              <span>{cat.sectors.length} sub-sectors</span>
-                            )}
-                          </div>
-                        </div>
-                      </CardShell>
-                      ))}
+                    {!collapsed && (
+                      <div className="space-y-8">
+                        {section.groups.map(group => renderGroupCard(group))}
                       </div>
-                    </div>
-                  </div>
-              ))}
+                    )}
+                  </section>
+                )
+              })}
               {filteredGroups.length === 0 && (
                 <div className="p-8 text-center">
                   <p className="text-muted-foreground">

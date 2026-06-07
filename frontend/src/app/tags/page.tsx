@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { OrganizationCardActionMenu } from '@/components/organizations/OrganizationCardActionMenu'
 import { apiFetch } from '@/lib/api-fetch'
 import { getIconForTag, getTagColor, getTagVocabularyLabel, isCustomTag } from '@/lib/tag-utils'
 import { useUserRole } from '@/hooks/useUserRole'
@@ -296,28 +297,12 @@ export default function TagsListingPage() {
                     ariaLabel={tag.name}
                     bannerColor={color}
                     bannerActions={canEdit ? (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/tags/${tag.id}/edit`) }}
-                          className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Edit tag"
-                          aria-label="Edit tag"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteTarget(tag) }}
-                          className="h-8 w-8 text-white/80 hover:text-white hover:bg-red-600/80 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Delete tag"
-                          aria-label="Delete tag"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <OrganizationCardActionMenu
+                        organizationId={tag.id}
+                        onView={() => router.push(`/tags/${tag.id}`)}
+                        onEdit={() => router.push(`/tags/${tag.id}/edit`)}
+                        onDelete={() => setDeleteTarget(tag)}
+                      />
                     ) : undefined}
                     bannerContent={
                       b?.banner ? (

@@ -314,7 +314,7 @@ export function DataClinicBudgets() {
                 onBlur={() => handleInlineEditBlur(budget.id, field)}
                 onKeyDown={(e) => handleInlineEditKeyDown(e, budget.id, field)}
                 className="w-48"
-                type={field === 'value' || field === 'value_usd' ? 'number' : field.includes('date') ? 'date' : 'text'}
+                type={field === 'value' || field === 'value_usd' ? 'number' : (field.includes('date') || field === 'period_start' || field === 'period_end') ? 'date' : 'text'}
                 placeholder="Enter value"
                 autoFocus
               />
@@ -342,7 +342,7 @@ export function DataClinicBudgets() {
               BUDGET_TYPE_LABELS[String(value) as keyof typeof BUDGET_TYPE_LABELS] :
               field === 'status' && BUDGET_STATUS_LABELS[String(value) as keyof typeof BUDGET_STATUS_LABELS] ?
                 BUDGET_STATUS_LABELS[String(value) as keyof typeof BUDGET_STATUS_LABELS] :
-                field.includes('date') && value ? formatDate(value) :
+                (field.includes('date') || field === 'period_start' || field === 'period_end') && value ? formatDate(value) :
                   field === 'value' || field === 'value_usd' ? renderMoney(Number(value), budget.currency) :
                     value
             }
@@ -523,14 +523,14 @@ export function DataClinicBudgets() {
                           />
                         </td>
                       )}
-                      <td className="p-4">
+                      <td className="p-4 align-top">
                         <div className="max-w-xs">
-                          <p className="font-medium truncate">
+                          <p className="font-medium break-words">
                             {budget.activityTitle || 'Untitled Activity'}
                           </p>
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 align-top">
                         {renderFieldValue(budget, 'period_start')}
                       </td>
                       <td className="p-4">

@@ -35,6 +35,7 @@ import { DefaultFinanceTypeSelect } from "@/components/forms/DefaultFinanceTypeS
 import { FlowTypeSelect } from "@/components/forms/FlowTypeSelect";
 import { apiFetch } from '@/lib/api-fetch';
 import { renderMoney, formatClinicDate } from './formatters';
+import { OrganizationCombobox, Organization as ComboboxOrg } from '@/components/ui/organization-combobox';
 
 // Transaction Type mappings
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
@@ -113,6 +114,7 @@ type Transaction = {
   transactionDate?: string;
   value?: number;
   currency?: string;
+  valueUsd?: number;
   providerOrgId?: string;
   providerOrgName?: string;
   receiverOrgId?: string;
@@ -136,8 +138,134 @@ export function DataClinicTransactions() {
   const [bulkEditField, setBulkEditField] = useState<string>('');
   const [bulkEditValue, setBulkEditValue] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<'activity' | 'type' | 'date' | 'value' | 'financeType' | 'aidType' | 'flowType' | 'organisation'>('date');
+  const [sortField, setSortField] = useState<'activity' | 'type' | 'date' | 'value' | 'usdValue' | 'financeType' | 'aidType' | 'flowType' | 'provider' | 'receiver'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [organizations, setOrganizations] = useState<ComboboxOrg[]>([]);
+  const [linking, setLinking] = useState<{ id: string; side: 'provider' | 'receiver' } | null>(null);
+
+  // Org list for the "link organisation" dropdown on unlinked transactions
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch('/api/organizations?limit=1000');
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = (data.organizations || data || []).map((o: any) => ({
+          id: o.id,
+          name: o.name || o.reporting_org_name || 'Unknown',
+          acronym: o.acronym,
+          iati_org_id: o.iati_org_id,
+          country: o.country_represented,
+          organisation_type: o.type,
+        }));
+        setOrganizations(list);
+      } catch (e) {
+        console.error('[DataClinic] org list fetch failed', e);
+      }
+    })();
+  }, []);
+
+  // Link an unlinked transaction organisation: set the org id + canonical name.
+  const handleLinkOrg = async (transaction: Transaction, side: 'provider' | 'receiver', orgId: string) => {
+    const org = organizations.find((o) => o.id === orgId);
+    if (!org) return;
+    try {
+      await apiFetch(`/api/data-clinic/transactions/${transaction.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: `${side}_org_id`, value: orgId, userId: user?.id }),
+      });
+      await apiFetch(`/api/data-clinic/transactions/${transaction.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: `${side}_org_name`, value: org.name, userId: user?.id }),
+      });
+      setTransactions((prev) => prev.map((t) =>
+        t.id === transaction.id
+          ? { ...t, [`${side}OrgId`]: orgId, [`${side}OrgName`]: org.name }
+          : t
+      ));
+      setLinking(null);
+      toast.success('Organisation linked');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to link organisation');
+    }
+  };
+
+  // Provider/Receiver cell showing the org name + linked/unlinked status, with
+  // a click-to-link organisation picker. side = 'provider' | 'receiver'.
+  const renderOrgCell = (transaction: Transaction, side: 'provider' | 'receiver') => {
+    const orgId = side === 'provider' ? transaction.providerOrgId : transaction.receiverOrgId;
+    const orgName = side === 'provider' ? transaction.providerOrgName : transaction.receiverOrgName;
+    const isLinkingThis = linking?.id === transaction.id && linking?.side === side;
+
+    if (isLinkingThis) {
+      return (
+        <div className="flex items-center gap-2 min-w-[260px]">
+          <OrganizationCombobox
+            organizations={organizations}
+            value={orgId || undefined}
+            onValueChange={(id) => id && handleLinkOrg(transaction, side, id)}
+            placeholder={orgName ? `Link “${orgName}”…` : 'Select organisation…'}
+            contentAlign="end"
+          />
+          <Button size="sm" variant="ghost" onClick={() => setLinking(null)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+
+    const linkClick = isSuperUser ? () => setLinking({ id: transaction.id, side }) : undefined;
+
+    // Linked — has an organisation record
+    if (orgId) {
+      return (
+        <div className="flex items-start gap-2 flex-wrap">
+          <span className="text-body break-words">{orgName || '(linked org)'}</span>
+          <Badge
+            variant="outline"
+            className={`text-helper border border-green-600 text-green-700 bg-transparent whitespace-nowrap ${isSuperUser ? 'cursor-pointer hover:bg-green-50' : ''}`}
+            title={isSuperUser ? 'Linked — click to change' : 'Linked to an organisation record'}
+            onClick={linkClick}
+          >
+            <Check className="h-3 w-3 mr-1" />
+            Linked
+          </Badge>
+        </div>
+      );
+    }
+    // Named but not linked
+    if (orgName) {
+      return (
+        <div className="flex items-start gap-2 flex-wrap">
+          <span className="text-body break-words">{orgName}</span>
+          <Badge
+            variant="outline"
+            className={`text-helper border border-amber-500 text-amber-600 bg-transparent whitespace-nowrap ${isSuperUser ? 'cursor-pointer hover:bg-amber-50' : ''}`}
+            title="Named but not linked to an organisation record — click to link"
+            onClick={linkClick}
+          >
+            <Unlink className="h-3 w-3 mr-1" />
+            Unlinked
+          </Badge>
+        </div>
+      );
+    }
+    // Neither — missing
+    return (
+      <Badge
+        variant="outline"
+        className={`text-helper border border-red-500 text-red-600 bg-transparent ${isSuperUser ? 'cursor-pointer hover:bg-red-50' : ''}`}
+        title={isSuperUser ? 'No organisation — click to link' : undefined}
+        onClick={linkClick}
+      >
+        <AlertCircle className="h-3 w-3 mr-1" />
+        Missing
+      </Badge>
+    );
+  };
 
   const handleSort = (field: typeof sortField) => {
     if (sortField === field) {
@@ -149,8 +277,6 @@ export function DataClinicTransactions() {
   };
 
   const sortedTransactions = useMemo(() => {
-    const orgName = (t: Transaction) =>
-      t.organizationName || t.providerOrgName || t.receiverOrgName || '';
     return [...filteredTransactions].sort((a, b) => {
       const dir = sortDirection === 'asc' ? 1 : -1;
       switch (sortField) {
@@ -162,14 +288,18 @@ export function DataClinicTransactions() {
           return ((a.transactionDate || '') < (b.transactionDate || '') ? -1 : 1) * dir;
         case 'value':
           return ((a.value || 0) - (b.value || 0)) * dir;
+        case 'usdValue':
+          return ((a.valueUsd || 0) - (b.valueUsd || 0)) * dir;
         case 'financeType':
           return (a.financeType || '').localeCompare(b.financeType || '') * dir;
         case 'aidType':
           return (a.aidType || '').localeCompare(b.aidType || '') * dir;
         case 'flowType':
           return (a.flowType || '').localeCompare(b.flowType || '') * dir;
-        case 'organisation':
-          return orgName(a).localeCompare(orgName(b)) * dir;
+        case 'provider':
+          return (a.providerOrgName || '').localeCompare(b.providerOrgName || '') * dir;
+        case 'receiver':
+          return (a.receiverOrgName || '').localeCompare(b.receiverOrgName || '') * dir;
         default:
           return 0;
       }
@@ -556,8 +686,11 @@ export function DataClinicTransactions() {
                   <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[120px] ${sortableHeaderClasses}`} onClick={() => handleSort('date')}>
                     <div className="flex items-center gap-1 whitespace-nowrap">Date {getSortIcon('date', sortField, sortDirection)}</div>
                   </th>
-                  <th className={`px-4 py-3 text-right align-top text-body font-medium min-w-[130px] ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
-                    <div className="flex items-center justify-end gap-1 whitespace-nowrap">Value {getSortIcon('value', sortField, sortDirection)}</div>
+                  <th className={`px-4 py-3 text-right align-top text-body font-medium min-w-[140px] ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
+                    <div className="flex items-center justify-end gap-1 whitespace-nowrap">Original Value {getSortIcon('value', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`px-4 py-3 text-right align-top text-body font-medium min-w-[140px] ${sortableHeaderClasses}`} onClick={() => handleSort('usdValue')}>
+                    <div className="flex items-center justify-end gap-1 whitespace-nowrap">USD Value {getSortIcon('usdValue', sortField, sortDirection)}</div>
                   </th>
                   <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[170px] ${sortableHeaderClasses}`} onClick={() => handleSort('financeType')}>
                     <div className="flex items-center gap-1 whitespace-nowrap">Finance Type {getSortIcon('financeType', sortField, sortDirection)}</div>
@@ -568,15 +701,18 @@ export function DataClinicTransactions() {
                   <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[120px] ${sortableHeaderClasses}`} onClick={() => handleSort('flowType')}>
                     <div className="flex items-center gap-1 whitespace-nowrap">Flow Type {getSortIcon('flowType', sortField, sortDirection)}</div>
                   </th>
-                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('organisation')}>
-                    <div className="flex items-center gap-1 whitespace-nowrap">Organisation {getSortIcon('organisation', sortField, sortDirection)}</div>
+                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('provider')}>
+                    <div className="flex items-center gap-1 whitespace-nowrap">Provider {getSortIcon('provider', sortField, sortDirection)}</div>
+                  </th>
+                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('receiver')}>
+                    <div className="flex items-center gap-1 whitespace-nowrap">Receiver {getSortIcon('receiver', sortField, sortDirection)}</div>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {sortedTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={isSuperUser ? 9 : 8} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={isSuperUser ? 11 : 10} className="p-8 text-center text-muted-foreground">
                       No transactions found with data gaps
                     </td>
                   </tr>
@@ -645,6 +781,18 @@ export function DataClinicTransactions() {
                           </Badge>
                         )}
                       </td>
+                      <td className="px-4 py-3 align-top text-right">
+                        {transaction.valueUsd != null ? (
+                          <span className="text-body font-medium">
+                            {renderMoney(transaction.valueUsd, 'USD')}
+                          </span>
+                        ) : (
+                          <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Missing
+                          </Badge>
+                        )}
+                      </td>
                       <td className="px-4 py-3 align-top">
                         {renderFieldValue(transaction, 'financeType')}
                       </td>
@@ -655,39 +803,10 @@ export function DataClinicTransactions() {
                         {renderFieldValue(transaction, 'flowType')}
                       </td>
                       <td className="px-4 py-3 align-top">
-                        {(() => {
-                          const orgName = transaction.organizationName ||
-                            transaction.providerOrgName ||
-                            transaction.receiverOrgName;
-                          const isLinked = !!(transaction.providerOrgId ||
-                            transaction.receiverOrgId ||
-                            transaction.organizationId);
-                          if (orgName && isLinked) {
-                            return <span className="text-body break-words">{orgName}</span>;
-                          }
-                          if (orgName) {
-                            // Named but not linked to an organisation record
-                            return (
-                              <div className="flex items-start gap-2 flex-wrap">
-                                <span className="text-body break-words">{orgName}</span>
-                                <Badge
-                                  variant="outline"
-                                  className="text-helper border border-amber-500 text-amber-600 bg-transparent whitespace-nowrap"
-                                  title="This organisation is named but not linked to an organisation record"
-                                >
-                                  <Unlink className="h-3 w-3 mr-1" />
-                                  Unlinked
-                                </Badge>
-                              </div>
-                            );
-                          }
-                          return (
-                            <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
-                              <AlertCircle className="h-3 w-3 mr-1" />
-                              Missing
-                            </Badge>
-                          );
-                        })()}
+                        {renderOrgCell(transaction, 'provider')}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        {renderOrgCell(transaction, 'receiver')}
                       </td>
                     </tr>
                   ))

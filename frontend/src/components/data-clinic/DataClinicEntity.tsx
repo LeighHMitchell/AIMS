@@ -6,61 +6,38 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, RefreshCw, AlertCircle } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Search, RefreshCw, AlertCircle, Pencil, X, Unlink, Check } from "lucide-react"
 import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table"
 import { apiFetch } from "@/lib/api-fetch"
 import { renderMoney, formatClinicDate } from "./formatters"
+import { OrganizationCombobox, Organization as ComboboxOrg } from "@/components/ui/organization-combobox"
 import { toast } from "sonner"
 
-type ColType = 'text' | 'code' | 'date' | 'money' | 'percent'
+type ColType = 'text' | 'code' | 'date' | 'money' | 'percent' | 'org'
 interface Column {
   key: string
   label: string
   type?: ColType
   gap?: boolean
   currencyKey?: string
+  editable?: boolean
+  editor?: 'select' | 'number' | 'text'
+  options?: { value: string; label: string }[]
+  orgIdField?: string
+  orgNameField?: string
 }
 type Row = Record<string, any>
 
-function isMissing(col: Column, value: any): boolean {
+function isMissing(col: Column, row: Row): boolean {
+  const value = row[col.key]
+  if (col.type === 'org') {
+    return !row[`${col.key}_id`] && (value == null || value === '')
+  }
   if (col.type === 'money' || col.type === 'percent') {
     return value == null || value === '' || Number(value) === 0 || Number.isNaN(Number(value))
   }
   return value == null || value === ''
-}
-
-const missingBadge = (
-  <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
-    <AlertCircle className="h-3 w-3 mr-1" />
-    Missing
-  </Badge>
-)
-
-function renderCell(col: Column, row: Row) {
-  const value = row[col.key]
-  if (isMissing(col, value)) {
-    return col.gap ? missingBadge : <span className="text-muted-foreground">–</span>
-  }
-  switch (col.type) {
-    case 'code':
-      return (
-        <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap">
-          {String(value)}
-        </span>
-      )
-    case 'date':
-      return <span className="text-body whitespace-nowrap">{formatClinicDate(String(value))}</span>
-    case 'money':
-      return (
-        <span className="text-body font-medium">
-          {renderMoney(Number(value), col.currencyKey ? row[col.currencyKey] : undefined)}
-        </span>
-      )
-    case 'percent':
-      return <span className="text-body whitespace-nowrap">{Number(value)}%</span>
-    default:
-      return <span className="text-body break-words">{String(value)}</span>
-  }
 }
 
 export function DataClinicEntity({ entity }: { entity: string }) {
@@ -71,6 +48,57 @@ export function DataClinicEntity({ entity }: { entity: string }) {
   const [searchQuery, setSearchQuery] = useState("")
   const [sortField, setSortField] = useState<string>("_activity")
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [editing, setEditing] = useState<{ id: string; field: string } | null>(null)
+  const [editValue, setEditValue] = useState<string>("")
+  const [organizations, setOrganizations] = useState<ComboboxOrg[]>([])
+  const [linking, setLinking] = useState<{ id: string; field: string } | null>(null)
+
+  const hasOrgColumn = useMemo(() => columns.some((c) => c.type === 'org'), [columns])
+
+  // Lazy-load the org list only when this entity has an org column.
+  useEffect(() => {
+    if (!hasOrgColumn || organizations.length) return
+    (async () => {
+      try {
+        const res = await apiFetch('/api/organizations?limit=1000')
+        if (!res.ok) return
+        const data = await res.json()
+        const list = (data.organizations || data || []).map((o: any) => ({
+          id: o.id,
+          name: o.name || o.reporting_org_name || 'Unknown',
+          acronym: o.acronym,
+          iati_org_id: o.iati_org_id,
+          country: o.country_represented,
+          organisation_type: o.type,
+        }))
+        setOrganizations(list)
+      } catch (e) {
+        console.error('[DataClinicEntity] org list fetch failed', e)
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasOrgColumn])
+
+  const handleLinkOrg = async (row: Row, col: Column, orgId: string) => {
+    const org = organizations.find((o) => o.id === orgId)
+    if (!org) return
+    try {
+      const res = await apiFetch(`/api/data-clinic/entity/${entity}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: row._id, field: col.key, orgId, orgName: org.name }),
+      })
+      if (!res.ok) throw new Error('Link failed')
+      setRows((prev) => prev.map((r) =>
+        r._id === row._id ? { ...r, [col.key]: org.name, [`${col.key}_id`]: orgId } : r
+      ))
+      setLinking(null)
+      toast.success('Organisation linked')
+    } catch (e) {
+      console.error(e)
+      toast.error('Failed to link organisation')
+    }
+  }
 
   const fetchData = async () => {
     try {
@@ -104,6 +132,28 @@ export function DataClinicEntity({ entity }: { entity: string }) {
     }
   }
 
+  const startEdit = (row: Row, col: Column) => {
+    setEditing({ id: row._id, field: col.key })
+    setEditValue(row[col.key] != null ? String(row[col.key]) : "")
+  }
+
+  const saveEdit = async (row: Row, col: Column, value: string) => {
+    try {
+      const res = await apiFetch(`/api/data-clinic/entity/${entity}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: row._id, field: col.key, value }),
+      })
+      if (!res.ok) throw new Error('Update failed')
+      setRows((prev) => prev.map((r) => (r._id === row._id ? { ...r, [col.key]: value } : r)))
+      setEditing(null)
+      toast.success('Updated')
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to update')
+    }
+  }
+
   const filteredSorted = useMemo(() => {
     let list = rows
     if (searchQuery) {
@@ -121,6 +171,143 @@ export function DataClinicEntity({ entity }: { entity: string }) {
     })
   }, [rows, searchQuery, sortField, sortDirection])
 
+  const renderEditor = (row: Row, col: Column) => {
+    if (col.editor === 'select') {
+      return (
+        <div className="flex items-center gap-2">
+          <Select value={editValue} onValueChange={(v) => saveEdit(row, col, v)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              {(col.options || []).map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded mr-2">{o.value}</span>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="ghost" onClick={() => setEditing(null)}><X className="h-4 w-4" /></Button>
+        </div>
+      )
+    }
+    return (
+      <div className="flex items-center gap-2">
+        <Input
+          type={col.editor === 'number' ? 'number' : 'text'}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(row, col, editValue) }}
+          className="w-32"
+          autoFocus
+        />
+        <Button size="sm" variant="ghost" onClick={() => saveEdit(row, col, editValue)}>Save</Button>
+        <Button size="sm" variant="ghost" onClick={() => setEditing(null)}><X className="h-4 w-4" /></Button>
+      </div>
+    )
+  }
+
+  const renderOrgCell = (col: Column, row: Row) => {
+    const orgId = row[`${col.key}_id`]
+    const orgName = row[col.key]
+    if (linking && linking.id === row._id && linking.field === col.key) {
+      return (
+        <div className="flex items-center gap-2 min-w-[260px]">
+          <OrganizationCombobox
+            organizations={organizations}
+            value={orgId || undefined}
+            onValueChange={(id) => id && handleLinkOrg(row, col, id)}
+            placeholder={orgName ? `Link “${orgName}”…` : 'Select organisation…'}
+            contentAlign="end"
+          />
+          <Button size="sm" variant="ghost" onClick={() => setLinking(null)}><X className="h-4 w-4" /></Button>
+        </div>
+      )
+    }
+    const linkClick = () => setLinking({ id: row._id, field: col.key })
+    if (orgId) {
+      return (
+        <div className="flex items-start gap-2 flex-wrap">
+          <span className="text-body break-words">{orgName || '(linked org)'}</span>
+          <Badge variant="outline" className="text-helper border border-green-600 text-green-700 bg-transparent whitespace-nowrap cursor-pointer hover:bg-green-50" title="Linked — click to change" onClick={linkClick}>
+            <Check className="h-3 w-3 mr-1" />Linked
+          </Badge>
+        </div>
+      )
+    }
+    if (orgName) {
+      return (
+        <div className="flex items-start gap-2 flex-wrap">
+          <span className="text-body break-words">{orgName}</span>
+          <Badge variant="outline" className="text-helper border border-amber-500 text-amber-600 bg-transparent whitespace-nowrap cursor-pointer hover:bg-amber-50" title="Named but not linked — click to link" onClick={linkClick}>
+            <Unlink className="h-3 w-3 mr-1" />Unlinked
+          </Badge>
+        </div>
+      )
+    }
+    return (
+      <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent cursor-pointer hover:bg-red-50" title="No organisation — click to link" onClick={linkClick}>
+        <AlertCircle className="h-3 w-3 mr-1" />Missing
+      </Badge>
+    )
+  }
+
+  const renderCell = (col: Column, row: Row) => {
+    if (col.type === 'org') return renderOrgCell(col, row)
+    if (editing && editing.id === row._id && editing.field === col.key) {
+      return renderEditor(row, col)
+    }
+    const value = row[col.key]
+    if (isMissing(col, row)) {
+      if (!col.gap) return <span className="text-muted-foreground">–</span>
+      return (
+        <Badge
+          variant="outline"
+          className={`text-helper border border-red-500 text-red-600 bg-transparent ${col.editable ? 'cursor-pointer hover:bg-red-50' : ''}`}
+          onClick={col.editable ? () => startEdit(row, col) : undefined}
+        >
+          <AlertCircle className="h-3 w-3 mr-1" />
+          Missing
+        </Badge>
+      )
+    }
+    const editPencil = col.editable ? (
+      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => startEdit(row, col)}>
+        <Pencil className="h-3 w-3 text-muted-foreground" />
+      </Button>
+    ) : null
+
+    const name = row[`${col.key}_name`]
+    switch (col.type) {
+      case 'code':
+        return (
+          <span className="inline-flex items-center gap-2">
+            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap">{String(value)}</span>
+            {name ? <span className="text-body">{name}</span> : null}
+            {editPencil}
+          </span>
+        )
+      case 'date':
+        return <span className="text-body whitespace-nowrap">{formatClinicDate(String(value))}{editPencil}</span>
+      case 'money':
+        return (
+          <span className="text-body font-medium">
+            {renderMoney(Number(value), col.currencyKey ? row[col.currencyKey] : undefined)}
+          </span>
+        )
+      case 'percent':
+        return <span className="text-body whitespace-nowrap">{Number(value)}%</span>
+      default:
+        return (
+          <span className="inline-flex items-center gap-2">
+            <span className="text-body break-words">{String(value)}</span>
+            {editPencil}
+          </span>
+        )
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -131,8 +318,6 @@ export function DataClinicEntity({ entity }: { entity: string }) {
   }
 
   const colCount = columns.length + 1
-  // ~160px per dynamic column + 240px for Activity, used as a min-width so the
-  // table scrolls horizontally instead of crushing columns.
   const minWidth = 240 + columns.length * 160
 
   return (

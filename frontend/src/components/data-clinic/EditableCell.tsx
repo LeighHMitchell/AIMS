@@ -154,7 +154,7 @@ export function EditableCell({
 
   // Auto-open Select dropdown when popover opens for select-based fields
   useEffect(() => {
-    if (isOpen && (field === 'country' || field === 'type' || field === 'default_currency')) {
+    if (isOpen && (field === 'country' || field === 'country_represented' || field === 'type' || field === 'default_currency')) {
       // Small delay to ensure popover is rendered first
       setTimeout(() => setSelectOpen(true), 50);
     } else {
@@ -237,6 +237,7 @@ export function EditableCell({
           </div>
         );
       case 'country':
+      case 'country_represented':
         const countryInfo = IATI_COUNTRIES.find(c => c.name === value);
         if (countryInfo) {
           return (
@@ -338,6 +339,7 @@ export function EditableCell({
         );
 
       case 'country':
+      case 'country_represented':
         const searchLower = countrySearchTerm.toLowerCase();
         
         // Filter institutional groups (parent groups only - not sub-groups/subsidiaries)
