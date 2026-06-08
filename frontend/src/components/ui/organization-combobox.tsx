@@ -95,6 +95,8 @@ interface OrganizationComboboxProps {
   onOpenChange?: (open: boolean) => void
   /** Popover alignment relative to the trigger (default "start") */
   contentAlign?: 'start' | 'center' | 'end'
+  /** Open the dropdown immediately on mount (uncontrolled) */
+  defaultOpen?: boolean
 }
 
 export function OrganizationCombobox({
@@ -111,9 +113,10 @@ export function OrganizationCombobox({
   onLegacyTypeDetected,
   open: externalOpen,
   onOpenChange: externalOnOpenChange,
-  contentAlign = 'start'
+  contentAlign = 'start',
+  defaultOpen = false
 }: OrganizationComboboxProps) {
-  const [internalOpen, setInternalOpen] = React.useState(false)
+  const [internalOpen, setInternalOpen] = React.useState(defaultOpen)
   
   // Use external state if provided, otherwise use internal state
   const open = externalOpen !== undefined ? externalOpen : internalOpen

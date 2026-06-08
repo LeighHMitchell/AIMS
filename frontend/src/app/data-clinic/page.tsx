@@ -139,7 +139,7 @@ export default function DataClinicPage() {
               <div>
                 <h1 className="text-3xl font-bold text-foreground">Data Clinic</h1>
                 <p className="text-muted-foreground mt-1">
-                  Detect and fix missing or invalid IATI fields in your aid project data
+                  Detect and fix missing or invalid fields across your aid project data
                 </p>
               </div>
             </div>

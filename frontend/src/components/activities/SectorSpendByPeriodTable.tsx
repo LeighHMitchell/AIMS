@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
 import { ChartDataTable, CodeChip, ChartTableColumn } from '@/components/ui/chart-data-table';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
@@ -33,6 +34,10 @@ interface Props {
   basis?: string;
   /** When true, render nothing if there is no spend to show (keeps activity-level tabs clean). */
   hideWhenEmpty?: boolean;
+  /** When true, the table body collapses behind a clickable header so it stays out of the way. */
+  collapsible?: boolean;
+  /** When collapsible, start collapsed (header only) until the user expands it. */
+  defaultCollapsed?: boolean;
 }
 
 /**
@@ -41,9 +46,10 @@ interface Props {
  * across transactions" table by showing HOW MUCH went to each sector, WHEN.
  * Uses the shared ChartDataTable so it looks and sorts like every other table in the app.
  */
-export function SectorSpendByPeriodTable({ activityId, basis = 'disbursement_expenditure', hideWhenEmpty = false }: Props) {
+export function SectorSpendByPeriodTable({ activityId, basis = 'disbursement_expenditure', hideWhenEmpty = false, collapsible = false, defaultCollapsed = false }: Props) {
   const [data, setData] = useState<SpendResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(!(collapsible && defaultCollapsed));
 
   useEffect(() => {
     if (!activityId) return;
@@ -99,7 +105,7 @@ export function SectorSpendByPeriodTable({ activityId, basis = 'disbursement_exp
         </span>
       ),
     },
-    ...periods.map((p) => ({ key: p.label, numeric: true, currency: 'USD' } as ChartTableColumn)),
+    ...periods.map((p) => ({ key: p.label, label: `CY${p.label}`, numeric: true, currency: 'USD' } as ChartTableColumn)),
   ], [periods]);
 
   // Optionally render nothing when there's no spend to show (avoids clutter on activity-level tabs).
@@ -109,35 +115,51 @@ export function SectorSpendByPeriodTable({ activityId, basis = 'disbursement_exp
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <span className="text-body font-medium text-foreground">Sector spend by year</span>
+          {collapsible ? (
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              aria-expanded={open}
+              className="flex items-center gap-1 text-body font-medium text-foreground hover:text-foreground/80"
+            >
+              {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              <span>Sector Spend by Year</span>
+            </button>
+          ) : (
+            <span className="text-body font-medium text-foreground">Sector Spend by Year</span>
+          )}
           <HelpTextTooltip
             size="sm"
             content="Actual money paid out (disbursements + expenditures), in USD, broken down by sector and year. Built from each transaction's own sector. 'Actual' comes straight from the transactions; 'imputed' means the activity-level sector split was applied where a transaction carried no sector of its own."
           />
         </div>
-        {loading ? (
-          <span className="text-helper text-muted-foreground">Loading…</span>
-        ) : dq ? (
-          <span className="text-helper text-muted-foreground">
-            {pctActual}% actual{pctActual < 100 ? ` · ${100 - pctActual}% imputed` : ''}
-          </span>
-        ) : null}
+        {(!collapsible || open) && (
+          loading ? (
+            <span className="text-helper text-muted-foreground">Loading…</span>
+          ) : dq ? (
+            <span className="text-helper text-muted-foreground">
+              {pctActual}% actual{pctActual < 100 ? ` · ${100 - pctActual}% imputed` : ''}
+            </span>
+          ) : null
+        )}
       </div>
 
-      {rows.length === 0 ? (
-        <div className="rounded-md border px-4 py-6 text-center text-body text-muted-foreground">
-          {loading ? 'Calculating sector spend…' : 'No transaction spend with sectors found for this activity yet.'}
-        </div>
-      ) : (
-        <ChartDataTable
-          rows={tableRows}
-          columns={columns}
-          currency="USD"
-          totalsColumn
-          totalsColumnLabel="Total"
-          totalLabel="Total"
-          className="border-border shadow-sm"
-        />
+      {(!collapsible || open) && (
+        rows.length === 0 ? (
+          <div className="rounded-md border px-4 py-6 text-center text-body text-muted-foreground">
+            {loading ? 'Calculating sector spend…' : 'No transaction spend with sectors found for this activity yet.'}
+          </div>
+        ) : (
+          <ChartDataTable
+            rows={tableRows}
+            columns={columns}
+            currency="USD"
+            totalsColumn
+            totalsColumnLabel="Total"
+            totalLabel="Total"
+            className="border-border shadow-sm"
+          />
+        )
       )}
     </div>
   );

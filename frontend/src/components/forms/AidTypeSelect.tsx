@@ -41,6 +41,8 @@ interface AidTypeSelectProps {
   open?: boolean
   /** Callback when open state changes */
   onOpenChange?: (open: boolean) => void
+  /** Open immediately on mount (uncontrolled) */
+  defaultOpen?: boolean
 }
 
 export function AidTypeSelect({
@@ -50,9 +52,10 @@ export function AidTypeSelect({
   id,
   disabled = false,
   open: externalOpen,
-  onOpenChange: externalOnOpenChange
+  onOpenChange: externalOnOpenChange,
+  defaultOpen = false
 }: AidTypeSelectProps) {
-  const [internalOpen, setInternalOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(defaultOpen)
   
   // Use external state if provided, otherwise use internal state
   const open = externalOpen !== undefined ? externalOpen : internalOpen

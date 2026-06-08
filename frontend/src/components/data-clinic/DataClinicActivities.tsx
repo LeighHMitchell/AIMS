@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -293,6 +294,7 @@ export function DataClinicActivities() {
           return (
             <div className="flex items-center gap-2">
               <AidTypeSelect
+                defaultOpen
                 value={value || ''}
                 onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue || '')}
               />
@@ -309,6 +311,7 @@ export function DataClinicActivities() {
           return (
             <div className="flex items-center gap-2">
               <DefaultFinanceTypeSelect
+                defaultOpen
                 value={value || ''}
                 onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue || '')}
               />
@@ -325,6 +328,7 @@ export function DataClinicActivities() {
           return (
             <div className="flex items-center gap-2">
               <FlowTypeSelect
+                defaultOpen
                 value={value || ''}
                 onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue || '')}
               />
@@ -341,6 +345,7 @@ export function DataClinicActivities() {
           return (
             <div className="flex items-center gap-2">
               <ActivityStatusSelect
+                defaultOpen
                 value={value || ''}
                 onValueChange={(newValue) => handleInlineEdit(activity.id, field, newValue || '')}
               />
@@ -620,19 +625,14 @@ export function DataClinicActivities() {
                           />
                         </td>
                       )}
-                      <td className="p-4">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <p className="font-medium truncate max-w-xs">
-                                {activity.title}
-                              </p>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{activity.title}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                      <td className="p-4 align-top">
+                        <Link
+                          href={`/activities/${activity.id}`}
+                          className="font-medium break-words no-underline hover:opacity-70 transition-opacity max-w-xs inline-block"
+                        >
+                          {activity.title}
+                          {activity.acronym ? ` (${activity.acronym})` : ''}
+                        </Link>
                       </td>
                       <td className="p-4">
                         {activity.iatiIdentifier

@@ -19,6 +19,13 @@ interface ExpandableChartCardProps {
   expandedChildren?: ReactNode
   className?: string
   height?: number
+  /** Make the expanded content fill the modal (for responsive charts) instead
+   *  of shrink-wrapping (which is for wide tables/SVGs that scroll). */
+  expandedFill?: boolean
+  /** Controls (filters etc.) shown in the expanded modal header row. */
+  expandedControls?: ReactNode
+  /** Explanatory text shown below the chart in the expanded modal. */
+  expandedFooter?: ReactNode
 }
 
 export function ExpandableChartCard({
@@ -27,7 +34,10 @@ export function ExpandableChartCard({
   children,
   expandedChildren,
   className = '',
-  height = 320
+  height = 320,
+  expandedFill = false,
+  expandedControls,
+  expandedFooter
 }: ExpandableChartCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -64,13 +74,27 @@ export function ExpandableChartCard({
         <DialogContent className="max-w-[95vw] w-[1400px] h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>Expanded view of the chart for detailed analysis.</DialogDescription>
+            {description
+              ? <DialogDescription>{description}</DialogDescription>
+              : <DialogDescription>Expanded view of the chart for detailed analysis.</DialogDescription>}
           </DialogHeader>
-          <div className="flex-1 mt-4 min-h-0 overflow-x-auto overflow-y-auto">
-            <div className="min-w-fit">
+          {expandedControls && (
+            <div className="flex-shrink-0 mt-2">{expandedControls}</div>
+          )}
+          {expandedFill ? (
+            <div className="flex-1 mt-4 min-h-0">
               {expandedChildren || children}
             </div>
-          </div>
+          ) : (
+            <div className="flex-1 mt-4 min-h-0 overflow-x-auto overflow-y-auto">
+              <div className="min-w-fit">
+                {expandedChildren || children}
+              </div>
+            </div>
+          )}
+          {expandedFooter && (
+            <div className="flex-shrink-0 mt-4 max-h-[30%] overflow-y-auto">{expandedFooter}</div>
+          )}
         </DialogContent>
       </Dialog>
     </>

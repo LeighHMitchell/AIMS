@@ -42,6 +42,7 @@ interface DefaultFinanceTypeSelectProps {
   onValueChange?: (value: string | null) => void;
   placeholder?: string;
   disabled?: boolean;
+  defaultOpen?: boolean;
 }
 
 export function DefaultFinanceTypeSelect({
@@ -49,10 +50,11 @@ export function DefaultFinanceTypeSelect({
   value,
   onValueChange,
   placeholder = "Select default finance type",
-  disabled = false
+  disabled = false,
+  defaultOpen = false
 }: DefaultFinanceTypeSelectProps) {
   return (
-    <Select value={value || ""} onValueChange={(val) => onValueChange?.(val === "" ? null : val)} disabled={disabled}>
+    <Select defaultOpen={defaultOpen} value={value || ""} onValueChange={(val) => onValueChange?.(val === "" ? null : val)} disabled={disabled}>
       <SelectTrigger id={id} className="w-full">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

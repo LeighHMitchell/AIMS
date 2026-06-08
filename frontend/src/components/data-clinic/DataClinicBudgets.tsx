@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ type Budget = {
   id: string;
   activity_id: string;
   activityTitle?: string;
+  activityAcronym?: string;
   type?: string | number;
   status?: string | number;
   period_start?: string;
@@ -249,6 +251,7 @@ export function DataClinicBudgets() {
           return (
             <div className="flex items-center gap-2">
               <Select
+                defaultOpen
                 value={String(value) || ''}
                 onValueChange={(newValue) => saveFieldValue(budget.id, field, newValue)}
               >
@@ -279,6 +282,7 @@ export function DataClinicBudgets() {
           return (
             <div className="flex items-center gap-2">
               <Select
+                defaultOpen
                 value={String(value) || ''}
                 onValueChange={(newValue) => saveFieldValue(budget.id, field, newValue)}
               >
@@ -525,9 +529,13 @@ export function DataClinicBudgets() {
                       )}
                       <td className="p-4 align-top">
                         <div className="max-w-xs">
-                          <p className="font-medium break-words">
+                          <Link
+                            href={`/activities/${budget.activity_id}`}
+                            className="font-medium break-words no-underline hover:opacity-70 transition-opacity"
+                          >
                             {budget.activityTitle || 'Untitled Activity'}
-                          </p>
+                            {budget.activityAcronym ? ` (${budget.activityAcronym})` : ''}
+                          </Link>
                         </div>
                       </td>
                       <td className="p-4 align-top">

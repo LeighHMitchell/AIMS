@@ -59,6 +59,9 @@ import ActivityBudgetsTab from "@/components/activities/ActivityBudgetsTab"
 import PlannedDisbursementsTab from "@/components/activities/PlannedDisbursementsTab"
 import TransactionTab from "@/components/activities/TransactionTab"
 import { ResultsReadOnlyView } from "@/components/activities/ResultsReadOnlyView"
+import { ProgramLogicReadOnlyView } from "@/components/activities/ProgramLogicReadOnlyView"
+import { getGraphForActivity } from "@/components/activities/program-logic/api"
+import type { ProgramLogicGraph } from "@/lib/program-logic/types"
 import { DocumentsAndImagesTabV2 } from "@/components/activities/DocumentsAndImagesTabV2"
 import { PublicCommentsThread } from "@/components/activities/PublicCommentsThread"
 import SectorSankeyVisualization from "@/components/charts/SectorSankeyVisualization"
@@ -190,8 +193,34 @@ export function ActivityProfileV2View({
   // data fetches immediately in the background. Hidden tabs sit under
   // `display: none` (see Pane below) but their effects still run, so by the time
   // the user clicks Finances / Results / Locations the data is already cached.
-  const ALL_TABS = ["overview", "sectors", "geography", "finances", "results", "people", "library", "discussion"]
+  const ALL_TABS = ["overview", "sectors", "geography", "finances", "results", "program-logic", "people", "library", "discussion"]
   const [visitedTabs] = useState<Set<string>>(() => new Set(ALL_TABS))
+
+  // Program Logic (theory of change) — only surfaced as a tab when the activity
+  // has actually reported one via the Activity Editor. Fetch once; the tab and
+  // its pane are conditionally rendered on the result. Failures (e.g. no access
+  // / not authed) simply leave the tab hidden.
+  const [programLogic, setProgramLogic] = useState<ProgramLogicGraph | null>(null)
+  useEffect(() => {
+    if (!activity?.id) return
+    let cancelled = false
+    getGraphForActivity(activity.id)
+      .then((res) => {
+        if (cancelled) return
+        const graph = res as ProgramLogicGraph
+        if (graph && graph.logic && Array.isArray(graph.nodes) && graph.nodes.length > 0) {
+          setProgramLogic(graph)
+        } else {
+          setProgramLogic(null)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setProgramLogic(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activity?.id])
 
   // Locations come from the dedicated /locations endpoint — the activity payload's
   // embedded `locations.specificLocations` is often empty. Match the v1 page so the
@@ -754,14 +783,24 @@ export function ActivityProfileV2View({
     </>
   )
 
+  // Insert the Program Logic tab right after Results, only when one exists.
+  const tabsList = useMemo(() => {
+    if (!programLogic) return V2_TABS
+    const next = [...V2_TABS]
+    const idx = next.findIndex((t) => t.value === "results")
+    next.splice(idx + 1, 0, { value: "program-logic", label: "Program Logic" })
+    return next
+  }, [programLogic])
+
   const tabs = (
-    <ProfileTabs tabs={V2_TABS} activeTab={activeTab} onChange={onTabChange} />
+    <ProfileTabs tabs={tabsList} activeTab={activeTab} onChange={onTabChange} />
   )
 
   const main = renderMainSlot({
     activity,
     activeTab,
     visitedTabs,
+    programLogic,
     activityLocations,
     validMapLocations,
     regionBreakdownsWithDetails,
@@ -903,6 +942,7 @@ function renderMainSlot(args: {
   activity: any
   activeTab: string
   visitedTabs: Set<string>
+  programLogic: ProgramLogicGraph | null
   activityLocations: any[]
   validMapLocations: any[]
   regionBreakdownsWithDetails: Record<string, { percentage: number; activityCount: number; activities: Array<{ id: string; title: string }> }>
@@ -918,7 +958,7 @@ function renderMainSlot(args: {
   onTabChange: (tab: string) => void
   user: any
 }) {
-  const { activeTab, activity, visitedTabs, activityLocations, validMapLocations, regionBreakdownsWithDetails, isLoadingActivityLocations, isLoadingSubnational, totalBudgeted, totalPlannedDisbursements } = args
+  const { activeTab, activity, visitedTabs, programLogic, activityLocations, validMapLocations, regionBreakdownsWithDetails, isLoadingActivityLocations, isLoadingSubnational, totalBudgeted, totalPlannedDisbursements } = args
   const startDate = activity?.actualStartDate || activity?.plannedStartDate || ""
   const endDate = activity?.actualEndDate || activity?.plannedEndDate || ""
 
@@ -956,7 +996,7 @@ function renderMainSlot(args: {
     </Card>
   )
 
-  const knownTabs = new Set(["overview", "sectors", "geography", "finances", "results", "people", "library", "discussion"])
+  const knownTabs = new Set(["overview", "sectors", "geography", "finances", "results", "program-logic", "people", "library", "discussion"])
 
   return (
     <>
@@ -1006,6 +1046,14 @@ function renderMainSlot(args: {
           <ResultsReadOnlyView activityId={activity.id} />
         </Card>
       </ProfilePane>
+
+      {programLogic && (
+        <ProfilePane tab="program-logic" activeTab={activeTab} visitedTabs={visitedTabs}>
+          <Card className="bg-card p-6">
+            <ProgramLogicReadOnlyView graph={programLogic} />
+          </Card>
+        </ProfilePane>
+      )}
 
       <ProfilePane tab="people" activeTab={activeTab} visitedTabs={visitedTabs}>
         <ActivityPeoplePane activityId={activity.id} />

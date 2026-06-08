@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,8 @@ import {
   CalendarClock,
   Copy,
   Check,
-  Unlink
+  Unlink,
+  Building2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -107,6 +109,7 @@ type Transaction = {
   id: string;
   activityId: string;
   activityTitle?: string;
+  activityAcronym?: string;
   transactionType?: string;
   aidType?: string;
   financeType?: string;
@@ -157,6 +160,7 @@ export function DataClinicTransactions() {
           iati_org_id: o.iati_org_id,
           country: o.country_represented,
           organisation_type: o.type,
+          logo: o.logo,
         }));
         setOrganizations(list);
       } catch (e) {
@@ -209,6 +213,7 @@ export function DataClinicTransactions() {
             onValueChange={(id) => id && handleLinkOrg(transaction, side, id)}
             placeholder={orgName ? `Link “${orgName}”…` : 'Select organisation…'}
             contentAlign="end"
+            defaultOpen
           />
           <Button size="sm" variant="ghost" onClick={() => setLinking(null)}>
             <X className="h-4 w-4" />
@@ -219,21 +224,25 @@ export function DataClinicTransactions() {
 
     const linkClick = isSuperUser ? () => setLinking({ id: transaction.id, side }) : undefined;
 
-    // Linked — has an organisation record
+    // Linked — show the org's logo + acronym (no badge); click to change.
     if (orgId) {
+      const org = organizations.find((o) => o.id === orgId);
+      const label = org?.acronym || org?.name || orgName || '(linked org)';
       return (
-        <div className="flex items-start gap-2 flex-wrap">
-          <span className="text-body break-words">{orgName || '(linked org)'}</span>
-          <Badge
-            variant="outline"
-            className={`text-helper border border-green-600 text-green-700 bg-transparent whitespace-nowrap ${isSuperUser ? 'cursor-pointer hover:bg-green-50' : ''}`}
-            title={isSuperUser ? 'Linked — click to change' : 'Linked to an organisation record'}
-            onClick={linkClick}
-          >
-            <Check className="h-3 w-3 mr-1" />
-            Linked
-          </Badge>
-        </div>
+        <button
+          type="button"
+          onClick={linkClick}
+          disabled={!isSuperUser}
+          title={isSuperUser ? 'Linked — click to change' : 'Linked to an organisation record'}
+          className="flex items-center gap-2 rounded px-1 py-0.5 -mx-1 hover:bg-muted/60 transition-colors text-left disabled:cursor-default disabled:hover:bg-transparent"
+        >
+          {org?.logo ? (
+            <img src={org.logo} alt="" className="h-5 w-5 rounded object-contain flex-shrink-0" />
+          ) : (
+            <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          )}
+          <span className="text-body font-medium break-words">{label}</span>
+        </button>
       );
     }
     // Named but not linked
@@ -450,6 +459,7 @@ export function DataClinicTransactions() {
           return (
             <div className="flex items-center gap-2">
               <AidTypeSelect
+                defaultOpen
                 value={value || ''}
                 onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue || '')}
               />
@@ -466,6 +476,7 @@ export function DataClinicTransactions() {
           return (
             <div className="flex items-center gap-2">
               <DefaultFinanceTypeSelect
+                defaultOpen
                 value={value || ''}
                 onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue || '')}
               />
@@ -482,6 +493,7 @@ export function DataClinicTransactions() {
           return (
             <div className="flex items-center gap-2">
               <FlowTypeSelect
+                defaultOpen
                 value={value || ''}
                 onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue || '')}
               />
@@ -498,6 +510,7 @@ export function DataClinicTransactions() {
           return (
             <div className="flex items-center gap-2">
               <Select
+                defaultOpen
                 value={value || ''}
                 onValueChange={(newValue) => handleInlineEdit(transaction.id, field, newValue || '')}
               >
@@ -736,9 +749,13 @@ export function DataClinicTransactions() {
                         </td>
                       )}
                       <td className="px-4 py-3 align-top group">
-                        <p className="font-medium break-words">
+                        <Link
+                          href={`/activities/${transaction.activityId}`}
+                          className="font-medium break-words no-underline hover:opacity-70 transition-opacity"
+                        >
                           {transaction.activityTitle || 'Unknown Activity'}
-                        </p>
+                          {transaction.activityAcronym ? ` (${transaction.activityAcronym})` : ''}
+                        </Link>
                       </td>
                       <td className="px-4 py-3 align-top">
                         {renderFieldValue(transaction, 'transactionType')}

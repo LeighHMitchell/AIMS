@@ -3,6 +3,14 @@
  */
 
 const SECTOR_GROUP_COLORS: Record<string, string> = {
+  // Broad OECD categories (top tier) — matches the /sectors listing palette
+  '100': '#4C5568', // Social Infrastructure & Services
+  '200': '#059669', // Economic Infrastructure & Services
+  '300': '#6366F1', // Production Sectors
+  '400': '#16A34A', // Multi-Sector / Cross-Cutting
+  '500': '#CA8A04', // Commodity Aid / General Programme Assistance
+  '700': '#475569', // Humanitarian Aid
+  '900': '#334155', // Other / Non-Sector Allocable
   '110': '#2563EB', // Education — blue
   '120': '#DC2626', // Health — red
   '130': '#EC4899', // Population / Reproductive Health — pink

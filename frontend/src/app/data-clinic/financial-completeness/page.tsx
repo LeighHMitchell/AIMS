@@ -14,9 +14,11 @@ import Link from "next/link"
 interface FinancialCompletenessActivity {
   id: string;
   title: string;
+  acronym: string | null;
   iati_identifier: string | null;
   reporting_org_id: string | null;
   reporting_org_name: string | null;
+  reporting_org_acronym: string | null;
   total_budgeted_usd: number;
   total_disbursed_usd: number;
   overspend_usd: number;

@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, RefreshCw, AlertCircle, Pencil, X, Unlink, Check } from "lucide-react"
+import Link from "next/link"
+import { Search, RefreshCw, AlertCircle, Pencil, X, Unlink, Building2, Check } from "lucide-react"
 import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table"
 import { apiFetch } from "@/lib/api-fetch"
 import { renderMoney, formatClinicDate } from "./formatters"
@@ -22,6 +23,7 @@ interface Column {
   gap?: boolean
   currencyKey?: string
   editable?: boolean
+  editOnMissingOnly?: boolean
   editor?: 'select' | 'number' | 'text'
   options?: { value: string; label: string }[]
   orgIdField?: string
@@ -70,6 +72,7 @@ export function DataClinicEntity({ entity }: { entity: string }) {
           iati_org_id: o.iati_org_id,
           country: o.country_represented,
           organisation_type: o.type,
+          logo: o.logo,
         }))
         setOrganizations(list)
       } catch (e) {
@@ -145,7 +148,13 @@ export function DataClinicEntity({ entity }: { entity: string }) {
         body: JSON.stringify({ id: row._id, field: col.key, value }),
       })
       if (!res.ok) throw new Error('Update failed')
-      setRows((prev) => prev.map((r) => (r._id === row._id ? { ...r, [col.key]: value } : r)))
+      // keep the code+name display in sync for select columns
+      const optLabel = col.options?.find((o) => o.value === value)?.label
+      setRows((prev) => prev.map((r) =>
+        r._id === row._id
+          ? { ...r, [col.key]: value, ...(optLabel !== undefined ? { [`${col.key}_name`]: optLabel } : {}) }
+          : r
+      ))
       setEditing(null)
       toast.success('Updated')
     } catch (err) {
@@ -175,7 +184,7 @@ export function DataClinicEntity({ entity }: { entity: string }) {
     if (col.editor === 'select') {
       return (
         <div className="flex items-center gap-2">
-          <Select value={editValue} onValueChange={(v) => saveEdit(row, col, v)}>
+          <Select defaultOpen value={editValue} onValueChange={(v) => saveEdit(row, col, v)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
@@ -202,8 +211,8 @@ export function DataClinicEntity({ entity }: { entity: string }) {
           className="w-32"
           autoFocus
         />
-        <Button size="sm" variant="ghost" onClick={() => saveEdit(row, col, editValue)}>Save</Button>
-        <Button size="sm" variant="ghost" onClick={() => setEditing(null)}><X className="h-4 w-4" /></Button>
+        <Button size="sm" variant="ghost" onClick={() => saveEdit(row, col, editValue)} title="Save"><Check className="h-4 w-4" /></Button>
+        <Button size="sm" variant="ghost" onClick={() => setEditing(null)} title="Cancel"><X className="h-4 w-4" /></Button>
       </div>
     )
   }
@@ -220,6 +229,7 @@ export function DataClinicEntity({ entity }: { entity: string }) {
             onValueChange={(id) => id && handleLinkOrg(row, col, id)}
             placeholder={orgName ? `Link “${orgName}”…` : 'Select organisation…'}
             contentAlign="end"
+            defaultOpen
           />
           <Button size="sm" variant="ghost" onClick={() => setLinking(null)}><X className="h-4 w-4" /></Button>
         </div>
@@ -227,13 +237,23 @@ export function DataClinicEntity({ entity }: { entity: string }) {
     }
     const linkClick = () => setLinking({ id: row._id, field: col.key })
     if (orgId) {
+      // Linked — show the org's logo + acronym (no badge); click to change.
+      const org = organizations.find((o) => o.id === orgId)
+      const label = org?.acronym || org?.name || orgName || '(linked org)'
       return (
-        <div className="flex items-start gap-2 flex-wrap">
-          <span className="text-body break-words">{orgName || '(linked org)'}</span>
-          <Badge variant="outline" className="text-helper border border-green-600 text-green-700 bg-transparent whitespace-nowrap cursor-pointer hover:bg-green-50" title="Linked — click to change" onClick={linkClick}>
-            <Check className="h-3 w-3 mr-1" />Linked
-          </Badge>
-        </div>
+        <button
+          type="button"
+          onClick={linkClick}
+          title="Linked — click to change"
+          className="flex items-center gap-2 rounded px-1 py-0.5 -mx-1 hover:bg-muted/60 transition-colors text-left"
+        >
+          {org?.logo ? (
+            <img src={org.logo} alt="" className="h-5 w-5 rounded object-contain flex-shrink-0" />
+          ) : (
+            <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          )}
+          <span className="text-body font-medium break-words">{label}</span>
+        </button>
       )
     }
     if (orgName) {
@@ -261,10 +281,14 @@ export function DataClinicEntity({ entity }: { entity: string }) {
     const value = row[col.key]
     if (isMissing(col, row)) {
       if (!col.gap) return <span className="text-muted-foreground">–</span>
+      // Editable gaps are actionable → red & clickable. Non-editable gaps are
+      // just informational → gray.
       return (
         <Badge
           variant="outline"
-          className={`text-helper border border-red-500 text-red-600 bg-transparent ${col.editable ? 'cursor-pointer hover:bg-red-50' : ''}`}
+          className={col.editable
+            ? 'text-helper border border-red-500 text-red-600 bg-transparent cursor-pointer hover:bg-red-50'
+            : 'text-helper border border-gray-300 text-gray-500 bg-transparent'}
           onClick={col.editable ? () => startEdit(row, col) : undefined}
         >
           <AlertCircle className="h-3 w-3 mr-1" />
@@ -272,7 +296,7 @@ export function DataClinicEntity({ entity }: { entity: string }) {
         </Badge>
       )
     }
-    const editPencil = col.editable ? (
+    const editPencil = col.editable && !col.editOnMissingOnly ? (
       <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => startEdit(row, col)}>
         <Pencil className="h-3 w-3 text-muted-foreground" />
       </Button>
@@ -281,10 +305,12 @@ export function DataClinicEntity({ entity }: { entity: string }) {
     const name = row[`${col.key}_name`]
     switch (col.type) {
       case 'code':
+        // Code badge inline with the wrapping label (stays on the same line,
+        // label wraps beside it when the column is narrow).
         return (
-          <span className="inline-flex items-center gap-2">
-            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap">{String(value)}</span>
-            {name ? <span className="text-body">{name}</span> : null}
+          <span className="text-body">
+            <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap align-middle mr-1.5">{String(value)}</span>
+            {name ? <span className="break-words">{name}</span> : null}
             {editPencil}
           </span>
         )
@@ -384,7 +410,13 @@ export function DataClinicEntity({ entity }: { entity: string }) {
                   filteredSorted.map((row) => (
                     <tr key={row._id} className="border-b hover:bg-muted/50">
                       <td className="px-4 py-3 align-top">
-                        <p className="font-medium break-words">{row._activity}</p>
+                        <Link
+                          href={`/activities/${row._activityId}`}
+                          className="font-medium break-words no-underline hover:opacity-70 transition-opacity"
+                        >
+                          {row._activity}
+                          {row._activityAcronym ? ` (${row._activityAcronym})` : ''}
+                        </Link>
                       </td>
                       {columns.map((col) => (
                         <td key={col.key} className="px-4 py-3 align-top">

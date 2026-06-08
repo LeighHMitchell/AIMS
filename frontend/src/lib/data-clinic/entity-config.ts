@@ -12,8 +12,10 @@
  */
 import { getGeographicLocationReachName } from '@/data/iati-geographic-location-reach'
 import { getGeographicExactnessName } from '@/data/iati-geographic-exactness'
-import { getGeographicLocationClassName } from '@/data/iati-geographic-location-class'
+import { getGeographicLocationClassName, GEOGRAPHIC_LOCATION_CLASS } from '@/data/iati-geographic-location-class'
 import { getSectorVocabularyName } from '@/data/iati-sector-vocabulary'
+import { getUniqueDAC3Codes } from '@/data/dac-codes'
+import { getBroadCategoryForCode } from '@/lib/sector-hierarchy'
 
 export type ClinicColumnType = 'text' | 'code' | 'date' | 'money' | 'percent' | 'org'
 
@@ -33,8 +35,12 @@ export interface ClinicColumn {
   currencyKey?: string
   /** editable inline — the key must be a real column on the table */
   editable?: boolean
+  /** only offer editing when the value is missing (no edit pencil when filled) */
+  editOnMissingOnly?: boolean
   editor?: 'select' | 'number' | 'text'
   options?: ClinicSelectOption[]
+  /** for select columns: a DB column to also set with the chosen option's label */
+  nameField?: string
   /** for 'org' columns: the DB columns holding the linked org id + free-text name */
   orgIdField?: string
   orgNameField?: string
@@ -55,7 +61,7 @@ export interface ClinicEntityConfig {
   enrich?: (rows: Record<string, any>[], supabase: any) => Promise<void>
 }
 
-const ACTIVITY_JOIN = 'activities!activity_id!inner ( title_narrative, deleted_at )'
+const ACTIVITY_JOIN = 'activities!activity_id!inner ( title_narrative, acronym, deleted_at )'
 const activityTitle = (row: any) => row.activities?.title_narrative || 'Unknown Activity'
 
 // IATI PolicySignificance codelist
@@ -98,19 +104,21 @@ export const CLINIC_ENTITIES: Record<string, ClinicEntityConfig> = {
     mapRow: (r) => ({
       _id: r.id,
       _activity: activityTitle(r),
+      _activityId: r.activity_id,
+      _activityAcronym: r.activities?.acronym || '',
       type: r.type,
       type_name: PD_TYPE_LABELS[String(r.type)] || '',
       period_start: r.period_start,
       period_end: r.period_end,
       amount: r.amount,
       currency: r.currency,
-      usd_amount: r.usd_amount,
+      usd_amount: r.usd_amount ?? (r.currency === 'USD' ? r.amount : null),
       usd_currency: 'USD',
       provider: r.provider_org_name || null,
       provider_id: r.provider_org_id || null,
       receiver: r.receiver_org_name || null,
       receiver_id: r.receiver_org_id || null,
-      status: r.status,
+      status: cap(r.status),
     }),
   },
 
@@ -132,6 +140,8 @@ export const CLINIC_ENTITIES: Record<string, ClinicEntityConfig> = {
     mapRow: (r) => ({
       _id: r.id,
       _activity: activityTitle(r),
+      _activityId: r.activity_id,
+      _activityAcronym: r.activities?.acronym || '',
       type: r.type,
       first_name: r.first_name,
       last_name: r.last_name,
@@ -157,6 +167,8 @@ export const CLINIC_ENTITIES: Record<string, ClinicEntityConfig> = {
     mapRow: (r) => ({
       _id: r.id,
       _activity: activityTitle(r),
+      _activityId: r.activity_id,
+      _activityAcronym: r.activities?.acronym || '',
       sdg_goal: r.sdg_goal != null ? String(r.sdg_goal) : null,
       sdg_target: r.sdg_target,
       contribution_percent: r.contribution_percent,
@@ -181,23 +193,38 @@ export const CLINIC_ENTITIES: Record<string, ClinicEntityConfig> = {
     hasOwnDeletedAt: true,
     select: `id, sector_code, sector_name, category_code, category_name, percentage, sector_vocabulary, level, ${ACTIVITY_JOIN}`,
     columns: [
-      { key: 'sector_code', label: 'Sector Code', type: 'code', gap: true },
-      { key: 'sector_name', label: 'Sector Name', type: 'text', gap: true },
-      { key: 'category_code', label: 'Category', type: 'code', gap: true },
-      { key: 'percentage', label: 'Percentage', type: 'percent', gap: true },
+      { key: 'group', label: 'Group', type: 'code' },
+      {
+        key: 'category_code',
+        label: 'Category',
+        type: 'code',
+        gap: true,
+        editable: true,
+        editor: 'select',
+        nameField: 'category_name',
+        options: getUniqueDAC3Codes().map((c) => ({ value: c.code, label: c.name })),
+      },
+      { key: 'sector_code', label: 'Sector', type: 'code', gap: true },
       { key: 'sector_vocabulary', label: 'Vocabulary', type: 'code', gap: true },
     ],
-    mapRow: (r) => ({
-      _id: r.id,
-      _activity: activityTitle(r),
-      sector_code: r.sector_code,
-      sector_name: r.sector_name,
-      category_code: r.category_code,
-      category_code_name: r.category_name || '',
-      percentage: r.percentage,
-      sector_vocabulary: r.sector_vocabulary != null ? String(r.sector_vocabulary) : null,
-      sector_vocabulary_name: getSectorVocabularyName(r.sector_vocabulary != null ? String(r.sector_vocabulary) : undefined),
-    }),
+    mapRow: (r) => {
+      const broad = getBroadCategoryForCode(String(r.category_code || r.sector_code || ''))
+      return {
+        _id: r.id,
+        _activity: activityTitle(r),
+        _activityId: r.activity_id,
+        _activityAcronym: r.activities?.acronym || '',
+        group: broad.code,
+        group_name: broad.name,
+        sector_code: r.sector_code,
+        sector_code_name: r.sector_name || '',
+        category_code: r.category_code,
+        category_code_name: r.category_name || '',
+        percentage: r.percentage,
+        sector_vocabulary: r.sector_vocabulary != null ? String(r.sector_vocabulary) : null,
+        sector_vocabulary_name: getSectorVocabularyName(r.sector_vocabulary != null ? String(r.sector_vocabulary) : undefined),
+      }
+    },
   },
 
   locations: {
@@ -213,13 +240,24 @@ export const CLINIC_ENTITIES: Record<string, ClinicEntityConfig> = {
       { key: 'longitude', label: 'Longitude', type: 'text', gap: true, editable: true, editor: 'number' },
       { key: 'location_reach', label: 'Reach', type: 'code', gap: true },
       { key: 'exactness', label: 'Exactness', type: 'code', gap: true },
-      { key: 'location_class', label: 'Class', type: 'code', gap: true },
+      {
+        key: 'location_class',
+        label: 'Class',
+        type: 'code',
+        gap: true,
+        editable: true,
+        editOnMissingOnly: true,
+        editor: 'select',
+        options: GEOGRAPHIC_LOCATION_CLASS.map((c) => ({ value: c.code, label: c.name })),
+      },
     ],
     mapRow: (r) => ({
       _id: r.id,
       _activity: activityTitle(r),
+      _activityId: r.activity_id,
+      _activityAcronym: r.activities?.acronym || '',
       location_name: r.location_name,
-      location_type: r.location_type,
+      location_type: cap(r.location_type),
       latitude: r.latitude,
       longitude: r.longitude,
       location_reach: r.location_reach != null ? String(r.location_reach) : null,
@@ -238,16 +276,17 @@ export const CLINIC_ENTITIES: Record<string, ClinicEntityConfig> = {
     hasOwnDeletedAt: true,
     select: `id, significance, rationale, policy_markers ( name, code ), ${ACTIVITY_JOIN}`,
     columns: [
-      { key: 'marker', label: 'Policy Marker', type: 'text' },
-      { key: 'code', label: 'Code', type: 'code' },
+      { key: 'code', label: 'Policy Marker', type: 'code' },
       { key: 'significance', label: 'Significance', type: 'code', gap: true },
-      { key: 'rationale', label: 'Rationale', type: 'text', gap: true },
+      { key: 'rationale', label: 'Rationale', type: 'text', gap: true, editable: true, editor: 'text' },
     ],
     mapRow: (r) => ({
       _id: r.id,
       _activity: activityTitle(r),
-      marker: r.policy_markers?.name,
+      _activityId: r.activity_id,
+      _activityAcronym: r.activities?.acronym || '',
       code: r.policy_markers?.code,
+      code_name: r.policy_markers?.name || '',
       significance: r.significance != null ? String(r.significance) : null,
       significance_name: SIGNIFICANCE_LABELS[String(r.significance)] || '',
       rationale: r.rationale,
@@ -268,6 +307,8 @@ export const CLINIC_ENTITIES: Record<string, ClinicEntityConfig> = {
     mapRow: (r) => ({
       _id: r.id,
       _activity: activityTitle(r),
+      _activityId: r.activity_id,
+      _activityAcronym: r.activities?.acronym || '',
       name: r.tags?.name,
       code: r.tags?.code,
       vocabulary: r.tags?.vocabulary,
@@ -288,6 +329,8 @@ export const CLINIC_ENTITIES: Record<string, ClinicEntityConfig> = {
     mapRow: (r) => ({
       _id: r.id,
       _activity: activityTitle(r),
+      _activityId: r.activity_id,
+      _activityAcronym: r.activities?.acronym || '',
       group: r.working_groups?.label,
       code: r.working_groups?.code,
       vocabulary: r.vocabulary,

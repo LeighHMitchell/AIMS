@@ -421,9 +421,10 @@ export async function GET(
 
     const subSectorBreakdown = childCodes.map(childCode => {
       const childInfo = getSectorInfo(childCode);
-      // For groups, children are categories; for categories, children are 5-digit sectors
-      // Aggregate all 5-digit codes under this child
-      const childSectorCodes = level === 'group' ? getAllSectorCodes(childCode) : [childCode];
+      // For broad categories, children are groups; for groups, children are
+      // categories; for categories, children are 5-digit sectors. In the first
+      // two cases aggregate all 5-digit codes beneath the child.
+      const childSectorCodes = (level === 'broad' || level === 'group') ? getAllSectorCodes(childCode) : [childCode];
 
       let agg = { activityIds: new Set<string>(), commitments: 0, disbursements: 0, totalValue: 0 };
       childSectorCodes.forEach(sc => {

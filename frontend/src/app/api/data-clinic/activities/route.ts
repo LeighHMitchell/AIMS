@@ -5,6 +5,7 @@ interface Activity {
   id: string;
   title_narrative: string;
   iati_identifier?: string;
+  acronym?: string;
   activity_status?: string;
   planned_start_date?: string;
   planned_end_date?: string;
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
         id,
         title_narrative,
         iati_identifier,
+        acronym,
         activity_status,
         planned_start_date,
         planned_end_date,
@@ -81,6 +83,7 @@ export async function GET(request: NextRequest) {
           id,
           title_narrative,
           iati_identifier,
+          acronym,
           activity_status,
           planned_start_date,
           planned_end_date,
@@ -115,6 +118,7 @@ export async function GET(request: NextRequest) {
         title: activity.title_narrative,
         sectors: activity.activity_sectors || [],
         iatiIdentifier: activity.iati_identifier,
+        acronym: activity.acronym,
         activityStatus: activity.activity_status,
         plannedStartDate: activity.planned_start_date,
         plannedEndDate: activity.planned_end_date,
@@ -185,6 +189,7 @@ export async function GET(request: NextRequest) {
             title: activity.title_narrative,
             sectors: activity.activity_sectors || [],
             iatiIdentifier: activity.iati_identifier,
+        acronym: activity.acronym,
             activityStatus: activity.activity_status,
             plannedStartDate: activity.planned_start_date,
             plannedEndDate: activity.planned_end_date,
@@ -222,6 +227,7 @@ export async function GET(request: NextRequest) {
         title: activity.title_narrative,
         sectors: [],
         iatiIdentifier: activity.iati_identifier,
+        acronym: activity.acronym,
         activityStatus: activity.activity_status,
         plannedStartDate: activity.planned_start_date,
         plannedEndDate: activity.planned_end_date,

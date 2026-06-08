@@ -14,7 +14,7 @@ interface SectorEntry {
   status: string
 }
 
-export type SectorLevel = 'group' | 'category' | 'sector'
+export type SectorLevel = 'broad' | 'group' | 'category' | 'sector'
 
 /**
  * OECD DAC "broad category" tier — the level above `group` (e.g. 100 Social
@@ -74,6 +74,11 @@ export function getBroadCategoryForCode(code: string): BroadCategory {
   return meta || { code: '900', name: 'Other / Non-Sector Allocable' }
 }
 
+// Set of broad-category codes that are NOT also 3-digit group codes (e.g. 600
+// is a real group, so it resolves as a group, not a broad tier). Used so a code
+// like 100/700/900 resolves to the broad profile.
+const broadOnlyCodes = new Set(BROAD_CATEGORY_ORDER.map(b => b.code))
+
 export interface SectorInfo {
   code: string
   name: string
@@ -120,6 +125,7 @@ export function getSectorLevel(code: string): SectorLevel {
   const str = String(code)
   if (groupMap.has(str)) return 'group'
   if (categoryMap.has(str)) return 'category'
+  if (broadOnlyCodes.has(str)) return 'broad'
   return 'sector'
 }
 
@@ -154,6 +160,19 @@ export function getSectorInfo(code: string): SectorInfo | null {
     }
   }
 
+  // Check if it's a broad-category code (top OECD tier, e.g. 100/700/900).
+  // Note: 600 is also a real group, so it is caught by the group branch above.
+  if (broadOnlyCodes.has(str)) {
+    const broad = BROAD_CATEGORY_ORDER.find(b => b.code === str)!
+    return {
+      code: str,
+      name: broad.name,
+      level: 'broad',
+      groupCode: '',
+      groupName: '',
+    }
+  }
+
   // It's a 5-digit sector code
   const entry = sectorMap.get(str)
   if (!entry) return null
@@ -175,6 +194,11 @@ export function getSectorInfo(code: string): SectorInfo | null {
 export function getChildCodes(code: string): string[] {
   const str = String(code)
   const level = getSectorLevel(str)
+
+  if (level === 'broad') {
+    // Children of a broad category are its 3-digit groups
+    return Array.from(groupMap.keys()).filter(g => getBroadCategoryForCode(g).code === str)
+  }
 
   if (level === 'group') {
     // Return unique category codes in this group
@@ -204,6 +228,13 @@ export function getChildCodes(code: string): string[] {
 export function getAllSectorCodes(code: string): string[] {
   const str = String(code)
   const level = getSectorLevel(str)
+
+  if (level === 'broad') {
+    // All 5-digit codes whose group rolls up to this broad category
+    return entries
+      .filter(e => getBroadCategoryForCode(e.code).code === str)
+      .map(e => e.code)
+  }
 
   if (level === 'group') {
     return entries

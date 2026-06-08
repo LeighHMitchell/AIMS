@@ -13,6 +13,7 @@ interface ActivityStatusSelectProps {
   dropdownId?: string // Unique identifier for this dropdown instance
   side?: "top" | "bottom" | "left" | "right"
   align?: "start" | "center" | "end"
+  defaultOpen?: boolean
 }
 
 export function ActivityStatusSelect({
@@ -24,6 +25,7 @@ export function ActivityStatusSelect({
   dropdownId = "activity-status-select",
   side,
   align,
+  defaultOpen = false,
 }: ActivityStatusSelectProps) {
   return (
     <EnhancedSearchableSelect
@@ -37,6 +39,7 @@ export function ActivityStatusSelect({
       dropdownId={dropdownId}
       side={side}
       align={align}
+      defaultOpen={defaultOpen}
     />
   )
 }

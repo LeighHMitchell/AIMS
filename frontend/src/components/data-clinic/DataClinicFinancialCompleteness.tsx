@@ -7,13 +7,17 @@ import { CheckCircle2, AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FinancialCompletenessFilters, SortOption } from "@/components/data-clinic/FinancialCompletenessFilters"
 import { FinancialCompletenessChart } from "@/components/data-clinic/FinancialCompletenessChart"
+import { ExpandableChartCard } from "@/components/analytics/ExpandableChartCard"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer } from "recharts"
 
 interface FinancialCompletenessActivity {
   id: string;
   title: string;
+  acronym: string | null;
   iati_identifier: string | null;
   reporting_org_id: string | null;
   reporting_org_name: string | null;
+  reporting_org_acronym: string | null;
   total_budgeted_usd: number;
   total_disbursed_usd: number;
   overspend_usd: number;
@@ -25,6 +29,7 @@ interface FinancialCompletenessActivity {
 interface Organization {
   id: string;
   name: string;
+  acronym?: string;
 }
 
 export function DataClinicFinancialCompleteness() {
@@ -46,7 +51,8 @@ export function DataClinicFinancialCompleteness() {
           const result = await response.json();
           const orgs = (result.organizations || result || []).map((org: any) => ({
             id: org.id,
-            name: org.name || org.reporting_org_name || 'Unknown Organisation'
+            name: org.name || org.reporting_org_name || 'Unknown Organisation',
+            acronym: org.acronym,
           }));
           setOrganizations(orgs);
         }
@@ -106,6 +112,26 @@ export function DataClinicFinancialCompleteness() {
     return sorted;
   }, [data, sortBy]);
 
+  // Total overspend grouped by reporting organisation (top 10)
+  const overspendByOrg = useMemo(() => {
+    const map = new Map<string, { overspend: number; acronym: string | null }>()
+    for (const a of data) {
+      const name = a.reporting_org_name || 'Unattributed'
+      const entry = map.get(name) || { overspend: 0, acronym: a.reporting_org_acronym || null }
+      entry.overspend += a.overspend_usd || 0
+      if (!entry.acronym && a.reporting_org_acronym) entry.acronym = a.reporting_org_acronym
+      map.set(name, entry)
+    }
+    return Array.from(map.entries())
+      .map(([name, e]) => ({
+        name,
+        label: e.acronym ? `${name} (${e.acronym})` : name,
+        overspend: e.overspend,
+      }))
+      .sort((a, b) => b.overspend - a.overspend)
+      .slice(0, 10)
+  }, [data])
+
   // Clear all filters
   const handleClearFilters = () => {
     setSelectedOrgId('all');
@@ -164,38 +190,66 @@ export function DataClinicFinancialCompleteness() {
     );
   }
 
-  // Data Found - Show Filters, Chart, and Table
+  const filtersEl = (
+    <FinancialCompletenessFilters
+      organizations={organizations}
+      selectedOrgId={selectedOrgId}
+      sortBy={sortBy}
+      onOrgChange={setSelectedOrgId}
+      onSortChange={setSortBy}
+      onClearFilters={handleClearFilters}
+    />
+  );
+
+  const completenessFooter = (
+    <p className="text-body text-muted-foreground leading-relaxed">
+      These charts surface multi-year activities (running 365 days or more) that have fewer than two budget
+      periods yet have already disbursed more than was budgeted — a pattern that usually means the budget side
+      of the activity is incomplete rather than that spending is genuinely out of control. Longer, darker bars
+      represent larger or more severe overspends, and the companion chart rolls the same overspend up by
+      reporting organisation so you can see which reporters account for most of it. Use the list to find the
+      activities and organisations whose budgets need attention, then add or correct their missing budget
+      periods so the recorded budgets reflect what is actually being spent — which keeps the financial picture
+      in your aid data accurate, complete and easier to trust.
+    </p>
+  );
+
+  // Data Found - two-column charts
   return (
-    <div className="space-y-6">
-      {/* Info Banner */}
-      <Card className="border-amber-200 bg-amber-50">
-        <CardContent className="py-4">
-          <p className="text-body text-amber-800">
-            <strong>Criteria:</strong> Activities shown below are multi-year (≥365 days), have fewer than 2 budget periods, 
-            and have disbursed more than budgeted. This may indicate incomplete financial reporting.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="py-4">
-          <FinancialCompletenessFilters
-            organizations={organizations}
-            selectedOrgId={selectedOrgId}
-            sortBy={sortBy}
-            onOrgChange={setSelectedOrgId}
-            onSortChange={setSortBy}
-            onClearFilters={handleClearFilters}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Chart with Table Toggle */}
+    <div className="grid gap-6 lg:grid-cols-2 items-stretch">
       <FinancialCompletenessChart
         data={sortedData}
         loading={false}
+        collapsedHeight={380}
+        sortBy={sortBy}
+        expandedControls={filtersEl}
+        expandedFooter={completenessFooter}
       />
+
+      <ExpandableChartCard
+        title="Overspend by Organisation"
+        description="Total overspend (disbursed minus budgeted) per reporting organisation"
+        height={380}
+        expandedFill
+        expandedFooter={completenessFooter}
+      >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={overspendByOrg}
+              layout="vertical"
+              margin={{ top: 8, right: 24, bottom: 8, left: 8 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+              <YAxis type="category" dataKey="label" width={160} tick={{ fontSize: 11, fill: '#334155' }} />
+              <RTooltip
+                formatter={(v: any) => [`USD ${Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 })}`, 'Overspend']}
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}
+              />
+              <Bar dataKey="overspend" fill="#ef4444" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ExpandableChartCard>
     </div>
   );
 }

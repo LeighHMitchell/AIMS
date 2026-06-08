@@ -3,9 +3,45 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AlertCircle, Calendar, DollarSign } from "lucide-react"
+import { AlertCircle, Calendar, DollarSign, BarChart3, Table as TableIcon, Download } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { getOrganizationTypeName } from "@/data/iati-organization-types"
+import { ExpandableChartCard } from "@/components/analytics/ExpandableChartCard"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer } from "recharts"
+
+// Download an array of rows as a CSV file.
+function downloadCsv(filename: string, headers: string[], rows: (string | number)[][]) {
+  const esc = (c: any) => `"${String(c ?? '').replace(/"/g, '""')}"`
+  const csv = [headers.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// Small right-aligned toolbar: table/chart toggle + CSV download.
+function ChartToolbar({ view, onView, onCsv }: { view: 'chart' | 'table'; onView: (v: 'chart' | 'table') => void; onCsv: () => void }) {
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <div className="flex items-center border rounded-md">
+        <Button variant={view === 'chart' ? 'default' : 'ghost'} size="icon" className="h-8 w-8 rounded-r-none" title="Chart view" onClick={() => onView('chart')}>
+          <BarChart3 className="h-4 w-4" />
+        </Button>
+        <Button variant={view === 'table' ? 'default' : 'ghost'} size="icon" className="h-8 w-8 rounded-l-none" title="Table view" onClick={() => onView('table')}>
+          <TableIcon className="h-4 w-4" />
+        </Button>
+      </div>
+      <Button variant="ghost" size="icon" className="h-8 w-8" title="Download CSV" onClick={onCsv}>
+        <Download className="h-4 w-4" />
+      </Button>
+    </div>
+  )
+}
 
 interface OrgFinancialDateRange {
   orgType: string
@@ -15,10 +51,32 @@ interface OrgFinancialDateRange {
   activityCount: number
 }
 
+// Shaded-header hover card matching the rest of the app's chart tooltips.
+function CalendarYearTooltip({ active, payload }: any) {
+  if (!active || !payload || payload.length === 0) return null
+  const d = payload[0].payload
+  return (
+    <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-muted px-3 py-2 border-b border-border">
+        <p className="font-semibold text-foreground text-body">CY {d.year}</p>
+      </div>
+      <div className="px-3 py-2 text-body">
+        <span className="text-muted-foreground">Transactions: </span>
+        <span className="font-semibold text-foreground">{d.count}</span>
+      </div>
+    </div>
+  )
+}
+
 export function DataClinicFinancialDates() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rangeData, setRangeData] = useState<OrgFinancialDateRange[]>([])
+  const [yearData, setYearData] = useState<{ year: string; count: number }[]>([])
+  const [timelineView, setTimelineView] = useState<'chart' | 'table'>('chart')
+  const [txView, setTxView] = useState<'chart' | 'table'>('chart')
+  const [yearFrom, setYearFrom] = useState<string>('all')
+  const [yearTo, setYearTo] = useState<string>('all')
 
   useEffect(() => {
     fetchFinancialDates()
@@ -58,8 +116,22 @@ export function DataClinicFinancialDates() {
       const transactions = txRes.data || []
       if (transactions.length === 0) {
         setRangeData([])
+        setYearData([])
         return
       }
+
+      // Transactions per calendar year (for the volume-over-time chart)
+      const yearMap = new Map<number, number>()
+      transactions.forEach((t: any) => {
+        if (!t.transaction_date) return
+        const y = new Date(t.transaction_date).getFullYear()
+        if (!Number.isNaN(y)) yearMap.set(y, (yearMap.get(y) || 0) + 1)
+      })
+      setYearData(
+        Array.from(yearMap.entries())
+          .sort((a, b) => a[0] - b[0])
+          .map(([year, count]) => ({ year: String(year), count }))
+      )
 
       // organisation id → IATI org type code
       const orgTypeById = new Map<string, string>()
@@ -195,20 +267,76 @@ export function DataClinicFinancialDates() {
   const rowHeight = 50
   const chartHeight = rangeData.length * rowHeight + 100
 
+  // Year picker: available years + the filtered set shown in the bar chart
+  const availableYears = yearData.map((d) => d.year)
+  const filteredYearData = yearData.filter((d) => {
+    const y = Number(d.year)
+    if (yearFrom !== 'all' && y < Number(yearFrom)) return false
+    if (yearTo !== 'all' && y > Number(yearTo)) return false
+    return true
+  })
+
+  const datesFooter = (
+    <p className="text-body text-muted-foreground leading-relaxed">
+      The timeline plots the span of years over which each type of organisation has reported transactions,
+      while the bar chart counts how many transactions fall in each calendar year. A short range or a gap means
+      an organisation type — or a whole year — has little or no recorded financial activity, which often
+      signals disbursements that are missing, reported late, or not yet entered. Use these views to spot
+      reporters and periods with sparse or outdated coverage and follow up to fill the gaps, so the platform
+      reflects spending closer to real time and your aid data stays complete and trustworthy.
+    </p>
+  )
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5" />
-          Financial Activity Timeline by Organization Type
-        </CardTitle>
-        <CardDescription>
-          Range of transaction years for each organization type
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <svg width={chartWidth} height={chartHeight} className="border border-border rounded-lg bg-white">
+    <div className="space-y-6">
+      <ExpandableChartCard
+        title="Financial Activity Timeline by Organisation Type"
+        description="Range of transaction years for each organisation type"
+        height={Math.min(chartHeight, 620)}
+        expandedFill
+        expandedFooter={datesFooter}
+      >
+        <div className="flex flex-col h-full gap-2">
+          <ChartToolbar
+            view={timelineView}
+            onView={setTimelineView}
+            onCsv={() => downloadCsv(
+              'financial-activity-timeline.csv',
+              ['Organisation Type', 'Earliest Year', 'Latest Year', 'Transactions'],
+              rangeData.map((d) => [d.orgTypeName, d.earliestYear, d.latestYear, d.activityCount])
+            )}
+          />
+          {timelineView === 'table' ? (
+            <div className="flex-1 min-h-0 overflow-auto rounded-md border">
+              <table className="w-full text-body">
+                <thead className="bg-surface-muted sticky top-0">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium">Organisation Type</th>
+                    <th className="px-4 py-2 text-right font-medium">Earliest Year</th>
+                    <th className="px-4 py-2 text-right font-medium">Latest Year</th>
+                    <th className="px-4 py-2 text-right font-medium">Transactions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rangeData.map((d) => (
+                    <tr key={d.orgType} className="border-t hover:bg-muted/50">
+                      <td className="px-4 py-2">{d.orgTypeName}</td>
+                      <td className="px-4 py-2 text-right">{d.earliestYear}</td>
+                      <td className="px-4 py-2 text-right">{d.latestYear}</td>
+                      <td className="px-4 py-2 text-right">{d.activityCount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+          <svg
+            width="100%"
+            height="100%"
+            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+            preserveAspectRatio="xMidYMid meet"
+            className="flex-1 min-h-0 border border-border rounded-lg bg-white"
+          >
             {/* Year axis labels at top */}
             <g>
               {Array.from({ length: yearRange }, (_, i) => {
@@ -323,20 +451,85 @@ export function DataClinicFinancialDates() {
               )
             })}
           </svg>
+          )}
         </div>
+      </ExpandableChartCard>
 
-        {/* Legend */}
-        <div className="mt-4 flex items-center gap-4 text-body text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="w-12 h-6 bg-blue-500 rounded opacity-80"></div>
-            <span>Transaction period range</span>
+      <ExpandableChartCard
+        title="Transactions by Year"
+        description="Number of transactions recorded in each calendar year"
+        height={380}
+        expandedFill
+        expandedFooter={datesFooter}
+      >
+        <div className="flex flex-col h-full gap-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Select value={yearFrom} onValueChange={setYearFrom}>
+                <SelectTrigger className="h-8 w-[110px]"><SelectValue placeholder="From CY" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">From: any</SelectItem>
+                  {availableYears.map((y) => <SelectItem key={y} value={y}>CY {y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <span className="text-muted-foreground text-helper">to</span>
+              <Select value={yearTo} onValueChange={setYearTo}>
+                <SelectTrigger className="h-8 w-[110px]"><SelectValue placeholder="To CY" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">To: any</SelectItem>
+                  {availableYears.map((y) => <SelectItem key={y} value={y}>CY {y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <ChartToolbar
+              view={txView}
+              onView={setTxView}
+              onCsv={() => downloadCsv(
+                'transactions-by-year.csv',
+                ['Calendar Year', 'Transactions'],
+                filteredYearData.map((d) => [`CY ${d.year}`, d.count])
+              )}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-900 rounded-full"></div>
-            <span>Start/End year markers</span>
+          <div className="flex-1 min-h-0">
+            {txView === 'table' ? (
+              <div className="h-full overflow-auto rounded-md border">
+                <table className="w-full text-body">
+                  <thead className="bg-surface-muted sticky top-0">
+                    <tr>
+                      <th className="px-4 py-2 text-left font-medium">Calendar Year</th>
+                      <th className="px-4 py-2 text-right font-medium">Transactions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredYearData.map((d) => (
+                      <tr key={d.year} className="border-t hover:bg-muted/50">
+                        <td className="px-4 py-2">CY {d.year}</td>
+                        <td className="px-4 py-2 text-right">{d.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={filteredYearData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis
+                    dataKey="year"
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    tickFormatter={(y: any) => `CY ${y}`}
+                  />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <RTooltip cursor={{ fill: 'rgba(0,0,0,0.04)' }} content={<CalendarYearTooltip />} />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </ExpandableChartCard>
+    </div>
   )
 }

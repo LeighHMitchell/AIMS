@@ -1,7 +1,24 @@
 {
-  "currentVersion": "4.0.5",
-  "narrativeSummary": "This update makes the Data Clinic's new tabs far more useful for cleaning up data. Transactions and Planned Disbursements now show Provider and Receiver as separate columns, each clearly marked Linked, Unlinked or Missing — and you can link an organisation (or fix a typo'd name) right from the table. Transactions gain a USD Value column alongside the original, budgets now carry their USD values, and the Duplicates tab (and every tab) correctly ignores anything in the recycle bin. Throughout, IATI codes now show their names, dates read as “1 Jul 2023”, locations and the planned-disbursement type are editable, and country flags appear next to organisations.",
+  "currentVersion": "4.0.6",
+  "narrativeSummary": "This update sharpens the Data Clinic's financial views and makes fixing data faster. The Financial Dates tab adds a transactions-per-year bar chart with a year filter, and the Financial Completeness tab gains an overspend view that flags where disbursements exceed budgets — both with chart/table toggles, CSV export and full-screen expand. Inline edit dropdowns now open the moment you click, so corrections take one less click. The Sectors browser is clearer too: the whole banner links through to a sector's profile and the list view drills open on demand. Plus a round of colour, hierarchy and consistency polish behind the scenes.",
   "releases": [
+    {
+      "version": "4.0.6",
+      "date": "2026-06-08",
+      "narrativeSummary": "This update sharpens the Data Clinic's financial views and makes fixing data faster. The Financial Dates tab adds a transactions-per-year bar chart with a year filter, and the Financial Completeness tab gains an overspend view that flags where disbursements exceed budgets — both with chart/table toggles, CSV export and full-screen expand. Inline edit dropdowns now open the moment you click, so corrections take one less click. The Sectors browser is clearer too: the whole banner links through to a sector's profile and the list view drills open on demand. Plus a round of colour, hierarchy and consistency polish behind the scenes.",
+      "changes": [
+        "<b>See transaction volume over time</b>",
+        "&nbsp;&nbsp;The Financial Dates tab adds a bar chart of transactions per calendar year with a year-range filter, and the organisation-type timeline can now be expanded full-screen. Both come with a chart/table toggle and CSV download. Why it helps: you can spot the years and reporters with sparse or outdated financial coverage and follow up.",
+        "<b>Flag overspending at a glance</b>",
+        "&nbsp;&nbsp;The Financial Completeness tab gains an Overspend view (by organisation or by activity) with a Mild / Moderate / Severe severity legend, sorting by overspend, % spent or organisation, an organisation filter, and a table/chart toggle with full-screen expand. Why it helps: you can quickly find where disbursements exceed what was budgeted.",
+        "<b>Edit faster in the clinic</b>",
+        "&nbsp;&nbsp;Inline edit dropdowns — activity status, aid type, flow type, finance type, organisation and searchable lists — now open the moment you click to edit. Why it helps: one less click on every fix.",
+        "<b>A clearer Sectors browser</b>",
+        "&nbsp;&nbsp;The whole sector banner now links through to its profile (not just the title), and the list view drills open broad → category → code on demand. Why it helps: faster navigation through the sector hierarchy.",
+        "<b>Behind the scenes</b>",
+        "&nbsp;&nbsp;Sector colour and hierarchy refinements, plus consistent USD and IATI-name handling across the data-clinic endpoints. Why it helps: steadier, more consistent figures."
+      ]
+    },
     {
       "version": "4.0.5",
       "date": "2026-06-07",

@@ -55,11 +55,11 @@ export async function GET(request: NextRequest) {
     for (const org of organizations || []) {
       let hasGap = false;
 
+      // Only a genuinely missing IATI identifier is a gap. Non-standard formats
+      // are treated as legitimate (many valid identifiers don't match a strict
+      // pattern), so they are not flagged.
       if (!org.iati_org_id) {
         missingIdentifier++;
-        hasGap = true;
-      } else if (!identifierPattern.test(org.iati_org_id)) {
-        invalidIdentifier++;
         hasGap = true;
       }
 

@@ -241,9 +241,9 @@ export function EditableCell({
         const countryInfo = IATI_COUNTRIES.find(c => c.name === value);
         if (countryInfo) {
           return (
-            <div className="flex items-center gap-2">
-              <Flag code={countryInfo.code} className="h-4 w-6 object-cover rounded" />
-              <span className="text-body">{value}</span>
+            <div className="flex items-start gap-2">
+              <Flag code={countryInfo.code} className="h-4 w-6 object-cover rounded flex-shrink-0 mt-0.5" />
+              <span className="text-body break-words">{value}</span>
             </div>
           );
         }
@@ -252,56 +252,31 @@ export function EditableCell({
           // Special case for United Nations - show UN flag
           if (value === 'United Nations') {
             return (
-              <div className="flex items-center gap-2">
-                <img src="/images/flags/united-nations.svg" alt="UN Flag" className="h-4 w-6 object-cover rounded" />
-                <span className="text-body">{value}</span>
+              <div className="flex items-start gap-2">
+                <img src="/images/flags/united-nations.svg" alt="UN Flag" className="h-4 w-6 object-cover rounded flex-shrink-0 mt-0.5" />
+                <span className="text-body break-words">{value}</span>
               </div>
             );
           }
           // Special case for European Union Institutions - show EU flag
           if (value === 'European Union Institutions') {
             return (
-              <div className="flex items-center gap-2">
-                <img src="/images/flags/european-union.svg" alt="EU Flag" className="h-4 w-6 object-cover rounded" />
-                <span className="text-body">{value}</span>
+              <div className="flex items-start gap-2">
+                <img src="/images/flags/european-union.svg" alt="EU Flag" className="h-4 w-6 object-cover rounded flex-shrink-0 mt-0.5" />
+                <span className="text-body break-words">{value}</span>
               </div>
             );
           }
           return (
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              <span className="text-body">{value}</span>
+            <div className="flex items-start gap-2">
+              <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <span className="text-body break-words">{value}</span>
             </div>
           );
         }
         // Fallback for legacy or unknown values
-        return <span className="text-body">{value}</span>;
+        return <span className="text-body break-words">{value}</span>;
       case 'iati_org_id':
-        const isValid = isValidIdentifier ? isValidIdentifier(value) : true;
-        if (!isValid) {
-          return (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-mono text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">{value}</span>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <AlertCircle className="h-3 w-3 text-orange-500" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-helper space-y-1">
-                      <p className="font-semibold">Invalid IATI Organisation Identifier</p>
-                      <p>Required format: AGENCY-REGISTRATION</p>
-                      <p className="text-muted-foreground">Examples:</p>
-                      <p className="text-muted-foreground">• XI-IATI-1234</p>
-                      <p className="text-muted-foreground">• GB-COH-123456</p>
-                      <p className="text-muted-foreground">• US-EIN-12-3456789</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          );
-        }
         return <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{value}</span>;
       default:
         return <span className="text-body">{value}</span>;
@@ -567,12 +542,9 @@ export function EditableCell({
     }
   };
 
-  // Only offer editing where there's a data gap: a missing value, or an
-  // identifier present but in an invalid format. Filled, valid fields render
-  // as plain (non-editable) text — no edit affordance.
-  const isInvalidIdentifier =
-    field === 'iati_org_id' && !!value && isValidIdentifier ? !isValidIdentifier(value) : false;
-  const hasGap = !value || isInvalidIdentifier;
+  // Only offer editing where there's a data gap: a missing value. Filled
+  // fields render as plain (non-editable) text — no edit affordance.
+  const hasGap = !value;
 
   // Non-editable display
   if (!isEditable || !hasGap) {

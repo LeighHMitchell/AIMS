@@ -47,6 +47,11 @@ export async function PATCH(
       dbValue = Number.isNaN(n) ? null : n
     }
     update = { [field]: dbValue }
+    // Keep a paired name column in sync with the chosen option's label.
+    if (col.nameField && col.editor === 'select') {
+      const label = col.options?.find((o) => o.value === value)?.label ?? null
+      update[col.nameField] = label
+    }
   }
 
   const { error } = await supabase

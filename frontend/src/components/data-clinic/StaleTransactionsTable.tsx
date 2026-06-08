@@ -10,13 +10,16 @@ import { Badge } from '@/components/ui/badge'
 import { Clock, Pencil, AlertCircle, Download } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { differenceInDays, format, parseISO } from 'date-fns'
+import { renderMoney } from './formatters'
 
 // Types
 interface StaleActivity {
   id: string;
   title_narrative: string | null;
   iati_identifier: string | null;
+  acronym: string | null;
   activity_status: string;
   reporting_org_name: string | null;
   reporting_org_acronym: string | null;
@@ -49,22 +52,6 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   '13': 'Incoming Pledge',
 };
 
-// Helper to format currency
-const formatCurrency = (value: number | null, currency: string | null): string => {
-  if (value == null) return '—';
-  const safeCurrency = currency?.toUpperCase() || 'USD';
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: safeCurrency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  } catch {
-    return `${safeCurrency} ${value.toLocaleString()}`;
-  }
-};
-
 // Main Component
 export function StaleTransactionsTable() {
   const [loading, setLoading] = useState(true);
@@ -88,7 +75,7 @@ export function StaleTransactionsTable() {
       // 1. Fetch ongoing activities (status = '2' = Implementation) with reporting org fields
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('activities')
-        .select('id, title_narrative, iati_identifier, activity_status, created_by_org_name, created_by_org_acronym')
+        .select('id, title_narrative, iati_identifier, acronym, activity_status, created_by_org_name, created_by_org_acronym')
         .is('deleted_at', null)
         .eq('activity_status', '2');
 
@@ -132,6 +119,7 @@ export function StaleTransactionsTable() {
           id: activity.id,
           title_narrative: activity.title_narrative,
           iati_identifier: activity.iati_identifier,
+          acronym: activity.acronym || null,
           activity_status: activity.activity_status,
           reporting_org_name: activity.created_by_org_name || null,
           reporting_org_acronym: activity.created_by_org_acronym || null,
@@ -413,25 +401,27 @@ export function StaleTransactionsTable() {
                 {sortedActivities.slice(0, 100).map((activity) => (
                   <TableRow key={activity.id} className="hover:bg-muted/50">
                     <TableCell>
-                      <span className="font-medium line-clamp-2">
-                        {activity.title_narrative || 'Untitled'}
-                      </span>
-                      {activity.iati_identifier && (
-                        <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded inline-block mt-1">
-                          {activity.iati_identifier}
-                        </span>
-                      )}
+                      <div className="break-words">
+                        {activity.iati_identifier && (
+                          <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap align-middle mr-1.5">
+                            {activity.iati_identifier}
+                          </span>
+                        )}
+                        <Link
+                          href={`/activities/${activity.id}`}
+                          className="font-medium no-underline hover:opacity-70 transition-opacity"
+                        >
+                          {activity.title_narrative || 'Untitled'}
+                          {activity.acronym ? ` (${activity.acronym})` : ''}
+                        </Link>
+                      </div>
                     </TableCell>
                     <TableCell className="whitespace-normal">
                       {activity.reporting_org_name ? (
-                        <div className="min-w-[150px]">
-                          {activity.reporting_org_acronym && (
-                            <span className="font-medium text-foreground">
-                              {activity.reporting_org_acronym}
-                            </span>
-                          )}
-                          <span className="block text-helper text-muted-foreground break-words">
+                        <div className="min-w-[150px] break-words">
+                          <span className="text-body">
                             {activity.reporting_org_name}
+                            {activity.reporting_org_acronym ? ` (${activity.reporting_org_acronym})` : ''}
                           </span>
                         </div>
                       ) : (
@@ -449,21 +439,26 @@ export function StaleTransactionsTable() {
                           </span>
                         </div>
                       ) : (
-                        <Badge variant="destructive" className="text-helper">
+                        <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
+                          <AlertCircle className="h-3 w-3 mr-1" />
                           No transactions
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-foreground">
                       {activity.last_transaction_type
                         ? TRANSACTION_TYPE_LABELS[activity.last_transaction_type] || activity.last_transaction_type
                         : '—'}
                     </TableCell>
                     <TableCell className="text-right text-foreground">
-                      {formatCurrency(activity.last_transaction_value, activity.last_transaction_currency)}
+                      {activity.last_transaction_value != null
+                        ? renderMoney(activity.last_transaction_value, activity.last_transaction_currency)
+                        : '—'}
                     </TableCell>
                     <TableCell className="text-right text-foreground">
-                      {formatCurrency(activity.last_transaction_value_usd, 'USD')}
+                      {activity.last_transaction_value_usd != null
+                        ? renderMoney(activity.last_transaction_value_usd, 'USD')
+                        : '—'}
                     </TableCell>
                     <TableCell>
                       <Button

@@ -347,7 +347,7 @@ export function DataClinicOrganizations() {
                     <div className="flex items-center gap-1">Acronym {getSortIcon('acronym', sortField, sortDirection)}</div>
                   </th>
                   <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('identifier')}>
-                    <div className="flex items-center gap-1">Identifier {getSortIcon('identifier', sortField, sortDirection)}</div>
+                    <div className="flex items-center gap-1">IATI Identifier {getSortIcon('identifier', sortField, sortDirection)}</div>
                   </th>
                   <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
                     <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
@@ -455,7 +455,7 @@ export function DataClinicOrganizations() {
                             )}
                           </span>
                         ) : (
-                          <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
+                          <Badge variant="outline" className="text-helper border border-gray-300 text-gray-500 bg-transparent">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Missing
                           </Badge>

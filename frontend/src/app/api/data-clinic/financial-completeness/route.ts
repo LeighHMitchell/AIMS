@@ -4,9 +4,11 @@ import { requireAuth } from '@/lib/auth';
 interface FinancialCompletenessActivity {
   id: string;
   title: string;
+  acronym: string | null;
   iati_identifier: string | null;
   reporting_org_id: string | null;
   reporting_org_name: string | null;
+  reporting_org_acronym: string | null;
   total_budgeted_usd: number;
   total_disbursed_usd: number;
   overspend_usd: number;
@@ -39,10 +41,12 @@ export async function GET(request: NextRequest) {
         id,
         title_narrative,
         iati_identifier,
+        acronym,
         planned_start_date,
         planned_end_date,
         reporting_org_id,
-        created_by_org_name
+        created_by_org_name,
+        created_by_org_acronym
       `)
       .is('deleted_at', null)
       .not('planned_start_date', 'is', null)
@@ -73,15 +77,17 @@ export async function GET(request: NextRequest) {
     // Fetch organization names for reporting orgs
     const reportingOrgIds = [...new Set(activities.map((a: any) => a.reporting_org_id).filter(Boolean))];
     const orgNameMap = new Map<string, string>();
-    
+    const orgAcronymMap = new Map<string, string>();
+
     if (reportingOrgIds.length > 0) {
       const { data: orgs } = await supabase
         .from('organizations')
-        .select('id, name')
+        .select('id, name, acronym')
         .in('id', reportingOrgIds);
-      
+
       orgs?.forEach((org: any) => {
         orgNameMap.set(org.id, org.name);
+        if (org.acronym) orgAcronymMap.set(org.id, org.acronym);
       });
     }
 
@@ -170,16 +176,21 @@ export async function GET(request: NextRequest) {
         : totalDisbursed > 0 ? 999 : 0; // Cap at 999% for display when budget is 0
 
       // Get org name from map or fallback to created_by_org_name
-      const orgName = activity.reporting_org_id 
-        ? orgNameMap.get(activity.reporting_org_id) || activity.created_by_org_name 
+      const orgName = activity.reporting_org_id
+        ? orgNameMap.get(activity.reporting_org_id) || activity.created_by_org_name
         : activity.created_by_org_name;
+      const orgAcronym = activity.reporting_org_id
+        ? orgAcronymMap.get(activity.reporting_org_id) || activity.created_by_org_acronym
+        : activity.created_by_org_acronym;
 
       results.push({
         id: activity.id,
         title: activity.title_narrative || 'Untitled Activity',
+        acronym: activity.acronym || null,
         iati_identifier: activity.iati_identifier,
         reporting_org_id: activity.reporting_org_id,
         reporting_org_name: orgName || null,
+        reporting_org_acronym: orgAcronym || null,
         total_budgeted_usd: Math.round(budgetInfo.total * 100) / 100,
         total_disbursed_usd: Math.round(totalDisbursed * 100) / 100,
         overspend_usd: Math.round(overspend * 100) / 100,

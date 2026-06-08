@@ -1088,13 +1088,6 @@ function ImprovedSectorAllocationFormInner({
         );
       })()}
 
-      {/* Sector spend by year (USD per sector per period, actual vs imputed). Complements the
-          weighted-average % table above by showing how much went where, and when. In transaction
-          mode it's always shown; in activity mode it self-hides unless there is spend to impute. */}
-      {activityId && (
-        <SectorSpendByPeriodTable activityId={activityId} hideWhenEmpty={!isTransactionMode} />
-      )}
-
       {/* Wrap everything below in a disabled overlay when in transaction mode */}
       <div className={cn("space-y-6", isLocked && "opacity-50 pointer-events-none select-none")}>
       {/*
@@ -1366,6 +1359,20 @@ function ImprovedSectorAllocationFormInner({
 
       </div>
       </div>
+
+      {/* Sector spend by year (USD per sector per period, actual vs imputed) — tucked below the
+          Selected Sectors and collapsed by default so it stays out of the way; expand on demand.
+          Sits outside the transaction-mode disabled overlay so it stays readable when locked.
+          Self-hides in activity mode when there's no spend to impute. */}
+      {activityId && (
+        <SectorSpendByPeriodTable
+          activityId={activityId}
+          hideWhenEmpty={!isTransactionMode}
+          collapsible
+          defaultCollapsed
+        />
+      )}
+
       <ConfirmDialog />
     </div>
   );

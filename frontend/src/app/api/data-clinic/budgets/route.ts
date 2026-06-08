@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
         usd_value,
         activities:activity_id (
           title_narrative,
-          iati_identifier
+          iati_identifier,
+          acronym
         )
       `)
       .is('deleted_at', null)
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
       const formattedBudgets = (budgets || []).map(budget => ({
         ...budget,
         activityTitle: budget.activities?.title_narrative || 'Untitled Activity',
+        activityAcronym: budget.activities?.acronym || '',
         value_usd: budget.usd_value
       }));
       return NextResponse.json({ budgets: formattedBudgets });
@@ -105,6 +107,7 @@ export async function GET(request: NextRequest) {
           id: budget.id,
           activity_id: budget.activity_id,
           activityTitle: budget.activities?.title_narrative || 'Untitled Activity',
+          activityAcronym: budget.activities?.acronym || '',
           type: budget.type,
           status: budget.status,
           period_start: budget.period_start,

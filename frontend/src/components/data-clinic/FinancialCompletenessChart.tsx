@@ -16,7 +16,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { AlertCircle, BarChart3, Table as TableIcon, ExternalLink, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { AlertCircle, BarChart3, Table as TableIcon, ExternalLink, ChevronsUpDown, ChevronUp, ChevronDown, Maximize2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import {
   formatCurrencyCompact,
@@ -30,9 +31,11 @@ import {
 interface FinancialCompletenessActivity {
   id: string;
   title: string;
+  acronym: string | null;
   iati_identifier: string | null;
   reporting_org_id: string | null;
   reporting_org_name: string | null;
+  reporting_org_acronym: string | null;
   total_budgeted_usd: number;
   total_disbursed_usd: number;
   overspend_usd: number;
@@ -44,6 +47,14 @@ interface FinancialCompletenessActivity {
 interface FinancialCompletenessChartProps {
   data: FinancialCompletenessActivity[];
   loading: boolean;
+  /** fixed height of the collapsed card chart */
+  collapsedHeight?: number;
+  /** controls (filters etc.) shown only in the expanded modal */
+  expandedControls?: React.ReactNode;
+  /** explanatory text shown below the chart in the expanded modal */
+  expandedFooter?: React.ReactNode;
+  /** current "Sort by" from the filters — drives the chart/table order */
+  sortBy?: 'overspend' | 'percentage' | 'organization';
 }
 
 type ViewMode = 'chart' | 'table';
@@ -112,7 +123,8 @@ const CustomYAxisTick = ({ x, y, payload, data, width }: any) => {
     return lines;
   };
 
-  const lines = wrapText(payload.value, 45);
+  const labelText = activity?.acronym ? `${payload.value} (${activity.acronym})` : payload.value;
+  const lines = wrapText(labelText, 45);
   const totalHeight = lines.length * lineHeight;
   const startY = -totalHeight / 2 + lineHeight / 2;
 
@@ -135,10 +147,19 @@ const CustomYAxisTick = ({ x, y, payload, data, width }: any) => {
   );
 };
 
-export function FinancialCompletenessChart({ data, loading }: FinancialCompletenessChartProps) {
+export function FinancialCompletenessChart({ data, loading, collapsedHeight = 380, expandedControls, expandedFooter, sortBy }: FinancialCompletenessChartProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('chart');
   const [sortField, setSortField] = useState<SortField>('overspend');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Drive the chart/table order from the filters' "Sort by" selection.
+  React.useEffect(() => {
+    if (sortBy) {
+      setSortField(sortBy as SortField);
+      setSortDirection('desc');
+    }
+  }, [sortBy]);
   const router = useRouter();
 
   // Handle column header click for sorting
@@ -210,9 +231,13 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
     return (
       <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-sm">
         <div className="bg-muted px-3 py-2 border-b border-border">
-          <p className="font-semibold text-foreground text-body">{item.fullName}</p>
+          <p className="font-semibold text-foreground text-body">
+            {item.fullName}{item.acronym ? ` (${item.acronym})` : ''}
+          </p>
           {item.reporting_org_name && (
-            <p className="text-helper text-muted-foreground mt-0.5">{item.reporting_org_name}</p>
+            <p className="text-helper text-muted-foreground mt-0.5">
+              {item.reporting_org_name}{item.reporting_org_acronym ? ` (${item.reporting_org_acronym})` : ''}
+            </p>
           )}
         </div>
         <div className="p-2">
@@ -300,97 +325,77 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
   // Calculate dynamic height based on number of items - taller to accommodate wrapped titles
   const chartHeight = Math.max(400, chartData.length * 70);
 
-  return (
-    <Card className="bg-white">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg font-semibold text-foreground">
-              Overspend by Activity
-            </CardTitle>
-            <CardDescription>
-              Activities with disbursements exceeding budgeted amounts. Click activity title to view details.
-            </CardDescription>
-          </div>
-          {/* View Toggle */}
-          <div className="flex items-center border rounded-md">
-            <Button
-              variant={viewMode === 'chart' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('chart')}
-              className="rounded-r-none gap-1.5"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Chart
-            </Button>
-            <Button
-              variant={viewMode === 'table' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('table')}
-              className="rounded-l-none gap-1.5"
-            >
-              <TableIcon className="h-4 w-4" />
-              Table
-            </Button>
-          </div>
-        </div>
-        {/* Severity Legend */}
-        <div className="flex items-center gap-4 mt-4">
-          <span className="text-helper text-muted-foreground">Severity:</span>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#fbbf24' }} />
-            <span className="text-helper text-muted-foreground">Mild (&lt;150%)</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#f97316' }} />
-            <span className="text-helper text-muted-foreground">Moderate (150-200%)</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#ef4444' }} />
-            <span className="text-helper text-muted-foreground">Severe (&gt;200%)</span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {viewMode === 'chart' ? (
-          <div className="bg-white rounded-lg border border-border p-4">
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <BarChart
-                data={chartData}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 300, bottom: 5 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#e2e8f0"
-                  horizontal={false}
-                />
-                <XAxis
-                  type="number"
-                  tickFormatter={formatCurrencyCompact}
-                  tick={{ fill: '#64748b', fontSize: 12 }}
-                  axisLine={{ stroke: '#cbd5e1' }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="title"
-                  tick={<CustomYAxisTick data={chartData} />}
-                  axisLine={{ stroke: '#cbd5e1' }}
-                  width={290}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="overspend_usd" radius={[0, 4, 4, 0]}>
-                  {chartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={getSeverityColorFromPercentage(entry.percentage_spent)}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
+  const barChartEl = (
+    <BarChart
+      data={chartData}
+      layout="vertical"
+      margin={{ top: 5, right: 30, left: 300, bottom: 5 }}
+    >
+      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+      <XAxis
+        type="number"
+        tickFormatter={formatCurrencyCompact}
+        tick={{ fill: '#64748b', fontSize: 12 }}
+        axisLine={{ stroke: '#cbd5e1' }}
+      />
+      <YAxis
+        type="category"
+        dataKey="title"
+        tick={<CustomYAxisTick data={chartData} />}
+        axisLine={{ stroke: '#cbd5e1' }}
+        width={290}
+      />
+      <Tooltip content={<CustomTooltip />} />
+      <Bar dataKey="overspend_usd" radius={[0, 4, 4, 0]}>
+        {chartData.map((entry, index) => (
+          <Cell key={`cell-${index}`} fill={getSeverityColorFromPercentage(entry.percentage_spent)} />
+        ))}
+      </Bar>
+    </BarChart>
+  );
+
+  const severityLegend = (
+    <div className="flex items-center gap-4">
+      <span className="text-helper text-muted-foreground">Severity:</span>
+      <div className="flex items-center gap-1">
+        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#fbbf24' }} />
+        <span className="text-helper text-muted-foreground">Mild (&lt;150%)</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#f97316' }} />
+        <span className="text-helper text-muted-foreground">Moderate (150-200%)</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#ef4444' }} />
+        <span className="text-helper text-muted-foreground">Severe (&gt;200%)</span>
+      </div>
+    </div>
+  );
+
+  const toggleEl = (
+    <div className="flex items-center border rounded-md">
+      <Button
+        variant={viewMode === 'chart' ? 'default' : 'ghost'}
+        size="icon"
+        onClick={() => setViewMode('chart')}
+        className="rounded-r-none h-8 w-8"
+        title="Chart view"
+      >
+        <BarChart3 className="h-4 w-4" />
+      </Button>
+      <Button
+        variant={viewMode === 'table' ? 'default' : 'ghost'}
+        size="icon"
+        onClick={() => setViewMode('table')}
+        className="rounded-l-none h-8 w-8"
+        title="Table view"
+      >
+        <TableIcon className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+
+  const tableEl = (
           <div className="rounded-md border overflow-auto">
             <Table>
               <TableHeader>
@@ -471,10 +476,14 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
                       onClick={() => router.push(`/activities/${item.id}`)}
                     >
                       <TableCell className="font-medium">
-                        <span className="line-clamp-2">{item.title}</span>
+                        <span className="line-clamp-2">
+                          {item.title}{item.acronym ? ` (${item.acronym})` : ''}
+                        </span>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {item.reporting_org_name || '—'}
+                      <TableCell className="text-foreground">
+                        {item.reporting_org_name
+                          ? `${item.reporting_org_name}${item.reporting_org_acronym ? ` (${item.reporting_org_acronym})` : ''}`
+                          : '—'}
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrencyFull(item.total_budgeted_usd)}
@@ -500,8 +509,66 @@ export function FinancialCompletenessChart({ data, loading }: FinancialCompleten
               </TableBody>
             </Table>
           </div>
-        )}
+  );
+
+  return (
+    <>
+    <Card className="bg-white">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg font-semibold text-foreground">
+              Overspend by Activity
+            </CardTitle>
+            <CardDescription>
+              Activities with disbursements exceeding budgeted amounts.
+            </CardDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 flex-shrink-0"
+            onClick={() => setIsExpanded(true)}
+            title="Expand chart"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="bg-white rounded-lg border border-border p-4">
+          <ResponsiveContainer width="100%" height={collapsedHeight}>
+            {barChartEl}
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
+
+    <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
+      <DialogContent className="max-w-[95vw] w-[1400px] h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>Overspend by Activity</DialogTitle>
+          <DialogDescription>Activities with disbursements exceeding budgeted amounts. Click a title to view details.</DialogDescription>
+        </DialogHeader>
+        <div className="flex-shrink-0 mt-2 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">{expandedControls}</div>
+          {toggleEl}
+        </div>
+        <div className="flex-1 mt-4 min-h-0 overflow-auto">
+          {viewMode === 'chart' ? (
+            <ResponsiveContainer width="100%" height={Math.max(chartHeight, 600)}>
+              {barChartEl}
+            </ResponsiveContainer>
+          ) : tableEl}
+        </div>
+        {viewMode === 'chart' && (
+          <div className="flex-shrink-0 mt-3">{severityLegend}</div>
+        )}
+        {expandedFooter && (
+          <div className="flex-shrink-0 mt-4 max-h-[28%] overflow-y-auto">{expandedFooter}</div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

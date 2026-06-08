@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
           receiver_org_name,
           description,
           activities!activity_id!inner (
-            title_narrative
+            title_narrative,
+            acronym
           )
         `)
         .is('deleted_at', null)
@@ -68,7 +69,8 @@ export async function GET(request: NextRequest) {
           receiver_org_name,
           description,
           activities!activity_id!inner (
-            title_narrative
+            title_narrative,
+            acronym
           )
         `)
         .is('deleted_at', null)
@@ -153,6 +155,7 @@ export async function GET(request: NextRequest) {
             id: transaction.uuid,
             activityId: transaction.activity_id,
             activityTitle: transaction.activities?.title_narrative,
+        activityAcronym: transaction.activities?.acronym,
             transactionType: transaction.transaction_type,
             aidType: transaction.aid_type,
             financeType: transaction.finance_type,
@@ -203,6 +206,7 @@ export async function GET(request: NextRequest) {
         id: transaction.uuid,
         activityId: transaction.activity_id,
         activityTitle: transaction.activities?.title_narrative,
+        activityAcronym: transaction.activities?.acronym,
         transactionType: transaction.transaction_type,
         transactionDate: transaction.transaction_date,
         value: transaction.value,

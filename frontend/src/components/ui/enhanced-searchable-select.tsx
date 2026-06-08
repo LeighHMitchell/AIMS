@@ -35,6 +35,8 @@ interface EnhancedSearchableSelectProps {
   open?: boolean;
   /** Callback when open state changes */
   onOpenChange?: (open: boolean) => void;
+  /** Open immediately on mount (uncontrolled) */
+  defaultOpen?: boolean;
 }
 
 export function EnhancedSearchableSelect({
@@ -52,9 +54,10 @@ export function EnhancedSearchableSelect({
   align = "start",
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  defaultOpen = false,
 }: EnhancedSearchableSelectProps) {
   // Use shared dropdown state if dropdownId is provided
-  const [localIsOpen, setLocalIsOpen] = React.useState(false);
+  const [localIsOpen, setLocalIsOpen] = React.useState(defaultOpen);
   const [search, setSearch] = React.useState("");
 
   // Use controlled state if provided, then dropdown context, then local state.
