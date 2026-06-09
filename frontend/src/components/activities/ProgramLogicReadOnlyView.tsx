@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Copy, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProgramLogicGraph } from "@/lib/program-logic/types";
-import { toMermaid } from "@/lib/program-logic/mermaid";
+import {
+  toMermaid,
+  getCeilingTierName,
+  drawAccountabilityCeiling,
+} from "@/lib/program-logic/mermaid";
 
 interface ProgramLogicReadOnlyViewProps {
   graph: ProgramLogicGraph;
@@ -26,6 +30,7 @@ export function ProgramLogicReadOnlyView({ graph }: ProgramLogicReadOnlyViewProp
   const [error, setError] = useState<string | null>(null);
 
   const definition = useMemo(() => toMermaid(graph), [graph]);
+  const ceilingName = useMemo(() => getCeilingTierName(graph), [graph]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +72,13 @@ export function ProgramLogicReadOnlyView({ graph }: ProgramLogicReadOnlyViewProp
         const { svg } = await mermaid.render(id, definition);
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
+          // Draw the horizontal accountability-ceiling divider after layout.
+          if (ceilingName) {
+            const el = containerRef.current;
+            requestAnimationFrame(() => {
+              if (!cancelled && el) drawAccountabilityCeiling(el, ceilingName);
+            });
+          }
         }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "Failed to render diagram");
@@ -77,7 +89,7 @@ export function ProgramLogicReadOnlyView({ graph }: ProgramLogicReadOnlyViewProp
     return () => {
       cancelled = true;
     };
-  }, [definition]);
+  }, [definition, ceilingName]);
 
   const copyDefinition = async () => {
     try {
@@ -125,7 +137,7 @@ export function ProgramLogicReadOnlyView({ graph }: ProgramLogicReadOnlyViewProp
 
       <p className="mt-3 text-xs text-muted-foreground">
         Bottom-up: activities at the base, goal at the top. Solid arrow =
-        attribution · dotted arrow = contribution · highlighted band =
+        attribution · dotted arrow = contribution · dotted amber line =
         accountability ceiling.
       </p>
 

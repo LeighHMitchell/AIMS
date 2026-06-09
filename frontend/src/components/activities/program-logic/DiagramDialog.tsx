@@ -11,7 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Copy, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProgramLogicGraph } from "@/lib/program-logic/types";
-import { toMermaid } from "@/lib/program-logic/mermaid";
+import {
+  toMermaid,
+  getCeilingTierName,
+  drawAccountabilityCeiling,
+} from "@/lib/program-logic/mermaid";
 
 interface DiagramDialogProps {
   open: boolean;
@@ -35,6 +39,7 @@ export function DiagramDialog({
     () => toMermaid(graph, includeNodeIds),
     [graph, includeNodeIds]
   );
+  const ceilingName = useMemo(() => getCeilingTierName(graph), [graph]);
 
   useEffect(() => {
     if (!open) return;
@@ -77,6 +82,12 @@ export function DiagramDialog({
         const { svg } = await mermaid.render(id, definition);
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
+          if (ceilingName) {
+            const el = containerRef.current;
+            requestAnimationFrame(() => {
+              if (!cancelled && el) drawAccountabilityCeiling(el, ceilingName);
+            });
+          }
         }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "Failed to render diagram");
@@ -87,7 +98,7 @@ export function DiagramDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, definition]);
+  }, [open, definition, ceilingName]);
 
   const copyDefinition = async () => {
     try {
@@ -123,7 +134,7 @@ export function DiagramDialog({
             <span className="inline-flex items-center gap-1">
               Solid arrow = attribution
             </span>{" "}
-            · dotted arrow = contribution · highlighted band = accountability
+            · dotted arrow = contribution · dotted amber line = accountability
             ceiling.
           </p>
           <div className="flex items-center gap-2 shrink-0">

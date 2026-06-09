@@ -1,7 +1,18 @@
 {
-  "currentVersion": "4.0.7",
-  "narrativeSummary": "This update enriches organisation records and tidies the look of tables across the platform. Organisations can now carry social links and a separate country-office address, and the funding-envelope view is better aligned with the IATI standard. A new workspace organisation switcher makes it quicker to move between the organisations you work with. Throughout the app, tables now share clean, square corners for a more consistent feel, search is sharper, and there's a round of polish across the Data Clinic, dashboards and profiles.",
+  "currentVersion": "4.0.8",
+  "narrativeSummary": "This update refines the organisation dashboard's funding-flow (Sankey) diagram and the activity Program Logic diagrams so they read more clearly. A focused round of polish across how flows and results frameworks are drawn.",
   "releases": [
+    {
+      "version": "4.0.8",
+      "date": "2026-06-09",
+      "narrativeSummary": "This update refines the organisation dashboard's funding-flow (Sankey) diagram and the activity Program Logic diagrams so they read more clearly. A focused round of polish across how flows and results frameworks are drawn.",
+      "changes": [
+        "<b>Clearer funding-flow diagram</b>",
+        "&nbsp;&nbsp;Refinements to the organisation dashboard's Sankey flow so funding paths are easier to follow. Why it helps: you can see where money moves at a glance.",
+        "<b>Tidier Program Logic diagrams</b>",
+        "&nbsp;&nbsp;Polish to how activity Program Logic (results framework) diagrams are drawn. Why it helps: results and their links read more clearly."
+      ]
+    },
     {
       "version": "4.0.7",
       "date": "2026-06-09",

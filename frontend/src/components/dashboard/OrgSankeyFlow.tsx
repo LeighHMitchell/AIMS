@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { HeroCard } from '@/components/ui/hero-card';
 import { GitBranch } from 'lucide-react';
 import {
   BarChart,
@@ -15,7 +14,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import type { OrgSankeyData, SankeyTransactionFilter } from '@/types/dashboard';
+import type { OrgSankeyData, SankeyTransactionFilter, SankeyTypeTotal } from '@/types/dashboard';
 import { apiFetch } from '@/lib/api-fetch';
 
 interface OrgSankeyFlowProps {
@@ -42,11 +41,75 @@ const formatUsdFull = (n: number): string =>
   `US$${(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
 interface FlowDatum {
-  name: string;
-  incoming: number;
-  outgoing: number; // stored negative so it diverges left of the 0 axis
+  key: string;        // partner org id (stable category key for the Y axis)
+  name: string;       // short label (acronym when known)
+  fullName: string;   // full organisation name
+  acronym?: string;
+  incoming: number;   // stored negative → diverges left of the 0 axis
+  outgoing: number;   // stored positive → diverges right
   incomingAbs: number;
   outgoingAbs: number;
+}
+
+/** Monochrome summary card: a total plus a small per-transaction-type table.
+ *  Mirrors the Activity Editor hero-card styling (border / p-6 / text-2xl). */
+function FlowSummaryCard({
+  title,
+  total,
+  breakdown,
+}: {
+  title: string;
+  total: number;
+  breakdown: SankeyTypeTotal[];
+}) {
+  return (
+    <Card className="border bg-white">
+      <CardContent className="p-6">
+        <p className="text-body font-medium text-muted-foreground mb-2">{title}</p>
+        <p className="text-2xl font-bold text-foreground">{formatUsdFull(total)}</p>
+        {breakdown.length > 0 && (
+          <table className="w-full mt-4">
+            <tbody>
+              {breakdown.map((b) => (
+                <tr key={b.type} className="border-t border-border">
+                  <td className="py-1.5 text-helper text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-mono rounded px-1.5 py-0.5">
+                        {b.type}
+                      </span>
+                      {b.label}
+                    </span>
+                  </td>
+                  <td className="py-1.5 text-right text-helper font-medium text-foreground tabular-nums">
+                    {formatUsdFull(b.value)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Two-line Y-axis tick: full organisation name + acronym (always visible). */
+function FlowYAxisTick(props: any) {
+  const { x, y, payload, rows } = props;
+  const row: FlowDatum | undefined = rows?.find((d: FlowDatum) => d.key === payload.value);
+  const name = row?.fullName || String(payload.value);
+  const acronym = row?.acronym;
+  const MAX = 30;
+  const line1 = name.length > MAX ? `${name.slice(0, MAX - 1)}…` : name;
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <title>{acronym ? `${name} (${acronym})` : name}</title>
+      <text x={-4} y={acronym ? -2 : 4} textAnchor="end" fontSize={11} fill="#334155">{line1}</text>
+      {acronym && (
+        <text x={-4} y={11} textAnchor="end" fontSize={10} fill="#64748b">{`(${acronym})`}</text>
+      )}
+    </g>
+  );
 }
 
 /** Tooltip for the diverging flow bar chart. */
@@ -56,7 +119,7 @@ function FlowTooltip({ active, payload }: any) {
   return (
     <div className="bg-white border border-border shadow-lg text-helper overflow-hidden">
       <div className="bg-surface-muted px-3 py-1.5 font-semibold text-foreground border-b border-border">
-        {row.name}
+        {row.fullName}{row.acronym ? ` (${row.acronym})` : ''}
       </div>
       <div className="px-3 py-1 flex items-center justify-between gap-6">
         <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -128,35 +191,41 @@ export function OrgSankeyFlow({
   // incoming to the left (green). Sorted by total throughput, top 10.
   const chartData = useMemo<FlowDatum[]>(() => {
     if (!data || !selfNode) return [];
-    const nameOf = (id: string) => data.nodes.find(n => n.id === id)?.name || 'Unknown';
-    const byPartner = new Map<string, { name: string; incoming: number; outgoing: number }>();
+    const nodeById = new Map(data.nodes.map(n => [n.id, n]));
+    const byPartner = new Map<string, { incoming: number; outgoing: number }>();
 
     data.links.forEach(link => {
       if (link.target === selfNode.id) {
-        const e = byPartner.get(link.source) || { name: nameOf(link.source), incoming: 0, outgoing: 0 };
+        const e = byPartner.get(link.source) || { incoming: 0, outgoing: 0 };
         e.incoming += link.value;
         byPartner.set(link.source, e);
       } else if (link.source === selfNode.id) {
-        const e = byPartner.get(link.target) || { name: nameOf(link.target), incoming: 0, outgoing: 0 };
+        const e = byPartner.get(link.target) || { incoming: 0, outgoing: 0 };
         e.outgoing += link.value;
         byPartner.set(link.target, e);
       }
     });
 
-    return Array.from(byPartner.values())
-      .map(e => ({
-        name: e.name,
-        incoming: -e.incoming, // negative → diverges left
-        outgoing: e.outgoing, //  positive → diverges right
-        incomingAbs: e.incoming,
-        outgoingAbs: e.outgoing,
-      }))
+    return Array.from(byPartner.entries())
+      .map(([id, e]) => {
+        const node = nodeById.get(id);
+        return {
+          key: id,
+          name: node?.name || 'Unknown',
+          fullName: node?.fullName || node?.name || 'Unknown',
+          acronym: node?.acronym,
+          incoming: -e.incoming, // negative → diverges left
+          outgoing: e.outgoing, //  positive → diverges right
+          incomingAbs: e.incoming,
+          outgoingAbs: e.outgoing,
+        };
+      })
       .sort((a, b) => (b.incomingAbs + b.outgoingAbs) - (a.incomingAbs + a.outgoingAbs))
       .slice(0, 10);
   }, [data, selfNode]);
 
   const hasFlows = chartData.length > 0;
-  const chartHeight = Math.max(220, chartData.length * 48);
+  const chartHeight = Math.max(220, chartData.length * 52);
 
   if (loading) {
     return (
@@ -238,11 +307,11 @@ export function OrgSankeyFlow({
         </div>
       </CardHeader>
       <CardContent>
-        {/* Two hero cards: total incoming / total outgoing — same HeroCard
-            component as the Activity Editor's transaction summary cards. */}
+        {/* Two monochrome summary cards (total + per-type breakdown table),
+            styled like the Activity Editor transaction summary cards. */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <HeroCard title="Total Incoming" value={formatUsdFull(data?.totalIncoming || 0)} variant="success" />
-          <HeroCard title="Total Outgoing" value={formatUsdFull(data?.totalOutgoing || 0)} variant="error-text" />
+          <FlowSummaryCard title="Total Incoming" total={data?.totalIncoming || 0} breakdown={data?.incomingByType || []} />
+          <FlowSummaryCard title="Total Outgoing" total={data?.totalOutgoing || 0} breakdown={data?.outgoingByType || []} />
         </div>
 
         {!hasFlows ? (
@@ -286,10 +355,10 @@ export function OrgSankeyFlow({
                 />
                 <YAxis
                   type="category"
-                  dataKey="name"
-                  width={130}
-                  tick={{ fontSize: 12 }}
+                  dataKey="key"
+                  width={220}
                   interval={0}
+                  tick={<FlowYAxisTick rows={chartData} />}
                 />
                 <RechartsTooltip content={<FlowTooltip />} cursor={{ fill: 'rgba(15,23,42,0.04)' }} />
                 <ReferenceLine x={0} stroke="#94a3b8" />

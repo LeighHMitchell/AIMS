@@ -16,9 +16,10 @@
 import type { ProgramLogicGraph, LogicNodeRow } from "./types";
 
 function esc(s: string): string {
-  // Mermaid label text inside quotes — strip characters that break parsing.
+  // Mermaid label text inside quotes / markdown strings — strip characters that
+  // break parsing (quotes, backticks, bracket/brace/pipe).
   return s
-    .replace(/"/g, "'")
+    .replace(/["`]/g, "'")
     .replace(/[\[\]{}|]/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -69,12 +70,15 @@ export function toMermaid(
       (a, b) => a.sort_order - b.sort_order
     );
     if (tierNodes.length === 0) return;
-    const ceil = tier.attribution_boundary ? " — accountability ceiling" : "";
-    lines.push(`  subgraph T${ti}["${esc(tier.name + ceil)}"]`);
+    lines.push(`  subgraph T${ti}["${esc(tier.name)}"]`);
     lines.push("    direction LR");
-    tierNodes.forEach((n) => {
+    tierNodes.forEach((n, ni) => {
       const tag = n.scope === "activity" ? "«activity» " : "";
-      lines.push(`    ${idOf.get(n.id)}("${esc(tag + n.statement)}")`);
+      // Markdown-string label: a bold per-tier identifier (e.g. EOPO 1) on the
+      // first line, then the statement. Requires backtick-wrapped label.
+      const code = `${tier.short_code} ${ni + 1}`;
+      const label = `**${esc(code)}**\n${esc(tag + n.statement)}`;
+      lines.push(`    ${idOf.get(n.id)}("\`${label}\`")`);
     });
     lines.push("  end");
   });
@@ -101,8 +105,9 @@ export function toMermaid(
     lines.push(`  class ${ids.join(",")} tier${ti};`);
   });
 
-  // Band styling — white interior so the coloured nodes pop, tier-tinted border
-  // + label. Ceiling band gets the amber accent.
+  // Band styling — white interior so the coloured nodes pop, tier-tinted solid
+  // border + label. The accountability ceiling is drawn separately as a
+  // horizontal divider line (see drawAccountabilityCeiling), not a band border.
   tiersAsc.forEach((tier, ti) => {
     const tierNodes = byTier.get(tier.id) ?? [];
     if (tierNodes.length === 0) return;
@@ -113,4 +118,94 @@ export function toMermaid(
   });
 
   return lines.join("\n");
+}
+
+/** The name of the accountability-ceiling tier (attribution_boundary), if any. */
+export function getCeilingTierName(graph: ProgramLogicGraph): string | null {
+  const t = graph.tiers.find((tier) => tier.attribution_boundary);
+  return t ? t.name : null;
+}
+
+/**
+ * Draw a full-width horizontal dotted "accountability ceiling" divider into an
+ * already-rendered Mermaid SVG, positioned in the gap directly above the ceiling
+ * tier's band (i.e. between it and the tier above). Mermaid has no primitive for
+ * a diagram-spanning rule, so we post-process the SVG.
+ *
+ * Positioning is done in screen coordinates (getBoundingClientRect) then mapped
+ * back into the SVG user space via the screen CTM, so it is robust against
+ * Mermaid's internal group transforms and viewBox scaling. Idempotent.
+ */
+export function drawAccountabilityCeiling(
+  container: HTMLElement,
+  ceilingLabel: string
+): void {
+  const svg = container.querySelector("svg");
+  if (!svg) return;
+  svg.querySelectorAll("[data-pl-ceiling]").forEach((el) => el.remove());
+
+  const clusters = Array.from(
+    svg.querySelectorAll<SVGGElement>("g.cluster")
+  );
+  if (clusters.length === 0) return;
+
+  let target: SVGGElement | null = null;
+  for (const c of clusters) {
+    const txt = (c.querySelector(".cluster-label")?.textContent || "").trim();
+    if (txt === ceilingLabel) {
+      target = c;
+      break;
+    }
+  }
+  if (!target) return;
+
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return;
+  const inv = ctm.inverse();
+  const toUser = (x: number, y: number) => {
+    const p = svg.createSVGPoint();
+    p.x = x;
+    p.y = y;
+    return p.matrixTransform(inv);
+  };
+
+  const trect = target.getBoundingClientRect();
+  // Nearest cluster sitting above the ceiling band (its bottom above our top).
+  let aboveBottom: number | null = null;
+  for (const c of clusters) {
+    if (c === target) continue;
+    const r = c.getBoundingClientRect();
+    if (r.bottom <= trect.top + 1) {
+      if (aboveBottom === null || r.bottom > aboveBottom) aboveBottom = r.bottom;
+    }
+  }
+  const yScreen =
+    aboveBottom !== null ? (aboveBottom + trect.top) / 2 : trect.top - 14;
+
+  const svgRect = svg.getBoundingClientRect();
+  const left = toUser(svgRect.left + 4, yScreen);
+  const right = toUser(svgRect.right - 4, yScreen);
+
+  const NS = "http://www.w3.org/2000/svg";
+  const line = document.createElementNS(NS, "line");
+  line.setAttribute("data-pl-ceiling", "1");
+  line.setAttribute("x1", String(left.x));
+  line.setAttribute("y1", String(left.y));
+  line.setAttribute("x2", String(right.x));
+  line.setAttribute("y2", String(right.y));
+  line.setAttribute("stroke", "#f59e0b");
+  line.setAttribute("stroke-width", "2");
+  line.setAttribute("stroke-dasharray", "7 5");
+  svg.appendChild(line);
+
+  const label = document.createElementNS(NS, "text");
+  label.setAttribute("data-pl-ceiling", "1");
+  label.setAttribute("x", String(right.x));
+  label.setAttribute("y", String(right.y - 6));
+  label.setAttribute("text-anchor", "end");
+  label.setAttribute("fill", "#b45309");
+  label.setAttribute("font-size", "12");
+  label.setAttribute("font-weight", "700");
+  label.textContent = "Accountability ceiling";
+  svg.appendChild(label);
 }

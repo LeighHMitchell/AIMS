@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import type { OrgSankeyData, SankeyNode, SankeyLink, SankeyTransactionFilter } from '@/types/dashboard';
+import type { OrgSankeyData, SankeyNode, SankeyLink, SankeyTransactionFilter, SankeyTypeTotal } from '@/types/dashboard';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -117,12 +117,17 @@ export async function GET(request: NextRequest) {
     // Build nodes and links
     const nodesMap = new Map<string, SankeyNode>();
     const linksMap = new Map<string, { source: string; target: string; value: number; transactionType: string }>();
+    // Per-transaction-type USD totals for each direction (code -> value).
+    const incomingByTypeMap = new Map<string, number>();
+    const outgoingByTypeMap = new Map<string, number>();
 
     // Add self node
     nodesMap.set(organizationId, {
       id: organizationId,
       name: selfOrgName,
       type: 'self',
+      fullName: orgData?.name || selfOrgName,
+      acronym: orgData?.acronym || undefined,
     });
 
     // Process outgoing transactions
@@ -139,6 +144,7 @@ export async function GET(request: NextRequest) {
           : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0);
 
         totalOutgoing += value;
+        outgoingByTypeMap.set(t.transaction_type, (outgoingByTypeMap.get(t.transaction_type) || 0) + value);
 
         // Add receiver node
         if (!nodesMap.has(receiverId)) {
@@ -177,6 +183,7 @@ export async function GET(request: NextRequest) {
           : ((t.currency ?? '').toString().toUpperCase() === 'USD' ? Number(t.value) || 0 : 0);
 
         totalIncoming += value;
+        incomingByTypeMap.set(t.transaction_type, (incomingByTypeMap.get(t.transaction_type) || 0) + value);
 
         // Add provider node
         if (!nodesMap.has(providerId)) {
@@ -203,6 +210,40 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Resolve full name + acronym for counterparty nodes that map to a real org
+    // (name-keyed counterparties keep their name as the full name, no acronym).
+    const counterpartyIds = Array.from(nodesMap.values())
+      .filter((n) => n.type === 'counterparty' && isValidUUID(n.id))
+      .map((n) => n.id);
+    const orgInfo = new Map<string, { name: string | null; acronym: string | null }>();
+    if (counterpartyIds.length > 0) {
+      const { data: orgRows } = await supabase
+        .from('organizations')
+        .select('id, name, acronym')
+        .in('id', counterpartyIds);
+      (orgRows || []).forEach((o: { id: string; name: string | null; acronym: string | null }) =>
+        orgInfo.set(o.id, { name: o.name, acronym: o.acronym })
+      );
+    }
+    for (const node of Array.from(nodesMap.values())) {
+      if (node.type !== 'counterparty') continue;
+      const info = orgInfo.get(node.id);
+      if (info) {
+        node.fullName = info.name || node.name;
+        node.acronym = info.acronym || undefined;
+        node.name = info.acronym || info.name || node.name; // short label for the axis
+      } else {
+        node.fullName = node.name;
+      }
+    }
+
+    // Transaction-type breakdown per direction, sorted by value.
+    const toTypeTotals = (m: Map<string, number>): SankeyTypeTotal[] =>
+      Array.from(m.entries())
+        .map(([type, value]) => ({ type, label: TRANSACTION_TYPE_LABELS[type] || `Type ${type}`, value }))
+        .filter((t) => t.value > 0)
+        .sort((a, b) => b.value - a.value);
+
     // Convert to arrays
     const nodes: SankeyNode[] = Array.from(nodesMap.values());
     const links: SankeyLink[] = Array.from(linksMap.values()).filter(link => link.value > 0);
@@ -222,6 +263,8 @@ export async function GET(request: NextRequest) {
       links,
       totalIncoming,
       totalOutgoing,
+      incomingByType: toTypeTotals(incomingByTypeMap),
+      outgoingByType: toTypeTotals(outgoingByTypeMap),
     };
 
     return NextResponse.json(response);

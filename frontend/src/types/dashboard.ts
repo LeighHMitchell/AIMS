@@ -168,8 +168,20 @@ export const IATI_FIELD_LABELS: Record<IATIMandatoryField, string> = {
 // Sankey diagram node
 export interface SankeyNode {
   id: string;
+  /** Short display label (acronym when available, else name) — used on axes. */
   name: string;
   type: 'self' | 'counterparty';
+  /** Full organisation name (for tooltips). */
+  fullName?: string;
+  /** Organisation acronym, when known. */
+  acronym?: string;
+}
+
+// One transaction-type total within a direction (incoming / outgoing).
+export interface SankeyTypeTotal {
+  type: string;   // IATI transaction-type code, e.g. '3'
+  label: string;  // e.g. 'Disbursement'
+  value: number;  // USD
 }
 
 // Sankey diagram link
@@ -186,6 +198,10 @@ export interface OrgSankeyData {
   links: SankeyLink[];
   totalIncoming: number;
   totalOutgoing: number;
+  /** Incoming total split by transaction type (desc by value). */
+  incomingByType: SankeyTypeTotal[];
+  /** Outgoing total split by transaction type (desc by value). */
+  outgoingByType: SankeyTypeTotal[];
 }
 
 // Transaction type filter for Sankey
