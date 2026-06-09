@@ -50,6 +50,7 @@ import { INSTITUTIONAL_GROUPS, getAllInstitutionalGroupNames } from "@/data/loca
 import { apiFetch } from '@/lib/api-fetch';
 import PartnerCardModern from '@/components/partners/PartnerCardModern';
 import type { Partner } from '@/hooks/usePartners';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 type SortField = 'name' | 'reportedActivities' | 'providerReceiver' | 'totalAmount' | '2022' | '2023' | '2024' | '2025' | '2026' | '2027';
 type SortOrder = 'asc' | 'desc';
@@ -586,8 +587,8 @@ export default function PartnersPage() {
 
       // Country row
       rows.push(
-        <tr key={country.id} className="border-b border-border hover:bg-muted/50 bg-surface-muted">
-          <td className="py-3 px-2">
+        <TableRow key={country.id} className="bg-surface-muted">
+          <TableCell>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => toggleCountry(country.id)}
@@ -607,34 +608,34 @@ export default function PartnersPage() {
                 {country.name}
               </span>
             </div>
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {country.organizations.reduce((sum, org) => sum + (org.reportedActivities || 0), 0)}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold text-helper text-foreground">
+          </TableCell>
+          <TableCell className="text-center font-semibold text-helper text-foreground">
             {country.organizations.reduce((sum, org) => sum + (org.providerTransactionCount || 0), 0)}
             {' / '}
             {country.organizations.reduce((sum, org) => sum + (org.receiverTransactionCount || 0), 0)}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2022'] || 0), 0))}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2023'] || 0), 0))}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2024'] || 0), 0))}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2025'] || 0), 0))}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2026'] || 0), 0))}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2027'] || 0), 0))}
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
       );
 
       // Organization rows (if country is expanded)
@@ -645,8 +646,8 @@ export default function PartnersPage() {
 
           // Organization row
           rows.push(
-            <tr key={org.id} className="border-b border-border hover:bg-muted/50 bg-muted">
-              <td className="py-3 px-2">
+            <TableRow key={org.id} className="bg-muted">
+              <TableCell>
                 <div className="flex items-center gap-2 pl-8">
                   <button
                     onClick={() => toggleOrganization(org.id)}
@@ -667,38 +668,38 @@ export default function PartnersPage() {
                     href={`/organizations/${org.id}`}
                     className="text-left text-blue-700 hover:text-blue-900 hover:underline font-semibold"
                   >
-                    {org.fullName && org.acronym 
+                    {org.fullName && org.acronym
                       ? `${org.fullName} (${org.acronym})`
                       : org.name
                     }
                   </a>
                 </div>
-              </td>
-              <td className="py-3 px-2 text-center font-semibold">
+              </TableCell>
+              <TableCell className="text-center font-semibold">
                 {org.reportedActivities || 0}
-              </td>
-              <td className="py-3 px-2 text-center font-semibold text-helper text-foreground">
+              </TableCell>
+              <TableCell className="text-center font-semibold text-helper text-foreground">
                 {org.providerTransactionCount || 0} / {org.receiverTransactionCount || 0}
-              </td>
-              <td className="py-3 px-2 text-center font-semibold">
+              </TableCell>
+              <TableCell className="text-center font-semibold">
                 {formatCurrency(org.financialData['2022'])}
-              </td>
-              <td className="py-3 px-2 text-center font-semibold">
+              </TableCell>
+              <TableCell className="text-center font-semibold">
                 {formatCurrency(org.financialData['2023'])}
-              </td>
-              <td className="py-3 px-2 text-center font-semibold">
+              </TableCell>
+              <TableCell className="text-center font-semibold">
                 {formatCurrency(org.financialData['2024'])}
-              </td>
-              <td className="py-3 px-2 text-center font-semibold">
+              </TableCell>
+              <TableCell className="text-center font-semibold">
                 {formatCurrency(org.financialData['2025'])}
-              </td>
-              <td className="py-3 px-2 text-center font-semibold">
+              </TableCell>
+              <TableCell className="text-center font-semibold">
                 {formatCurrency(org.financialData['2026'])}
-              </td>
-              <td className="py-3 px-2 text-center font-semibold">
+              </TableCell>
+              <TableCell className="text-center font-semibold">
                 {formatCurrency(org.financialData['2027'])}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           );
 
           // Activity rows (if organization is expanded)
@@ -713,16 +714,16 @@ export default function PartnersPage() {
 
             filteredActivities.forEach((activity: any) => {
               rows.push(
-                <tr key={`activity-${activity.id}`} className="hover:bg-muted/50">
-                  <td className="py-2 px-2 pl-16">
+                <TableRow key={`activity-${activity.id}`}>
+                  <TableCell className="pl-16">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-px bg-border"></div>
                       {/* Activity Icon */}
                       {activity.icon ? (
                         <div className="w-5 h-5 flex-shrink-0 rounded overflow-hidden border border-border bg-card">
-                          <img 
-                            src={activity.icon} 
-                            alt="" 
+                          <img
+                            src={activity.icon}
+                            alt=""
                             className="w-full h-full object-contain"
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = 'none';
@@ -742,32 +743,32 @@ export default function PartnersPage() {
                         {activity.acronym && ` (${activity.acronym})`}
                       </a>
                     </div>
-                  </td>
-                  <td className="py-2 px-2 text-center text-body">
+                  </TableCell>
+                  <TableCell className="text-center text-body">
                     -
-                  </td>
-                  <td className="py-2 px-2 text-center text-body">
+                  </TableCell>
+                  <TableCell className="text-center text-body">
                     -
-                  </td>
-                  <td className="py-2 px-2 text-center text-body">
+                  </TableCell>
+                  <TableCell className="text-center text-body">
                     {formatCurrency(activity.financialData?.['2022'] || 0)}
-                  </td>
-                  <td className="py-2 px-2 text-center text-body">
+                  </TableCell>
+                  <TableCell className="text-center text-body">
                     {formatCurrency(activity.financialData?.['2023'] || 0)}
-                  </td>
-                  <td className="py-2 px-2 text-center text-body">
+                  </TableCell>
+                  <TableCell className="text-center text-body">
                     {formatCurrency(activity.financialData?.['2024'] || 0)}
-                  </td>
-                  <td className="py-2 px-2 text-center text-body">
+                  </TableCell>
+                  <TableCell className="text-center text-body">
                     {formatCurrency(activity.financialData?.['2025'] || 0)}
-                  </td>
-                  <td className="py-2 px-2 text-center text-body">
+                  </TableCell>
+                  <TableCell className="text-center text-body">
                     {formatCurrency(activity.financialData?.['2026'] || 0)}
-                  </td>
-                  <td className="py-2 px-2 text-center text-body">
+                  </TableCell>
+                  <TableCell className="text-center text-body">
                     {formatCurrency(activity.financialData?.['2027'] || 0)}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             });
           }
@@ -838,8 +839,8 @@ export default function PartnersPage() {
 
     return (
       <React.Fragment key={org.id}>
-        <tr className="border-b border-border hover:bg-muted/50 bg-muted">
-          <td className="py-3 px-2">
+        <TableRow className="bg-muted">
+          <TableCell>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => toggleOrganization(org.id)}
@@ -860,38 +861,38 @@ export default function PartnersPage() {
                 href={`/organizations/${org.id}`}
                 className="text-left text-blue-700 hover:text-blue-900 hover:underline font-semibold"
               >
-                {org.fullName && org.acronym 
+                {org.fullName && org.acronym
                   ? `${org.fullName} (${org.acronym})`
                   : org.name
                 }
               </a>
             </div>
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {org.reportedActivities || 0}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold text-helper text-foreground">
+          </TableCell>
+          <TableCell className="text-center font-semibold text-helper text-foreground">
             {org.providerTransactionCount || 0} / {org.receiverTransactionCount || 0}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(org.financialData['2022'])}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(org.financialData['2023'])}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(org.financialData['2024'])}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(org.financialData['2025'])}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(org.financialData['2026'])}
-          </td>
-          <td className="py-3 px-2 text-center font-semibold">
+          </TableCell>
+          <TableCell className="text-center font-semibold">
             {formatCurrency(org.financialData['2027'])}
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
         {isOrgExpanded && (hideInactiveOrgs 
           ? orgActivitiesList.filter((activity: any) => {
               const years = ['2022', '2023', '2024', '2025', '2026', '2027'];
@@ -899,16 +900,16 @@ export default function PartnersPage() {
             })
           : orgActivitiesList
         ).map((activity: any) => (
-          <tr key={`activity-${activity.id}`} className="hover:bg-muted/50">
-            <td className="py-2 px-2 pl-16">
+          <TableRow key={`activity-${activity.id}`}>
+            <TableCell className="pl-16">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-px bg-border"></div>
                 {/* Activity Icon */}
                 {activity.icon ? (
                   <div className="w-5 h-5 flex-shrink-0 rounded overflow-hidden border border-border bg-card">
-                    <img 
-                      src={activity.icon} 
-                      alt="" 
+                    <img
+                      src={activity.icon}
+                      alt=""
                       className="w-full h-full object-contain"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
@@ -928,33 +929,33 @@ export default function PartnersPage() {
                   {activity.acronym && ` (${activity.acronym})`}
                 </a>
               </div>
-            </td>
-            <td className="py-2 px-2 text-center text-body">
+            </TableCell>
+            <TableCell className="text-center text-body">
               {/* Individual activity doesn't show these org-level counts */}
               -
-            </td>
-            <td className="py-2 px-2 text-center text-body">
+            </TableCell>
+            <TableCell className="text-center text-body">
               -
-            </td>
-            <td className="py-2 px-2 text-center text-body">
+            </TableCell>
+            <TableCell className="text-center text-body">
               {formatCurrency(activity.financialData?.['2022'] || 0)}
-            </td>
-            <td className="py-2 px-2 text-center text-body">
+            </TableCell>
+            <TableCell className="text-center text-body">
               {formatCurrency(activity.financialData?.['2023'] || 0)}
-            </td>
-            <td className="py-2 px-2 text-center text-body">
+            </TableCell>
+            <TableCell className="text-center text-body">
               {formatCurrency(activity.financialData?.['2024'] || 0)}
-            </td>
-            <td className="py-2 px-2 text-center text-body">
+            </TableCell>
+            <TableCell className="text-center text-body">
               {formatCurrency(activity.financialData?.['2025'] || 0)}
-            </td>
-            <td className="py-2 px-2 text-center text-body">
+            </TableCell>
+            <TableCell className="text-center text-body">
               {formatCurrency(activity.financialData?.['2026'] || 0)}
-            </td>
-            <td className="py-2 px-2 text-center text-body">
+            </TableCell>
+            <TableCell className="text-center text-body">
               {formatCurrency(activity.financialData?.['2027'] || 0)}
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
       </React.Fragment>
     );
@@ -1123,98 +1124,96 @@ export default function PartnersPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-body">
-                        <thead className="bg-surface-muted">
-                          <tr className="border-b border-border bg-surface-muted">
-                            <th className="text-left py-3 px-2 font-medium text-muted-foreground">
-                              <button
-                                onClick={() => handleSort('name')}
-                                className="flex items-center hover:text-foreground"
-                              >
-                                Country/Organisation Name
-                                {getSortIcon('name')}
-                              </button>
-                            </th>
-                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                              <button
-                                onClick={() => handleSort('reportedActivities')}
-                                className="flex items-center hover:text-foreground"
-                              >
-                                Reported
-                                {getSortIcon('reportedActivities')}
-                              </button>
-                            </th>
-                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                              <button
-                                onClick={() => handleSort('providerReceiver')}
-                                className="flex items-center hover:text-foreground"
-                              >
-                                Provider/Receiver
-                                {getSortIcon('providerReceiver')}
-                              </button>
-                            </th>
-                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                              <button
-                                onClick={() => handleSort('2022')}
-                                className="flex items-center hover:text-foreground"
-                              >
-                                {getYearLabel(2022)}
-                                {getSortIcon('2022')}
-                              </button>
-                            </th>
-                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                              <button
-                                onClick={() => handleSort('2023')}
-                                className="flex items-center hover:text-foreground"
-                              >
-                                {getYearLabel(2023)}
-                                {getSortIcon('2023')}
-                              </button>
-                            </th>
-                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                              <button
-                                onClick={() => handleSort('2024')}
-                                className="flex items-center hover:text-foreground"
-                              >
-                                {getYearLabel(2024)}
-                                {getSortIcon('2024')}
-                              </button>
-                            </th>
-                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                              <button
-                                onClick={() => handleSort('2025')}
-                                className="flex items-center hover:text-foreground"
-                              >
-                                {getYearLabel(2025)}
-                                {getSortIcon('2025')}
-                              </button>
-                            </th>
-                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                              <button
-                                onClick={() => handleSort('2026')}
-                                className="flex items-center hover:text-foreground"
-                              >
-                                {getYearLabel(2026)}
-                                {getSortIcon('2026')}
-                              </button>
-                            </th>
-                            <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                              <button
-                                onClick={() => handleSort('2027')}
-                                className="flex items-center hover:text-foreground"
-                              >
-                                {getYearLabel(2027)}
-                                {getSortIcon('2027')}
-                              </button>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {renderUnifiedTable()}
-                        </tbody>
-                      </table>
-                    </div>
+                    <Table className="border-0">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>
+                            <button
+                              onClick={() => handleSort('name')}
+                              className="flex items-center hover:text-foreground"
+                            >
+                              Country/Organisation Name
+                              {getSortIcon('name')}
+                            </button>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <button
+                              onClick={() => handleSort('reportedActivities')}
+                              className="flex items-center hover:text-foreground"
+                            >
+                              Reported
+                              {getSortIcon('reportedActivities')}
+                            </button>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <button
+                              onClick={() => handleSort('providerReceiver')}
+                              className="flex items-center hover:text-foreground"
+                            >
+                              Provider/Receiver
+                              {getSortIcon('providerReceiver')}
+                            </button>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <button
+                              onClick={() => handleSort('2022')}
+                              className="flex items-center hover:text-foreground"
+                            >
+                              {getYearLabel(2022)}
+                              {getSortIcon('2022')}
+                            </button>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <button
+                              onClick={() => handleSort('2023')}
+                              className="flex items-center hover:text-foreground"
+                            >
+                              {getYearLabel(2023)}
+                              {getSortIcon('2023')}
+                            </button>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <button
+                              onClick={() => handleSort('2024')}
+                              className="flex items-center hover:text-foreground"
+                            >
+                              {getYearLabel(2024)}
+                              {getSortIcon('2024')}
+                            </button>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <button
+                              onClick={() => handleSort('2025')}
+                              className="flex items-center hover:text-foreground"
+                            >
+                              {getYearLabel(2025)}
+                              {getSortIcon('2025')}
+                            </button>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <button
+                              onClick={() => handleSort('2026')}
+                              className="flex items-center hover:text-foreground"
+                            >
+                              {getYearLabel(2026)}
+                              {getSortIcon('2026')}
+                            </button>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <button
+                              onClick={() => handleSort('2027')}
+                              className="flex items-center hover:text-foreground"
+                            >
+                              {getYearLabel(2027)}
+                              {getSortIcon('2027')}
+                            </button>
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {renderUnifiedTable()}
+                      </TableBody>
+                    </Table>
                   </CardContent>
                 </Card>
 
@@ -1232,98 +1231,96 @@ export default function PartnersPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-body">
-                          <thead className="bg-surface-muted">
-                            <tr className="border-b border-border bg-surface-muted">
-                              <th className="text-left py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('name')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  Organisation Name
-                                  {getSortIcon('name')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('reportedActivities')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  Reported
-                                  {getSortIcon('reportedActivities')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('providerReceiver')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  Provider/Receiver
-                                  {getSortIcon('providerReceiver')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2022')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2022)}
-                                  {getSortIcon('2022')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2023')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2023)}
-                                  {getSortIcon('2023')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2024')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2024)}
-                                  {getSortIcon('2024')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2025')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2025)}
-                                  {getSortIcon('2025')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2026')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2026)}
-                                  {getSortIcon('2026')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2027')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2027)}
-                                  {getSortIcon('2027')}
-                                </button>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {sortOrganizations(filterOrganizations(institutionalGroup.organizations)).map((org) => renderOrganizationRow(org))}
-                          </tbody>
-                        </table>
-                      </div>
+                      <Table className="border-0">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>
+                              <button
+                                onClick={() => handleSort('name')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                Organisation Name
+                                {getSortIcon('name')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('reportedActivities')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                Reported
+                                {getSortIcon('reportedActivities')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('providerReceiver')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                Provider/Receiver
+                                {getSortIcon('providerReceiver')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2022')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2022)}
+                                {getSortIcon('2022')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2023')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2023)}
+                                {getSortIcon('2023')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2024')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2024)}
+                                {getSortIcon('2024')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2025')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2025)}
+                                {getSortIcon('2025')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2026')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2026)}
+                                {getSortIcon('2026')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2027')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2027)}
+                                {getSortIcon('2027')}
+                              </button>
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {sortOrganizations(filterOrganizations(institutionalGroup.organizations)).map((org) => renderOrganizationRow(org))}
+                        </TableBody>
+                      </Table>
                     </CardContent>
                   </Card>
                 ))}
@@ -1340,98 +1337,96 @@ export default function PartnersPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-body">
-                          <thead className="bg-surface-muted">
-                            <tr className="border-b border-border">
-                              <th className="text-left py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('name')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  Organisation Name
-                                  {getSortIcon('name')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('reportedActivities')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  Reported
-                                  {getSortIcon('reportedActivities')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('providerReceiver')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  Provider/Receiver
-                                  {getSortIcon('providerReceiver')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2022')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2022)}
-                                  {getSortIcon('2022')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2023')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2023)}
-                                  {getSortIcon('2023')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2024')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2024)}
-                                  {getSortIcon('2024')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2025')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2025)}
-                                  {getSortIcon('2025')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2026')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2026)}
-                                  {getSortIcon('2026')}
-                                </button>
-                              </th>
-                              <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                <button
-                                  onClick={() => handleSort('2027')}
-                                  className="flex items-center hover:text-foreground"
-                                >
-                                  {getYearLabel(2027)}
-                                  {getSortIcon('2027')}
-                                </button>
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {sortOrganizations(filterOrganizations(getUnassignedOrganizations())).map((org) => renderOrganizationRow(org))}
-                          </tbody>
-                        </table>
-                      </div>
+                      <Table className="border-0">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>
+                              <button
+                                onClick={() => handleSort('name')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                Organisation Name
+                                {getSortIcon('name')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('reportedActivities')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                Reported
+                                {getSortIcon('reportedActivities')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('providerReceiver')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                Provider/Receiver
+                                {getSortIcon('providerReceiver')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2022')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2022)}
+                                {getSortIcon('2022')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2023')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2023)}
+                                {getSortIcon('2023')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2024')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2024)}
+                                {getSortIcon('2024')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2025')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2025)}
+                                {getSortIcon('2025')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2026')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2026)}
+                                {getSortIcon('2026')}
+                              </button>
+                            </TableHead>
+                            <TableHead className="text-center">
+                              <button
+                                onClick={() => handleSort('2027')}
+                                className="flex items-center hover:text-foreground"
+                              >
+                                {getYearLabel(2027)}
+                                {getSortIcon('2027')}
+                              </button>
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {sortOrganizations(filterOrganizations(getUnassignedOrganizations())).map((org) => renderOrganizationRow(org))}
+                        </TableBody>
+                      </Table>
                     </CardContent>
                   </Card>
                 )}
@@ -1503,98 +1498,96 @@ export default function PartnersPage() {
                                 {searchTerm ? 'No organizations match your search' : 'No organizations in this group'}
                               </div>
                             ) : (
-                              <div className="overflow-x-auto">
-                                <table className="w-full text-body">
-                                  <thead className="bg-surface-muted">
-                                    <tr className="border-b border-border">
-                                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">
-                                        <button
-                                          onClick={() => handleSort('name')}
-                                          className="flex items-center hover:text-foreground"
-                                        >
-                                          Organisation Name
-                                          {getSortIcon('name')}
-                                        </button>
-                                      </th>
-                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                        <button
-                                          onClick={() => handleSort('reportedActivities')}
-                                          className="flex items-center hover:text-foreground"
-                                        >
-                                          Reported
-                                          {getSortIcon('reportedActivities')}
-                                        </button>
-                                      </th>
-                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                        <button
-                                          onClick={() => handleSort('providerReceiver')}
-                                          className="flex items-center hover:text-foreground"
-                                        >
-                                          Provider/Receiver
-                                          {getSortIcon('providerReceiver')}
-                                        </button>
-                                      </th>
-                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                        <button
-                                          onClick={() => handleSort('2022')}
-                                          className="flex items-center hover:text-foreground"
-                                        >
-                                          {getYearLabel(2022)}
-                                          {getSortIcon('2022')}
-                                        </button>
-                                      </th>
-                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                        <button
-                                          onClick={() => handleSort('2023')}
-                                          className="flex items-center hover:text-foreground"
-                                        >
-                                          {getYearLabel(2023)}
-                                          {getSortIcon('2023')}
-                                        </button>
-                                      </th>
-                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                        <button
-                                          onClick={() => handleSort('2024')}
-                                          className="flex items-center hover:text-foreground"
-                                        >
-                                          {getYearLabel(2024)}
-                                          {getSortIcon('2024')}
-                                        </button>
-                                      </th>
-                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                        <button
-                                          onClick={() => handleSort('2025')}
-                                          className="flex items-center hover:text-foreground"
-                                        >
-                                          {getYearLabel(2025)}
-                                          {getSortIcon('2025')}
-                                        </button>
-                                      </th>
-                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                        <button
-                                          onClick={() => handleSort('2026')}
-                                          className="flex items-center hover:text-foreground"
-                                        >
-                                          {getYearLabel(2026)}
-                                          {getSortIcon('2026')}
-                                        </button>
-                                      </th>
-                                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">
-                                        <button
-                                          onClick={() => handleSort('2027')}
-                                          className="flex items-center hover:text-foreground"
-                                        >
-                                          {getYearLabel(2027)}
-                                          {getSortIcon('2027')}
-                                        </button>
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                                                  <tbody>
+                              <Table className="border-0">
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>
+                                      <button
+                                        onClick={() => handleSort('name')}
+                                        className="flex items-center hover:text-foreground"
+                                      >
+                                        Organisation Name
+                                        {getSortIcon('name')}
+                                      </button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                      <button
+                                        onClick={() => handleSort('reportedActivities')}
+                                        className="flex items-center hover:text-foreground"
+                                      >
+                                        Reported
+                                        {getSortIcon('reportedActivities')}
+                                      </button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                      <button
+                                        onClick={() => handleSort('providerReceiver')}
+                                        className="flex items-center hover:text-foreground"
+                                      >
+                                        Provider/Receiver
+                                        {getSortIcon('providerReceiver')}
+                                      </button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                      <button
+                                        onClick={() => handleSort('2022')}
+                                        className="flex items-center hover:text-foreground"
+                                      >
+                                        {getYearLabel(2022)}
+                                        {getSortIcon('2022')}
+                                      </button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                      <button
+                                        onClick={() => handleSort('2023')}
+                                        className="flex items-center hover:text-foreground"
+                                      >
+                                        {getYearLabel(2023)}
+                                        {getSortIcon('2023')}
+                                      </button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                      <button
+                                        onClick={() => handleSort('2024')}
+                                        className="flex items-center hover:text-foreground"
+                                      >
+                                        {getYearLabel(2024)}
+                                        {getSortIcon('2024')}
+                                      </button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                      <button
+                                        onClick={() => handleSort('2025')}
+                                        className="flex items-center hover:text-foreground"
+                                      >
+                                        {getYearLabel(2025)}
+                                        {getSortIcon('2025')}
+                                      </button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                      <button
+                                        onClick={() => handleSort('2026')}
+                                        className="flex items-center hover:text-foreground"
+                                      >
+                                        {getYearLabel(2026)}
+                                        {getSortIcon('2026')}
+                                      </button>
+                                    </TableHead>
+                                    <TableHead className="text-center">
+                                      <button
+                                        onClick={() => handleSort('2027')}
+                                        className="flex items-center hover:text-foreground"
+                                      >
+                                        {getYearLabel(2027)}
+                                        {getSortIcon('2027')}
+                                      </button>
+                                    </TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
                                   {sortedOrgs.map((org) => renderOrganizationRow(org))}
-                                </tbody>
-                                </table>
-                              </div>
+                                </TableBody>
+                              </Table>
                             )}
                           </CardContent>
                         )}

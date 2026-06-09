@@ -407,8 +407,8 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
         const statusMap: Record<string, string> = {
           '1': '1 - Pipeline/Identification',
           '2': '2 - Implementation',
-          '3': '3 - Completion',
-          '4': '4 - Post-completion',
+          '3': '3 - Finalisation',
+          '4': '4 - Closed',
           '5': '5 - Cancelled',
           '6': '6 - Suspended',
         };

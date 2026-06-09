@@ -371,7 +371,7 @@ export function NationalPrioritiesSection({
           </div>
         ) : (
           <>
-            <div className="border rounded-md overflow-hidden">
+            <div className="border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>

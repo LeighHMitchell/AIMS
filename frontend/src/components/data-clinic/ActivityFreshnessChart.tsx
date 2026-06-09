@@ -293,22 +293,22 @@ export function ActivityFreshnessChart() {
           </p>
         </div>
         <div className="p-2">
-          <table className="w-full text-body">
-            <tbody>
-              <tr className="border-b border-border">
-                <td className="py-1.5 pr-4 text-foreground font-medium">Activities</td>
-                <td className="py-1.5 text-right font-semibold text-foreground">
+          <Table className="w-full text-body">
+            <TableBody>
+              <TableRow>
+                <TableCell className="pr-4 text-foreground font-medium">Activities</TableCell>
+                <TableCell className="text-right font-semibold text-foreground">
                   {data.count}
-                </td>
-              </tr>
-              <tr>
-                <td className="py-1.5 pr-4 text-foreground font-medium">Percentage</td>
-                <td className="py-1.5 text-right font-semibold text-foreground">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pr-4 text-foreground font-medium">Percentage</TableCell>
+                <TableCell className="text-right font-semibold text-foreground">
                   {percentage}%
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
     );

@@ -93,7 +93,7 @@ export function DocumentTable({
   const someSelected = documents.some(d => selectedIds.has(d.id)) && !allSelected;
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border overflow-hidden">
       <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow>

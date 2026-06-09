@@ -4,7 +4,6 @@ import { createSupabaseClient } from '@/lib/supabase-simple'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { searchCache, cacheKeys } from '@/lib/search-cache'
 import { highlightSearchResults, extractSearchTerms } from '@/lib/search-highlighting'
-import { escapeIlikeWildcards } from '@/lib/security-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,8 +36,7 @@ export async function GET(request: NextRequest) {
 
     if (!query.trim() || query.length < 2) {
       return NextResponse.json({
-        suggestions: [],
-        popularSearches: []
+        suggestions: []
       }, {
         headers: {
           'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
@@ -75,28 +73,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Use the fast search_suggestions RPC function
-    const [suggestionsResult, popularResult] = await Promise.all([
-      // Fast prefix-based suggestions
-      supabase.rpc('search_suggestions', {
-        search_query: query.trim(),
-        result_limit: limit
-      }),
-      
-      // Popular searches (fire and forget style - don't block on this)
-      // SECURITY: Escape ILIKE wildcards to prevent filter injection
-      supabase
-        .from('search_analytics')
-        .select('search_query')
-        .ilike('search_query', `%${escapeIlikeWildcards(query)}%`)
-        .order('created_at', { ascending: false })
-        .limit(5)
-    ])
-
-    // Handle popular searches
-    let popularSearches: string[] = []
-    if (!popularResult.error && popularResult.data) {
-      popularSearches = [...new Set(popularResult.data.map(item => item.search_query))].slice(0, 5)
-    }
+    const suggestionsResult = await supabase.rpc('search_suggestions', {
+      search_query: query.trim(),
+      result_limit: limit
+    })
 
     // If RPC succeeded, use those results
     if (!suggestionsResult.error && suggestionsResult.data) {
@@ -130,7 +110,6 @@ export async function GET(request: NextRequest) {
 
       const result = {
         suggestions: highlightedSuggestions,
-        popularSearches,
         query,
         searchTerms,
         responseTime,
@@ -140,7 +119,6 @@ export async function GET(request: NextRequest) {
       // Cache the result (without highlighting)
       const cacheResult = {
         suggestions,
-        popularSearches,
         query,
         timestamp: new Date().toISOString()
       }
@@ -154,7 +132,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fallback to legacy search if RPC fails
-    return fallbackLegacySuggestions(request, query, limit, popularSearches, startTime)
+    return fallbackLegacySuggestions(request, query, limit, startTime)
 
   } catch (error) {
     console.error('[AIMS API] Search suggestions error:', error)
@@ -224,7 +202,6 @@ async function fallbackLegacySuggestions(
   request: NextRequest,
   query: string,
   limit: number,
-  popularSearches: string[],
   startTime: number
 ) {
   try {
@@ -341,7 +318,6 @@ async function fallbackLegacySuggestions(
 
     return NextResponse.json({
       suggestions: highlightedSuggestions,
-      popularSearches,
       query,
       searchTerms,
       responseTime,

@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, getSortIcon, sortableHeaderClasses } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { Clock, Pencil, AlertCircle, Download } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -60,6 +62,7 @@ export function StaleTransactionsTable() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('3'); // Default: 3 months
   const [sortField, setSortField] = useState<SortField>('last_transaction_date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [grouped, setGrouped] = useState(false);
   const router = useRouter();
 
   // Fetch data on mount
@@ -75,7 +78,7 @@ export function StaleTransactionsTable() {
       // 1. Fetch ongoing activities (status = '2' = Implementation) with reporting org fields
       const { data: activitiesData, error: activitiesError } = await supabase
         .from('activities')
-        .select('id, title_narrative, iati_identifier, acronym, activity_status, created_by_org_name, created_by_org_acronym')
+        .select('id, title_narrative, iati_identifier, acronym, activity_status, reporting_org_id, created_by_org_name, created_by_org_acronym')
         .is('deleted_at', null)
         .eq('activity_status', '2');
 
@@ -87,7 +90,22 @@ export function StaleTransactionsTable() {
         return;
       }
 
-      const activityIds = activitiesData.map(a => a.id);
+      const activityIds = activitiesData.map((a: any) => a.id);
+
+      // 1b. Resolve reporting organisation name/acronym from reporting_org_id
+      const orgIds = Array.from(new Set(activitiesData.map((a: any) => a.reporting_org_id).filter(Boolean)));
+      const orgNameById = new Map<string, string>();
+      const orgAcronymById = new Map<string, string>();
+      if (orgIds.length > 0) {
+        const { data: orgs } = await supabase
+          .from('organizations')
+          .select('id, name, acronym')
+          .in('id', orgIds);
+        (orgs || []).forEach((o: any) => {
+          if (o.name) orgNameById.set(o.id, o.name);
+          if (o.acronym) orgAcronymById.set(o.id, o.acronym);
+        });
+      }
 
       // 2. Fetch all transactions for those activities
       const { data: transactionsData, error: transactionsError } = await supabase
@@ -101,7 +119,7 @@ export function StaleTransactionsTable() {
 
       // 3. Find the latest transaction for each activity
       const latestTransactionByActivity = new Map<string, any>();
-      (transactionsData || []).forEach(tx => {
+      (transactionsData || []).forEach((tx: any) => {
         if (!latestTransactionByActivity.has(tx.activity_id)) {
           latestTransactionByActivity.set(tx.activity_id, tx);
         }
@@ -109,7 +127,7 @@ export function StaleTransactionsTable() {
 
       // 4. Build the stale activities list
       const now = new Date();
-      const staleActivities: StaleActivity[] = activitiesData.map(activity => {
+      const staleActivities: StaleActivity[] = activitiesData.map((activity: any) => {
         const latestTx = latestTransactionByActivity.get(activity.id);
         const daysSince = latestTx?.transaction_date
           ? differenceInDays(now, new Date(latestTx.transaction_date))
@@ -121,8 +139,8 @@ export function StaleTransactionsTable() {
           iati_identifier: activity.iati_identifier,
           acronym: activity.acronym || null,
           activity_status: activity.activity_status,
-          reporting_org_name: activity.created_by_org_name || null,
-          reporting_org_acronym: activity.created_by_org_acronym || null,
+          reporting_org_name: (activity.reporting_org_id && orgNameById.get(activity.reporting_org_id)) || activity.created_by_org_name || null,
+          reporting_org_acronym: (activity.reporting_org_id && orgAcronymById.get(activity.reporting_org_id)) || activity.created_by_org_acronym || null,
           last_transaction_date: latestTx?.transaction_date || null,
           last_transaction_type: latestTx?.transaction_type || null,
           last_transaction_value: latestTx?.value || null,
@@ -319,6 +337,10 @@ export function StaleTransactionsTable() {
               </SelectContent>
             </Select>
           </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+            <Switch id="timeliness-group-by-activity" checked={grouped} onCheckedChange={setGrouped} />
+            <Label htmlFor="timeliness-group-by-activity" className="text-body whitespace-nowrap cursor-pointer">Group by Activity</Label>
+          </div>
         </div>
       </CardHeader>
 
@@ -345,7 +367,7 @@ export function StaleTransactionsTable() {
                     onClick={() => handleSort('title')}
                   >
                     <div className="flex items-center gap-1">
-                      Activity
+                      Activity Title
                       {getSortIcon('title', sortField, sortDirection)}
                     </div>
                   </TableHead>
@@ -446,9 +468,14 @@ export function StaleTransactionsTable() {
                       )}
                     </TableCell>
                     <TableCell className="text-foreground">
-                      {activity.last_transaction_type
-                        ? TRANSACTION_TYPE_LABELS[activity.last_transaction_type] || activity.last_transaction_type
-                        : '—'}
+                      {activity.last_transaction_type ? (
+                        <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                          <span className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {activity.last_transaction_type}
+                          </span>
+                          {TRANSACTION_TYPE_LABELS[activity.last_transaction_type] || ''}
+                        </span>
+                      ) : '—'}
                     </TableCell>
                     <TableCell className="text-right text-foreground">
                       {activity.last_transaction_value != null

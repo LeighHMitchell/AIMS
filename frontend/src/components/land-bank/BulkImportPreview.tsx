@@ -79,7 +79,7 @@ export function BulkImportPreview({ rows }: BulkImportPreviewProps) {
         {errorCount > 0 && <Badge variant="destructive">{errorCount} errors</Badge>}
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-body">
             <thead className="bg-surface-muted">

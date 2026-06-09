@@ -1,15 +1,17 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, Fragment } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
 import { Search, RefreshCw, AlertCircle, Pencil, X, Unlink, Building2, Check } from "lucide-react"
-import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table"
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, getSortIcon, sortableHeaderClasses } from "@/components/ui/table"
 import { apiFetch } from "@/lib/api-fetch"
 import { renderMoney, formatClinicDate } from "./formatters"
 import { OrganizationCombobox, Organization as ComboboxOrg } from "@/components/ui/organization-combobox"
@@ -54,6 +56,7 @@ export function DataClinicEntity({ entity }: { entity: string }) {
   const [editValue, setEditValue] = useState<string>("")
   const [organizations, setOrganizations] = useState<ComboboxOrg[]>([])
   const [linking, setLinking] = useState<{ id: string; field: string } | null>(null)
+  const [grouped, setGrouped] = useState(false)
 
   const hasOrgColumn = useMemo(() => columns.some((c) => c.type === 'org'), [columns])
 
@@ -179,6 +182,19 @@ export function DataClinicEntity({ entity }: { entity: string }) {
       return String(av).localeCompare(String(bv)) * dir
     })
   }, [rows, searchQuery, sortField, sortDirection])
+
+  // Rows grouped by their activity (preserving the current sort order of groups)
+  const groups = useMemo(() => {
+    const map = new Map<string, { activity: string; activityId: string; acronym: string; rows: Row[] }>()
+    for (const r of filteredSorted) {
+      const key = r._activityId || r._activity
+      if (!map.has(key)) {
+        map.set(key, { activity: r._activity, activityId: r._activityId, acronym: r._activityAcronym, rows: [] })
+      }
+      map.get(key)!.rows.push(r)
+    }
+    return Array.from(map.values())
+  }, [filteredSorted])
 
   const renderEditor = (row: Row, col: Column) => {
     if (col.editor === 'select') {
@@ -363,6 +379,12 @@ export function DataClinicEntity({ entity }: { entity: string }) {
                 />
               </div>
             </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+              <Switch id="group-by-activity" checked={grouped} onCheckedChange={setGrouped} />
+              <Label htmlFor="group-by-activity" className="text-body cursor-pointer whitespace-nowrap">
+                Group by Activity
+              </Label>
+            </div>
             <Button variant="outline" onClick={fetchData}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -374,61 +396,85 @@ export function DataClinicEntity({ entity }: { entity: string }) {
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full" style={{ minWidth }}>
-              <thead className="border-b bg-surface-muted">
-                <tr>
-                  <th
-                    className={`px-4 py-3 text-left align-top text-body font-medium min-w-[240px] ${sortableHeaderClasses}`}
-                    onClick={() => handleSort('_activity')}
+          <Table className="border-0" style={{ minWidth }}>
+            <TableHeader>
+              <TableRow>
+                <TableHead
+                  className={`align-top min-w-[240px] ${sortableHeaderClasses}`}
+                  onClick={() => handleSort('_activity')}
+                >
+                  <div className="flex items-center gap-1 whitespace-nowrap">Activity Title {getSortIcon('_activity', sortField, sortDirection)}</div>
+                </TableHead>
+                {columns.map((col) => (
+                  <TableHead
+                    key={col.key}
+                    className={`align-top min-w-[140px] ${sortableHeaderClasses}`}
+                    onClick={() => handleSort(col.key)}
                   >
-                    <div className="flex items-center gap-1 whitespace-nowrap">Activity {getSortIcon('_activity', sortField, sortDirection)}</div>
-                  </th>
-                  {columns.map((col) => (
-                    <th
-                      key={col.key}
-                      className={`px-4 py-3 text-left align-top text-body font-medium min-w-[140px] ${sortableHeaderClasses}`}
-                      onClick={() => handleSort(col.key)}
-                    >
-                      <div className="flex items-center gap-1 whitespace-nowrap">{col.label} {getSortIcon(col.key, sortField, sortDirection)}</div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {error ? (
-                  <tr>
-                    <td colSpan={colCount} className="p-8 text-center text-muted-foreground">{error}</td>
-                  </tr>
-                ) : filteredSorted.length === 0 ? (
-                  <tr>
-                    <td colSpan={colCount} className="p-8 text-center text-muted-foreground">
-                      No records found with data gaps
-                    </td>
-                  </tr>
-                ) : (
-                  filteredSorted.map((row) => (
-                    <tr key={row._id} className="border-b hover:bg-muted/50">
-                      <td className="px-4 py-3 align-top">
+                    <div className="flex items-center gap-1 whitespace-nowrap">{col.label} {getSortIcon(col.key, sortField, sortDirection)}</div>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {error ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="p-8 text-center text-muted-foreground">{error}</TableCell>
+                </TableRow>
+              ) : filteredSorted.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={colCount} className="p-8 text-center text-muted-foreground">
+                    No records found with data gaps
+                  </TableCell>
+                </TableRow>
+              ) : grouped ? (
+                groups.map((g) => (
+                  <Fragment key={g.activityId || g.activity}>
+                    <TableRow className="bg-surface-muted/60">
+                      <TableCell colSpan={colCount} className="px-4 py-2">
                         <Link
-                          href={`/activities/${row._activityId}`}
+                          href={`/activities/${g.activityId}`}
                           className="font-medium break-words no-underline hover:opacity-70 transition-opacity"
                         >
-                          {row._activity}
-                          {row._activityAcronym ? ` (${row._activityAcronym})` : ''}
+                          {g.activity}{g.acronym ? ` (${g.acronym})` : ''}
                         </Link>
-                      </td>
-                      {columns.map((col) => (
-                        <td key={col.key} className="px-4 py-3 align-top">
-                          {renderCell(col, row)}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                        <span className="ml-2 text-helper text-muted-foreground">({g.rows.length})</span>
+                      </TableCell>
+                    </TableRow>
+                    {g.rows.map((row) => (
+                      <TableRow key={row._id}>
+                        <TableCell className="align-top" />
+                        {columns.map((col) => (
+                          <TableCell key={col.key} className="align-top">
+                            {renderCell(col, row)}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </Fragment>
+                ))
+              ) : (
+                filteredSorted.map((row) => (
+                  <TableRow key={row._id}>
+                    <TableCell className="align-top">
+                      <Link
+                        href={`/activities/${row._activityId}`}
+                        className="font-medium break-words no-underline hover:opacity-70 transition-opacity"
+                      >
+                        {row._activity}
+                        {row._activityAcronym ? ` (${row._activityAcronym})` : ''}
+                      </Link>
+                    </TableCell>
+                    {columns.map((col) => (
+                      <TableCell key={col.key} className="align-top">
+                        {renderCell(col, row)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

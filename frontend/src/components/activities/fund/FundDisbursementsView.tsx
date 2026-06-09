@@ -10,6 +10,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 import { Layers, MapPin, PieChart as PieChartIcon, Calendar } from "lucide-react"
 import Link from "next/link"
 import { formatAxisCurrency } from "@/lib/format"
+import { getActivityStatusDisplay } from "@/lib/activity-status-utils"
 
 interface ChildActivity {
   id: string
@@ -108,15 +109,6 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
     )
   }
 
-  const statusColors: Record<string, string> = {
-    'Pipeline/identification': 'bg-muted text-foreground',
-    'Implementation': 'bg-muted text-foreground',
-    'Completion': 'bg-gray-300 text-foreground',
-    'Post-completion': 'bg-muted text-muted-foreground',
-    'Cancelled': 'bg-muted text-muted-foreground',
-    'Suspended': 'bg-muted text-muted-foreground',
-  }
-
   return (
     <div className="space-y-6">
       {/* Controls */}
@@ -185,7 +177,7 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
       )}
 
       {/* Table based on view mode */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border overflow-hidden">
         {viewMode === 'children' && (
           <Table>
             <TableHeader>
@@ -208,8 +200,8 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
                     </Link>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={`text-xs ${statusColors[child.status] || ''}`}>
-                      {child.status}
+                    <Badge variant="outline" className={`text-xs ${getActivityStatusDisplay(child.status).className}`}>
+                      {getActivityStatusDisplay(child.status).label}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">

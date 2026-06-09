@@ -1997,7 +1997,7 @@ function OrganizationsPageContent() {
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-card rounded-lg overflow-hidden">
+                    <div className="bg-card overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow>

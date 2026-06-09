@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeaderSkeleton, StatsRowSkeleton } from '@/components/ui/skeleton-loader'
 import { Input } from '@/components/ui/input'
-import { AlertCircle, ChevronRight, ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown, Search, PieChart, List, LayoutGrid, Activity, Pencil } from 'lucide-react'
+import { AlertCircle, ChevronRight, ChevronDown, ChevronUp, ChevronsDownUp, ChevronsUpDown, Search, PieChart, List, LayoutGrid, Activity, Pencil, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch'
 import { useRouter } from 'next/navigation'
@@ -17,6 +17,7 @@ import { useUserRole } from '@/hooks/useUserRole'
 import { formatCurrencyShort } from '@/lib/format'
 import { UsdAmount } from '@/components/ui/usd-amount'
 import { getBroadCategoryForGroup, BROAD_CATEGORY_ORDER } from '@/lib/sector-hierarchy'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 // Color palette for sector groups
 const SECTOR_COLORS: Record<string, string> = {
@@ -234,6 +235,17 @@ export default function SectorsListingPage() {
     }
   }
 
+  // Card view: broad sections default expanded, so "expand all" = no section
+  // collapsed. Collapse/expand all toggles every broad section at once.
+  const cardAllExpanded = broadSections.length > 0 && collapsedBroad.size === 0
+  const toggleExpandAllCards = () => {
+    if (cardAllExpanded) {
+      setCollapsedBroad(new Set(broadSections.map(s => s.code)))
+    } else {
+      setCollapsedBroad(new Set())
+    }
+  }
+
   // Auto-expand when searching
   useMemo(() => {
     if (searchTerm.trim()) {
@@ -288,23 +300,23 @@ export default function SectorsListingPage() {
       .sort((a, b) => b.totalValue - a.totalValue)
     if (funded.length === 0) return null
     return (
-      <div className="rounded-2xl border border-border bg-surface-muted/40 overflow-hidden">
-        <div className="px-4 py-2 bg-surface-muted border-b border-border text-section-label font-medium text-muted-foreground uppercase">
+      <div className="rounded-2xl border border-border bg-surface-muted/40 p-4">
+        <div className="text-section-label font-medium text-muted-foreground uppercase mb-3">
           Purpose codes
         </div>
-        <div className="divide-y divide-border/50">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
           {funded.map(s => (
             <Link
               key={`${keyPrefix}-${s.code}`}
               href={`/sectors/${s.code}`}
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 transition-colors"
+              className="flex flex-col rounded-xl border border-border bg-card p-3 hover:shadow-md hover:border-foreground/20 transition-all"
             >
-              <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{s.code}</code>
-              <span className="flex-1 min-w-0 truncate text-body text-foreground">{s.name}</span>
-              <span className="w-28 text-right text-helper text-muted-foreground flex-shrink-0">
-                {s.activityCount} {s.activityCount === 1 ? 'activity' : 'activities'}
-              </span>
-              <span className="w-24 text-right flex-shrink-0"><UsdAmount value={s.totalValue} /></span>
+              <code className="text-[10px] font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 self-start mb-1.5">{s.code}</code>
+              <span className="text-helper font-medium text-foreground leading-tight line-clamp-2 min-h-[2.2em] mb-2">{s.name}</span>
+              <div className="mt-auto flex items-center justify-between gap-1 pt-2 border-t border-border">
+                <span className="text-helper font-semibold text-foreground">{formatCurrencyShort(s.totalValue)}</span>
+                <span className="text-[10px] text-muted-foreground whitespace-nowrap">{s.activityCount} {s.activityCount === 1 ? 'activity' : 'activities'}</span>
+              </div>
             </Link>
           ))}
         </div>
@@ -495,6 +507,65 @@ export default function SectorsListingPage() {
     )
   }
 
+  // One row of the list/table view, rendered with the shared <Table> primitives.
+  // The 4-level tree (broad → group → category → 5-digit) is flattened into rows;
+  // indentation conveys depth. Row click toggles expansion; the name/edit links
+  // stopPropagation so they navigate instead of toggling.
+  const renderTreeRow = (opts: {
+    code: string
+    name: string
+    level: number
+    activityCount: number
+    totalValue: number
+    expandable: boolean
+    isExpanded: boolean
+    onToggle?: () => void
+    nameClass: string
+    topBorder?: boolean
+    editable: boolean
+  }) => {
+    const { code, name, level, activityCount, totalValue, expandable, isExpanded, onToggle, nameClass, topBorder, editable } = opts
+    const chevronSize = level === 0 ? 'h-4 w-4' : 'h-3.5 w-3.5'
+    return (
+      <TableRow
+        key={code}
+        onClick={onToggle}
+        className={`group/row ${topBorder ? 'border-t-2 border-border' : ''} ${onToggle ? 'cursor-pointer' : ''}`}
+      >
+        <TableCell className="py-2.5 align-middle">
+          <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 1.5}rem` }}>
+            <span className="w-4 flex-shrink-0 inline-flex items-center">
+              {expandable ? (isExpanded
+                ? <ChevronDown className={`${chevronSize} text-muted-foreground`} />
+                : <ChevronRight className={`${chevronSize} text-muted-foreground`} />) : null}
+            </span>
+            <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 flex-shrink-0">{code}</code>
+            <Link href={`/sectors/${code}`} onClick={e => e.stopPropagation()} className={`${nameClass} hover:text-blue-600`}>{name}</Link>
+          </div>
+        </TableCell>
+        <TableCell className="py-2.5 align-middle text-right">
+          {activityCount > 0 ? <span className="text-foreground">{activityCount}</span> : <span className="text-muted-foreground">–</span>}
+        </TableCell>
+        <TableCell className="py-2.5 align-middle text-right"><UsdAmount value={totalValue} /></TableCell>
+        {canEdit && (
+          <TableCell className="py-2.5 align-middle text-right">
+            {editable && (
+              <Link
+                href={`/sectors/${code}/edit`}
+                onClick={e => e.stopPropagation()}
+                className="inline-flex opacity-0 group-hover/row:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                title="Edit sector"
+                aria-label={`Edit ${name}`}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Link>
+            )}
+          </TableCell>
+        )}
+      </TableRow>
+    )
+  }
+
   return (
     <MainLayout>
       <div className="w-full">
@@ -518,8 +589,19 @@ export default function SectorsListingPage() {
                 placeholder="Search by name or code..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-10"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Clear search"
+                  title="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <div className="flex items-center border rounded-md flex-shrink-0">
               <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-r-none h-9">
@@ -529,7 +611,7 @@ export default function SectorsListingPage() {
                 <LayoutGrid className="h-4 w-4" />
               </Button>
             </div>
-            {viewMode === 'list' && (
+            {viewMode === 'list' ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -539,6 +621,17 @@ export default function SectorsListingPage() {
               >
                 {allExpanded ? <ChevronsDownUp className="h-4 w-4 mr-2" /> : <ChevronsUpDown className="h-4 w-4 mr-2" />}
                 {allExpanded ? 'Collapse All' : 'Expand All'}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleExpandAllCards}
+                disabled={broadSections.length === 0}
+                aria-label={cardAllExpanded ? 'Collapse all' : 'Expand all'}
+              >
+                {cardAllExpanded ? <ChevronsDownUp className="h-4 w-4 mr-2" /> : <ChevronsUpDown className="h-4 w-4 mr-2" />}
+                {cardAllExpanded ? 'Collapse All' : 'Expand All'}
               </Button>
             )}
           </div>
@@ -552,10 +645,7 @@ export default function SectorsListingPage() {
                   <section key={section.code}>
                     {/* Broad-category section header (OECD top tier).
                         Chevron toggles collapse; code + title link to the profile. */}
-                    <div
-                      className="w-full flex items-center gap-3 pb-3 mb-5 border-b-2"
-                      style={{ borderColor: getSectorColor(section.code) }}
-                    >
+                    <div className="w-full flex items-center gap-3 pb-3 mb-5 border-b border-border">
                       <button
                         onClick={() => toggleBroad(section.code)}
                         className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
@@ -600,183 +690,80 @@ export default function SectorsListingPage() {
             </div>
           )}
 
-          {/* Hierarchical tree */}
-          {viewMode === 'list' && <div className="border border-border rounded-lg overflow-hidden">
-            {/* Header row */}
-            <div className="flex items-center gap-3 px-3 py-2 bg-surface-muted border-b border-border text-section-label font-medium text-muted-foreground uppercase">
-              <div className="w-4 flex-shrink-0" />
-              <div className="w-12 flex-shrink-0">Code</div>
-              <div className="flex-1">Name</div>
-              <div className="w-24 text-right flex-shrink-0">Activities</div>
-              <div className="w-24 text-right flex-shrink-0">Funding</div>
-            </div>
-
-            {broadSections.map((section, sectionIdx) => {
-              const isBroadExpanded = expandedBroad.has(section.code)
-
-              return (
-                <div key={section.code}>
-                  {/* Broad category level (OECD top tier) */}
-                  <div
-                    className={`w-full flex items-center gap-3 px-3 py-3 hover:bg-muted/50 transition-colors ${sectionIdx > 0 ? 'border-t-2 border-border' : ''}`}
-                  >
-                    <button onClick={() => toggleBroadRow(section.code)} className="flex-shrink-0 w-4" aria-label={isBroadExpanded ? 'Collapse' : 'Expand'}>
-                      {isBroadExpanded ? (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 inline-block align-middle mr-2">{section.code}</code>
-                      <Link
-                        href={`/sectors/${section.code}`}
-                        className="font-bold text-foreground text-body hover:text-blue-600"
-                      >
-                        {section.name}
-                      </Link>
-                    </div>
-                    <div className="w-24 text-right flex-shrink-0">
-                      {section.activityCount > 0 ? (
-                        <span className="text-body text-foreground">{section.activityCount}</span>
-                      ) : (
-                        <span className="text-muted-foreground">–</span>
-                      )}
-                    </div>
-                    <div className="w-24 text-right flex-shrink-0">
-                      <UsdAmount value={section.totalValue} />
-                    </div>
-                  </div>
-
-                  {/* Groups */}
-                  {isBroadExpanded && section.groups.map(group => {
-                    const isGroupExpanded = expandedGroups.has(group.code)
-
-                    return (
-                      <div key={group.code}>
-                        {/* Group level */}
-                        <div className="flex items-center gap-3 px-3 py-2.5 pl-10 border-t border-border/50 hover:bg-muted/50 transition-colors">
-                          <button onClick={() => toggleGroup(group.code)} className="flex-shrink-0 w-4" aria-label={isGroupExpanded ? 'Collapse' : 'Expand'}>
-                            {isGroupExpanded ? (
-                              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                            )}
-                          </button>
-                          <div className="flex-1 min-w-0">
-                            <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 inline-block align-middle mr-2">{group.code}</code>
-                            <Link
-                              href={`/sectors/${group.code}`}
-                              className="font-semibold text-foreground text-body hover:text-blue-600"
-                            >
-                              {group.name}
-                            </Link>
-                          </div>
-                          <div className="w-24 text-right flex-shrink-0">
-                            {group.activityCount > 0 ? (
-                              <span className="text-body text-foreground">{group.activityCount}</span>
-                            ) : (
-                              <span className="text-muted-foreground">–</span>
-                            )}
-                          </div>
-                          <div className="w-24 text-right flex-shrink-0">
-                            <UsdAmount value={group.totalValue} />
-                          </div>
-                        </div>
-
-                        {/* Categories */}
-                        {isGroupExpanded && (
-                          <div>
-                            {group.categories.map(cat => {
+          {/* Hierarchical tree — shared <Table>, 4-level expand/collapse as rows */}
+          {viewMode === 'list' && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead className="text-right whitespace-nowrap w-28">Activities</TableHead>
+                  <TableHead className="text-right whitespace-nowrap w-44">Committed + Disbursed</TableHead>
+                  {canEdit && <TableHead className="w-12" />}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {broadSections.map((section, sectionIdx) => {
+                  const isBroadExpanded = expandedBroad.has(section.code)
+                  return (
+                    <React.Fragment key={section.code}>
+                      {renderTreeRow({
+                        code: section.code, name: section.name, level: 0,
+                        activityCount: section.activityCount, totalValue: section.totalValue,
+                        expandable: true, isExpanded: isBroadExpanded,
+                        onToggle: () => toggleBroadRow(section.code),
+                        nameClass: 'font-bold text-foreground text-body',
+                        topBorder: sectionIdx > 0, editable: true,
+                      })}
+                      {isBroadExpanded && section.groups.map(group => {
+                        const isGroupExpanded = expandedGroups.has(group.code)
+                        return (
+                          <React.Fragment key={group.code}>
+                            {renderTreeRow({
+                              code: group.code, name: group.name, level: 1,
+                              activityCount: group.activityCount, totalValue: group.totalValue,
+                              expandable: true, isExpanded: isGroupExpanded,
+                              onToggle: () => toggleGroup(group.code),
+                              nameClass: 'font-semibold text-foreground text-body', editable: true,
+                            })}
+                            {isGroupExpanded && group.categories.map(cat => {
                               const isCatExpanded = expandedCategories.has(cat.code)
-
+                              const hasSectors = !!(cat.sectors && cat.sectors.length > 0)
                               return (
-                                <div key={cat.code}>
-                                  <div
-                                    className="flex items-center gap-3 px-3 py-2.5 pl-16 border-t border-border/50 hover:bg-muted/50 transition-colors cursor-pointer"
-                                    onClick={() => toggleCategory(cat.code)}
-                                  >
-                                    <div className="flex-shrink-0 w-4">
-                                      {cat.sectors && cat.sectors.length > 0 ? (
-                                        isCatExpanded ? (
-                                          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-                                        ) : (
-                                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                                        )
-                                      ) : (
-                                        <div className="w-3.5" />
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 inline-block align-middle mr-2">{cat.code}</code>
-                                      <Link
-                                        href={`/sectors/${cat.code}`}
-                                        onClick={e => e.stopPropagation()}
-                                        className="font-medium text-foreground text-body hover:text-blue-600"
-                                      >
-                                        {cat.name}
-                                      </Link>
-                                    </div>
-                                    <div className="w-24 text-right flex-shrink-0">
-                                      {cat.activityCount > 0 ? (
-                                        <span className="text-body text-foreground">{cat.activityCount}</span>
-                                      ) : (
-                                        <span className="text-muted-foreground">–</span>
-                                      )}
-                                    </div>
-                                    <div className="w-24 text-right flex-shrink-0">
-                                      <UsdAmount value={cat.totalValue} />
-                                    </div>
-                                  </div>
-
-                                  {/* Sectors (5-digit) */}
-                                  {isCatExpanded && cat.sectors && (
-                                    <div>
-                                      {cat.sectors.map(sector => (
-                                        <Link
-                                          key={sector.code}
-                                          href={`/sectors/${sector.code}`}
-                                          className="flex items-center gap-3 px-3 py-2 pl-20 border-t border-border/30 hover:bg-muted/50 transition-colors"
-                                        >
-                                          <div className="w-4 flex-shrink-0" />
-                                          <div className="flex-1 min-w-0">
-                                            <code className="text-xs font-mono text-muted-foreground bg-muted rounded px-1.5 py-0.5 inline-block align-middle mr-2">{sector.code}</code>
-                                            <span className="text-body text-muted-foreground">{sector.name}</span>
-                                          </div>
-                                          <div className="w-24 text-right flex-shrink-0">
-                                            {sector.activityCount > 0 ? (
-                                              <span className="text-body text-foreground">{sector.activityCount}</span>
-                                            ) : (
-                                              <span className="text-muted-foreground">–</span>
-                                            )}
-                                          </div>
-                                          <div className="w-24 text-right flex-shrink-0">
-                                            <UsdAmount value={sector.totalValue} />
-                                          </div>
-                                        </Link>
-                                      ))}
-                                    </div>
+                                <React.Fragment key={cat.code}>
+                                  {renderTreeRow({
+                                    code: cat.code, name: cat.name, level: 2,
+                                    activityCount: cat.activityCount, totalValue: cat.totalValue,
+                                    expandable: hasSectors, isExpanded: isCatExpanded,
+                                    onToggle: hasSectors ? () => toggleCategory(cat.code) : undefined,
+                                    nameClass: 'font-medium text-foreground text-body', editable: true,
+                                  })}
+                                  {isCatExpanded && cat.sectors && cat.sectors.map(sector =>
+                                    renderTreeRow({
+                                      code: sector.code, name: sector.name, level: 3,
+                                      activityCount: sector.activityCount, totalValue: sector.totalValue,
+                                      expandable: false, isExpanded: false,
+                                      nameClass: 'text-muted-foreground text-body', editable: false,
+                                    })
                                   )}
-                                </div>
+                                </React.Fragment>
                               )
                             })}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })}
-
-            {filteredGroups.length === 0 && (
-              <div className="p-8 text-center">
-                <p className="text-muted-foreground">
-                  {searchTerm ? `No sectors matching "${searchTerm}"` : 'No sector data found'}
-                </p>
-              </div>
-            )}
-          </div>}
+                          </React.Fragment>
+                        )
+                      })}
+                    </React.Fragment>
+                  )
+                })}
+                {filteredGroups.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={canEdit ? 4 : 3} className="text-center text-muted-foreground py-8">
+                      {searchTerm ? `No sectors matching "${searchTerm}"` : 'No sector data found'}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </div>
       </div>
     </MainLayout>

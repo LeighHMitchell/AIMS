@@ -82,13 +82,15 @@ export default function OrganizationEditorNavigation({
     {
       title: "Basic Information",
       sections: [
-        { id: "general", label: "General" }
+        { id: "general", label: "General" },
+        { id: "reporting", label: "Reporting Defaults" }
       ]
     },
     {
       title: "Contact",
       sections: [
         { id: "contact", label: "Contact Information" },
+        { id: "social", label: "Social Media" },
         { id: "contacts", label: "People" }
       ]
     },

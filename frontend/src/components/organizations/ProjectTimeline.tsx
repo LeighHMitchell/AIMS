@@ -245,7 +245,7 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
                 <DropdownMenuItem>All Projects</DropdownMenuItem>
                 <DropdownMenuItem>Implementation</DropdownMenuItem>
                 <DropdownMenuItem>Pipeline</DropdownMenuItem>
-                <DropdownMenuItem>Completion</DropdownMenuItem>
+                <DropdownMenuItem>Finalisation</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             

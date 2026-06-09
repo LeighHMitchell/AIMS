@@ -244,7 +244,7 @@ export function PageHelpManagement() {
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
             {/* Table */}
-            <div className="border rounded-md overflow-hidden">
+            <div className="border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>

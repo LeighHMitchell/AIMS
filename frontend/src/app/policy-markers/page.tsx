@@ -36,8 +36,9 @@ interface PMSummaryData {
 }
 
 const GROUP_ORDER = [
-  { key: 'oecd_dac', label: 'OECD DAC Policy Marker' },
-  { key: 'other', label: 'Other' },
+  // vocab = IATI PolicyMarkerVocabulary code (1 = OECD DAC CRS, 99 = Reporting Organisation)
+  { key: 'oecd_dac', label: 'OECD DAC Policy Marker', vocab: '1' },
+  { key: 'other', label: 'Other', vocab: '99' },
 ]
 
 export default function PolicyMarkersListingPage() {
@@ -135,7 +136,7 @@ export default function PolicyMarkersListingPage() {
   const filteredCount = Object.values(filteredGroups).reduce((sum, arr) => sum + arr.length, 0)
 
   // Flat, sortable rows for the table view
-  const tableRows = GROUP_ORDER.flatMap(g => (filteredGroups[g.key] || []).map(m => ({ marker: m, category: g.label })))
+  const tableRows = GROUP_ORDER.flatMap(g => (filteredGroups[g.key] || []).map(m => ({ marker: m, category: g.label, vocab: g.vocab })))
     .sort((a, b) => {
       let cmp = 0
       if (sortField === 'name') cmp = a.marker.name.localeCompare(b.marker.name)
@@ -212,7 +213,7 @@ export default function PolicyMarkersListingPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tableRows.map(({ marker, category }) => {
+                  {tableRows.map(({ marker, category, vocab }) => {
                     const IconComponent = getIconForMarker(marker.iati_code, marker.icon)
                     return (
                       <TableRow
@@ -231,7 +232,12 @@ export default function PolicyMarkersListingPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground">{category}</TableCell>
+                        <TableCell className="hidden md:table-cell text-foreground">
+                          {vocab && (
+                            <span className="font-mono text-xs bg-muted text-muted-foreground rounded px-1.5 py-0.5 mr-2">{vocab}</span>
+                          )}
+                          {category}
+                        </TableCell>
                         <TableCell className="text-right text-foreground">{marker.activityCount}</TableCell>
                         {canEdit && (
                           <TableCell className="opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity">

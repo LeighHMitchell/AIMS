@@ -2,10 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Building2, MapPin, Activity, DollarSign, ExternalLink } from 'lucide-react';
+import { Building2, MapPin, Activity } from 'lucide-react';
 import { OrganizationCardActionMenu } from './OrganizationCardActionMenu';
 import { useOrganizationBookmarks } from '@/hooks/use-organization-bookmarks';
-import { CardShell, CardShellLogoOverlay, CardShellRipLine } from '@/components/ui/card-shell';
+import { CardShell, CardShellLogoOverlay } from '@/components/ui/card-shell';
 import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -48,17 +48,15 @@ interface OrganizationCardModernProps {
   onToggleSelect?: (orgId: string, checked: boolean) => void;
 }
 
-// Currency formatting utility
+// Currency formatting utility — returns the numeric amount without a currency symbol
 const formatCurrency = (value: number | undefined) => {
-  if (!value) return '$0';
+  if (!value) return '0';
   if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}m`;
+    return `${(value / 1000000).toFixed(1)}m`;
   } else if (value >= 1000) {
-    return `$${(value / 1000).toFixed(1)}k`;
+    return `${(value / 1000).toFixed(1)}k`;
   } else {
     return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -183,35 +181,12 @@ const OrganizationCardModern: React.FC<OrganizationCardModernProps> = ({
               <p className="text-[10px] uppercase tracking-wider" style={{ color: colors.coolSteel }}>
                 Total Budgeted
               </p>
-              <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
-                <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
+              <div className="flex items-baseline gap-1 font-medium text-body" style={{ color: colors.blueSlate }}>
+                <span className="text-[10px] font-normal" style={{ color: colors.coolSteel }}>USD</span>
                 <span>{formatCurrency(organization.totalBudgeted)}</span>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Rip Line */}
-        <div className="my-4">
-          <CardShellRipLine />
-        </div>
-
-        {/* Bottom Section */}
-        <div className="flex items-center justify-end">
-          {organization.website && (
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                window.open(organization.website, '_blank');
-              }}
-              className="flex items-center gap-1 text-[10px] hover:underline relative z-10"
-              style={{ color: colors.blueSlate }}
-            >
-              <ExternalLink className="w-3 h-3" />
-              Visit Website
-            </button>
-          )}
         </div>
       </div>
     </CardShell>

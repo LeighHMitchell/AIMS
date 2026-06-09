@@ -166,26 +166,21 @@ export async function POST(
       return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
-    // Validation
-    if (!body.amount || !body.currency || !body.year_start || !body.flow_direction || !body.organization_role || !body.status) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: amount, currency, year_start, flow_direction, organization_role, and status are required' 
+    // Validation — IATI recipient-country-budget: amount, currency, year, status.
+    if (!body.amount || !body.currency || !body.year_start || !body.status) {
+      return NextResponse.json({
+        error: 'Missing required fields: amount, currency, year_start, and status are required'
       }, { status: 400 });
     }
 
-    // Validate period_type
-    if (body.period_type === 'multi_year' && (!body.year_end || body.year_end < body.year_start)) {
-      return NextResponse.json({ 
-        error: 'For multi_year period_type, year_end must be provided and >= year_start' 
+    if (!['indicative', 'committed'].includes(body.status)) {
+      return NextResponse.json({
+        error: "status must be 'indicative' or 'committed'"
       }, { status: 400 });
     }
 
-    if (body.period_type === 'single_year') {
-      body.year_end = null;
-    }
-
-    // Ensure funding_type_flags is an array
-    const fundingTypeFlags = Array.isArray(body.funding_type_flags) ? body.funding_type_flags : [];
+    // Annual budgets only — single year, no multi-year range.
+    body.year_end = null;
 
     // Normalize value_date (empty string to null)
     const normalizedValueDate = body.value_date && body.value_date.trim() !== ''
@@ -209,10 +204,10 @@ export async function POST(
       .from('organization_funding_envelopes')
       .insert({
         organization_id: organizationId,
-        period_type: body.period_type,
+        period_type: 'single_year',
         year_type: body.year_type || 'calendar',
         year_start: body.year_start,
-        year_end: body.year_end || null,
+        year_end: null,
         fiscal_year_start_month: body.fiscal_year_start_month || null,
         amount: body.amount,
         currency: body.currency,
@@ -221,11 +216,7 @@ export async function POST(
         exchange_rate_used: usdConversion.exchange_rate_used,
         usd_conversion_date: usdConversion.usd_conversion_date,
         usd_convertible: usdConversion.usd_convertible,
-        flow_direction: body.flow_direction,
-        organization_role: body.organization_role,
-        funding_type_flags: fundingTypeFlags,
         status: body.status,
-        confidence_level: body.confidence_level || null,
         notes: body.notes || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -264,21 +255,14 @@ export async function PUT(
       return NextResponse.json({ error: 'Envelope ID required' }, { status: 400 });
     }
 
-    // Validate period_type if provided
-    if (body.period_type === 'multi_year' && (!body.year_end || body.year_end < body.year_start)) {
-      return NextResponse.json({ 
-        error: 'For multi_year period_type, year_end must be provided and >= year_start' 
+    if (body.status && !['indicative', 'committed'].includes(body.status)) {
+      return NextResponse.json({
+        error: "status must be 'indicative' or 'committed'"
       }, { status: 400 });
     }
 
-    if (body.period_type === 'single_year') {
-      body.year_end = null;
-    }
-
-    // Ensure funding_type_flags is an array
-    if (body.funding_type_flags !== undefined) {
-      body.funding_type_flags = Array.isArray(body.funding_type_flags) ? body.funding_type_flags : [];
-    }
+    // Annual budgets only — single year, no multi-year range.
+    body.year_end = null;
 
     // Normalize value_date (empty string to null)
     const normalizedValueDate = body.value_date && body.value_date.trim() !== ''
@@ -302,10 +286,10 @@ export async function PUT(
     const { data, error } = await supabase
       .from('organization_funding_envelopes')
       .update({
-        period_type: body.period_type,
+        period_type: 'single_year',
         year_type: body.year_type || 'calendar',
         year_start: body.year_start,
-        year_end: body.year_end !== undefined ? body.year_end : null,
+        year_end: null,
         fiscal_year_start_month: body.fiscal_year_start_month || null,
         amount: body.amount,
         currency: body.currency,
@@ -314,11 +298,7 @@ export async function PUT(
         exchange_rate_used: usdConversion.exchange_rate_used,
         usd_conversion_date: usdConversion.usd_conversion_date,
         usd_convertible: usdConversion.usd_convertible,
-        flow_direction: body.flow_direction,
-        organization_role: body.organization_role,
-        funding_type_flags: body.funding_type_flags,
         status: body.status,
-        confidence_level: body.confidence_level !== undefined ? body.confidence_level : null,
         notes: body.notes !== undefined ? body.notes : null,
         updated_at: new Date().toISOString()
       })

@@ -27,6 +27,7 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 import { formatCurrency, TOOLTIP_CLASSES } from '@/lib/chart-utils'
 import { formatCurrencyShort } from '@/lib/format'
 import { SDGMetricCards } from '@/components/sdgs/SDGMetricCards'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 // Map thumbnail used as banner instead of uploaded images
 import { MiniChartCard } from '@/components/profiles/MiniChartCard'
 import type { EmbeddedLocation } from '@/components/maps-v2/EmbeddedAtlasMap'
@@ -163,7 +164,7 @@ function formatNumber(value: number): string {
 
 function getStatusLabel(status?: string): string {
   const labels: Record<string, string> = {
-    '1': 'Pipeline', '2': 'Implementation', '3': 'Completion',
+    '1': 'Pipeline', '2': 'Implementation', '3': 'Finalisation',
     '4': 'Closed', '5': 'Cancelled', '6': 'Suspended',
   }
   return labels[status || ''] || 'Unknown'
@@ -617,7 +618,7 @@ export default function LocationProfileDetailPage() {
                     <option value="all">All Statuses</option>
                     <option value="1">Pipeline</option>
                     <option value="2">Implementation</option>
-                    <option value="3">Completion</option>
+                    <option value="3">Finalisation</option>
                     <option value="4">Closed</option>
                     <option value="5">Cancelled</option>
                     <option value="6">Suspended</option>
@@ -815,7 +816,7 @@ export default function LocationProfileDetailPage() {
                       <option value="all">All Statuses</option>
                       <option value="1">Pipeline</option>
                       <option value="2">Implementation</option>
-                      <option value="3">Completion</option>
+                      <option value="3">Finalisation</option>
                       <option value="4">Closed</option>
                       <option value="5">Cancelled</option>
                     </select>
@@ -829,54 +830,52 @@ export default function LocationProfileDetailPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-body">
-                    <thead className="bg-surface-muted">
-                      <tr className="border-b border-border bg-muted/50">
-                        <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Activity</th>
-                        <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Status</th>
-                        <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Reporting Org</th>
-                        <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Committed</th>
-                        <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Disbursed</th>
-                        <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedActivities.map(activity => (
-                        <tr key={activity.id} className="border-b border-border/50 hover:bg-muted/50">
-                          <td className="py-2 px-3">
-                            <Link href={`/activities/${activity.id}`} className="hover:underline">
-                              <div className="flex items-center gap-1.5">
-                                <p className="font-medium text-foreground truncate max-w-xs">{activity.title_narrative || 'Untitled'}</p>
-                                {activity.iati_identifier && (
-                                  <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>
-                                )}
-                              </div>
-                            </Link>
-                          </td>
-                          <td className="py-2 px-3 text-helper text-foreground">
-                            {getStatusLabel(activity.activity_status)}
-                          </td>
-                          <td className="py-2 px-3">
-                            {activity.reportingOrgName ? (
-                              <div>
-                                <p className="text-helper text-foreground truncate max-w-[150px]">{activity.reportingOrgAcronym || activity.reportingOrgName}</p>
-                                {activity.reportingOrgType && (
-                                  <p className="text-[10px] text-muted-foreground">{getOrgTypeLabel(activity.reportingOrgType)}</p>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-helper text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="py-2 px-3 text-right"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(activity.commitments)}</span></td>
-                          <td className="py-2 px-3 text-right"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(activity.disbursements)}</span></td>
-                          <td className="py-2 px-3 text-right font-medium"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(activity.totalValue)}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <Table className="border-0">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Activity</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Reporting Org</TableHead>
+                      <TableHead className="text-right">Committed</TableHead>
+                      <TableHead className="text-right">Disbursed</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedActivities.map(activity => (
+                      <TableRow key={activity.id}>
+                        <TableCell>
+                          <Link href={`/activities/${activity.id}`} className="hover:underline">
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium text-foreground truncate max-w-xs">{activity.title_narrative || 'Untitled'}</p>
+                              {activity.iati_identifier && (
+                                <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>
+                              )}
+                            </div>
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-helper text-foreground">
+                          {getStatusLabel(activity.activity_status)}
+                        </TableCell>
+                        <TableCell>
+                          {activity.reportingOrgName ? (
+                            <div>
+                              <p className="text-helper text-foreground truncate max-w-[150px]">{activity.reportingOrgAcronym || activity.reportingOrgName}</p>
+                              {activity.reportingOrgType && (
+                                <p className="text-[10px] text-muted-foreground">{getOrgTypeLabel(activity.reportingOrgType)}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-helper text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(activity.commitments)}</span></TableCell>
+                        <TableCell className="text-right"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(activity.disbursements)}</span></TableCell>
+                        <TableCell className="text-right font-medium"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(activity.totalValue)}</span></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between px-3 py-3 border-t border-border">
                     <p className="text-helper text-muted-foreground">
@@ -899,43 +898,41 @@ export default function LocationProfileDetailPage() {
               </CardHeader>
               <CardContent className="p-0">
                 {organizations.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-body">
-                      <thead className="bg-surface-muted">
-                        <tr className="border-b border-border bg-muted/50">
-                          <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Organisation</th>
-                          <th className="text-left py-2 px-3 text-helper font-medium text-muted-foreground">Role</th>
-                          <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Activities</th>
-                          <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Committed</th>
-                          <th className="text-right py-2 px-3 text-helper font-medium text-muted-foreground">Disbursed</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {organizations.map(org => (
-                          <tr key={org.id} className="border-b border-border/50 hover:bg-muted/50">
-                            <td className="py-2 px-3">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium text-foreground truncate max-w-xs">{org.name}</p>
-                                {org.acronym && <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{org.acronym}</code>}
-                              </div>
-                            </td>
-                            <td className="py-2 px-3">
-                              <div className="flex gap-1 flex-wrap">
-                                {org.contributionTypes.map(role => (
-                                  <Badge key={role} variant="outline" className="text-[10px] px-1 py-0">
-                                    {role === '1' ? 'Funding' : role === '2' ? 'Accountable' : role === '3' ? 'Extending' : role === '4' ? 'Implementing' : role}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="py-2 px-3 text-right text-foreground">{org.activityCount}</td>
-                            <td className="py-2 px-3 text-right"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(org.totalCommitted)}</span></td>
-                            <td className="py-2 px-3 text-right"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(org.totalDisbursed)}</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table className="border-0">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Organisation</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead className="text-right">Activities</TableHead>
+                        <TableHead className="text-right">Committed</TableHead>
+                        <TableHead className="text-right">Disbursed</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {organizations.map(org => (
+                        <TableRow key={org.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-foreground truncate max-w-xs">{org.name}</p>
+                              {org.acronym && <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{org.acronym}</code>}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 flex-wrap">
+                              {org.contributionTypes.map(role => (
+                                <Badge key={role} variant="outline" className="text-[10px] px-1 py-0">
+                                  {role === '1' ? 'Funding' : role === '2' ? 'Accountable' : role === '3' ? 'Extending' : role === '4' ? 'Implementing' : role}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right text-foreground">{org.activityCount}</TableCell>
+                          <TableCell className="text-right"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(org.totalCommitted)}</span></TableCell>
+                          <TableCell className="text-right"><span className="text-[10px] text-muted-foreground">USD </span><span className="text-foreground">{formatAmountShort(org.totalDisbursed)}</span></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <Building2 className="h-8 w-8 mx-auto mb-2 opacity-50" />

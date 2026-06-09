@@ -53,6 +53,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from '@/components/ui/table';
 import { apiFetch } from '@/lib/api-fetch';
 import { formatCurrencyCompact, formatCurrencyPrecise, formatAxisCurrency } from '@/lib/format';
@@ -91,6 +93,16 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   '12': 'Outgoing Pledge',
   '13': 'Incoming Pledge',
 };
+
+// Small grey monospace chip for an IATI code, consistent with how codes are
+// presented throughout the app (e.g. the sector tooltip).
+function CodeChip({ code }: { code: string }) {
+  return (
+    <span className="inline-flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-mono rounded px-1.5 py-0.5 shrink-0">
+      {code}
+    </span>
+  );
+}
 
 interface SectorBreakdown {
   code: string;
@@ -223,6 +235,14 @@ function TrendChart({
   expanded: boolean;
   emptyLabel: string;
 }) {
+  // Sort state for the table view (chronological by default).
+  const [sortField, setSortField] = useState<'label' | 'amount'>('label');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const toggleSort = (field: 'label' | 'amount') => {
+    if (sortField === field) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('asc'); }
+  };
+
   if (!data || data.length === 0) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground text-body">
@@ -232,17 +252,27 @@ function TrendChart({
   }
 
   if (mode === 'table') {
+    const sorted = [...data].sort((a, b) => {
+      const cmp = sortField === 'amount'
+        ? (a.amount || 0) - (b.amount || 0)
+        : a.year - b.year; // chronological order backs the "Period" column
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
     return (
       <div className="h-full overflow-y-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Period</TableHead>
-              <TableHead className="text-right">Amount (USD)</TableHead>
+              <TableHead className={sortableHeaderClasses} onClick={() => toggleSort('label')}>
+                <span className="flex items-center gap-1">Period {getSortIcon('label', sortField, sortDir)}</span>
+              </TableHead>
+              <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => toggleSort('amount')}>
+                <span className="flex items-center gap-1 justify-end">Amount (USD) {getSortIcon('amount', sortField, sortDir)}</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((point) => (
+            {sorted.map((point) => (
               <TableRow key={point.year}>
                 <TableCell>{point.label}</TableCell>
                 <TableCell className="text-right">{formatCurrencyFull(point.amount)}</TableCell>
@@ -388,14 +418,18 @@ function ExpandedChartModal({
         <DialogHeader>
           <div className="flex items-center justify-between gap-4">
             <DialogTitle>{title}</DialogTitle>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              {toolbar}
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:bg-muted" onClick={onClose} title="Close" aria-label="Close">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:bg-muted flex-shrink-0" onClick={onClose} title="Close" aria-label="Close">
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </DialogHeader>
+        {/* Toolbar sits on its own row below the header and above the chart,
+            matching the Analytical Dashboard (chart/table toggle + CSV on the right). */}
+        {toolbar && (
+          <div className="flex items-center justify-end gap-1 border-b border-border pb-3">
+            {toolbar}
+          </div>
+        )}
         <div className="h-[440px]">{children}</div>
         <DialogDescription className="mt-1">{description}</DialogDescription>
       </DialogContent>
@@ -411,6 +445,14 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
   const [budgetViewMode, setBudgetViewMode] = useState<ViewMode>('bar');
   const [plannedViewMode, setPlannedViewMode] = useState<ViewMode>('bar');
   const [transactionsViewMode, setTransactionsViewMode] = useState<ViewMode>('bar');
+  // Sort state for the expanded transactions table. Field is 'month', 'total',
+  // or 'type_<code>'; default chronological (month asc, mirroring the API order).
+  const [txTableSortField, setTxTableSortField] = useState<string>('month');
+  const [txTableSortDir, setTxTableSortDir] = useState<'asc' | 'desc'>('asc');
+  const toggleTxSort = (field: string) => {
+    if (txTableSortField === field) setTxTableSortDir(txTableSortDir === 'asc' ? 'desc' : 'asc');
+    else { setTxTableSortField(field); setTxTableSortDir('asc'); }
+  };
   const [sectorsMetric, setSectorsMetric] = useState<'budget' | 'planned' | 'activities'>('budget');
   const transactionChartRef = useRef<HTMLDivElement>(null);
 
@@ -497,6 +539,10 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
     return (
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+          {/* Hidden category axis: without a dataKey Recharts passes the row
+              INDEX as the tooltip `label`, breaking the month lookup below
+              (the cause of the all-$0 hover). `hide` keeps the sparkline clean. */}
+          <XAxis dataKey="month" hide />
           <Tooltip
             wrapperStyle={{ visibility: 'hidden' }}
             cursor={{ fill: 'rgba(15,23,42,0.04)' }}
@@ -609,20 +655,42 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
     );
 
     if (transactionsViewMode === 'table') {
+      const sortedRows = [...(data?.transactionTrend || [])].sort((a, b) => {
+        let cmp = 0;
+        if (txTableSortField === 'month') {
+          cmp = a.month.localeCompare(b.month);
+        } else if (txTableSortField === 'total') {
+          cmp = (a.amount || 0) - (b.amount || 0);
+        } else if (txTableSortField.startsWith('type_')) {
+          const type = txTableSortField.slice(5);
+          cmp = (a.typeAmounts?.[type] || 0) - (b.typeAmounts?.[type] || 0);
+        }
+        return txTableSortDir === 'asc' ? cmp : -cmp;
+      });
       return (
         <div className="h-full overflow-y-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Period</TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => toggleTxSort('month')}>
+                  <span className="flex items-center gap-1">Period {getSortIcon('month', txTableSortField, txTableSortDir)}</span>
+                </TableHead>
                 {uniqueTypes.map(type => (
-                  <TableHead key={type} className="text-right">{TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}</TableHead>
+                  <TableHead key={type} className={`text-right ${sortableHeaderClasses}`} onClick={() => toggleTxSort(`type_${type}`)}>
+                    <span className="flex items-center gap-1.5 justify-end">
+                      <CodeChip code={type} />
+                      {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+                      {getSortIcon(`type_${type}`, txTableSortField, txTableSortDir)}
+                    </span>
+                  </TableHead>
                 ))}
-                <TableHead className="text-right">Total</TableHead>
+                <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => toggleTxSort('total')}>
+                  <span className="flex items-center gap-1 justify-end">Total {getSortIcon('total', txTableSortField, txTableSortDir)}</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(data?.transactionTrend || []).map((point) => (
+              {sortedRows.map((point) => (
                 <TableRow key={point.month}>
                   <TableCell>{point.month}</TableCell>
                   {uniqueTypes.map(type => (

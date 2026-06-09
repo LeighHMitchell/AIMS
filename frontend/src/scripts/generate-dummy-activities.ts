@@ -24,7 +24,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 // IATI Code Lists
 const AID_TYPES = ['A01', 'A02', 'B01', 'B02', 'B03', 'B04', 'C01', 'D01', 'D02', 'E01', 'E02', 'F01', 'G01']
 const FINANCE_TYPES = ['110', '210', '310', '410', '420', '510', '610', '710', '810', '910']
-const ACTIVITY_STATUSES = ['1', '2', '3', '4', '5', '6'] // Pipeline, Implementation, Completion, etc.
+const ACTIVITY_STATUSES = ['1', '2', '3', '4', '5', '6'] // Pipeline, Implementation, Finalisation, etc.
 const COLLABORATION_TYPES = ['1', '2', '3', '4'] // Bilateral, Multilateral, etc.
 const FLOW_TYPES = ['10', '20', '30', '35', '40', '50'] // ODA, OOF, etc.
 const TIED_STATUSES = ['1', '2', '3', '4', '5'] // Tied, Untied, etc.
@@ -155,8 +155,8 @@ async function generateActivity(index: number, organizations: any[]) {
     activity_status: faker.helpers.weightedArrayElement([
       { value: '2', weight: 60 }, // Implementation (most common)
       { value: '1', weight: 20 }, // Pipeline
-      { value: '3', weight: 10 }, // Completion
-      { value: '4', weight: 10 }  // Post-completion
+      { value: '3', weight: 10 }, // Finalisation
+      { value: '4', weight: 10 }  // Closed
     ]),
     collaboration_type: faker.helpers.arrayElement(COLLABORATION_TYPES),
     planned_start_date: startDate.toISOString().split('T')[0],

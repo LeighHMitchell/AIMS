@@ -64,7 +64,7 @@ export const ACTIVITY_FIELDS: SystemField[] = [
   { id: 'activity_status', name: 'Status', type: 'select', required: false, description: 'Current status of the activity', options: [
     { value: 'pipeline', label: 'Pipeline' },
     { value: 'implementation', label: 'Implementation' },
-    { value: 'completion', label: 'Completion' },
+    { value: 'completion', label: 'Finalisation' },
     { value: 'cancelled', label: 'Cancelled' },
     { value: 'suspended', label: 'Suspended' }
   ]},

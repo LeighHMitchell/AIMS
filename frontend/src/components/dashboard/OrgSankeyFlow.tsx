@@ -1,11 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, GitBranch } from 'lucide-react';
+import { HeroCard } from '@/components/ui/hero-card';
+import { GitBranch } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts';
 import type { OrgSankeyData, SankeyTransactionFilter } from '@/types/dashboard';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -14,7 +23,11 @@ interface OrgSankeyFlowProps {
   monthsRange?: number;
 }
 
-// Format currency
+// Incoming = money received (green); Outgoing = money sent (red/destructive).
+const INCOMING_COLOR = '#22c55e'; // green-500
+const OUTGOING_COLOR = '#dc2626'; // red-600 (destructive)
+
+// Format currency (compact, e.g. $1.2M)
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -24,48 +37,40 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-// Simple horizontal bar representation of flows (simplified Sankey-like visualization)
-function FlowBar({
-  source,
-  target,
-  value,
-  maxValue,
-  isOutgoing,
-}: {
-  source: string;
-  target: string;
-  value: number;
-  maxValue: number;
-  isOutgoing: boolean;
-}) {
-  const width = Math.max((value / maxValue) * 100, 10); // Min 10% width for visibility
+// Full USD format matching the Activity Editor transaction summary hero cards.
+const formatUsdFull = (n: number): string =>
+  `US$${(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
+interface FlowDatum {
+  name: string;
+  incoming: number;
+  outgoing: number; // stored negative so it diverges left of the 0 axis
+  incomingAbs: number;
+  outgoingAbs: number;
+}
+
+/** Tooltip for the diverging flow bar chart. */
+function FlowTooltip({ active, payload }: any) {
+  if (!active || !payload || payload.length === 0) return null;
+  const row = payload[0].payload as FlowDatum;
   return (
-    <div className="flex items-center gap-2 py-1">
-      <div className="w-[120px] text-helper text-right truncate" title={source}>
-        {source}
+    <div className="bg-white border border-border shadow-lg text-helper overflow-hidden">
+      <div className="bg-surface-muted px-3 py-1.5 font-semibold text-foreground border-b border-border">
+        {row.name}
       </div>
-      <div className="flex-1 flex items-center gap-1">
-        <div
-          className={`h-6 rounded transition-all ${
-            isOutgoing ? 'bg-destructive/10' : 'bg-green-200'
-          }`}
-          style={{ width: `${width}%` }}
-        >
-          <div
-            className={`h-full rounded ${
-              isOutgoing ? 'bg-destructive/100' : 'bg-green-500'
-            }`}
-            style={{ width: '100%' }}
-          />
-        </div>
-        <ArrowRight className={`h-3 w-3 ${isOutgoing ? 'text-destructive' : 'text-green-500'}`} />
+      <div className="px-3 py-1 flex items-center justify-between gap-6">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: INCOMING_COLOR }} />
+          Incoming
+        </span>
+        <span className="font-medium text-foreground">{formatCurrency(row.incomingAbs)}</span>
       </div>
-      <div className="w-[120px] text-helper truncate" title={target}>
-        {target}
-      </div>
-      <div className={`w-[80px] text-xs text-right font-medium ${isOutgoing ? 'text-destructive' : 'text-green-600'}`}>
-        {formatCurrency(value)}
+      <div className="px-3 py-1 pb-1.5 flex items-center justify-between gap-6">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: OUTGOING_COLOR }} />
+          Outgoing
+        </span>
+        <span className="font-medium text-foreground">{formatCurrency(row.outgoingAbs)}</span>
       </div>
     </div>
   );
@@ -115,25 +120,43 @@ export function OrgSankeyFlow({
     }
   }, [organizationId, months, transactionFilter]);
 
-  // Get self node (the user's organization)
+  // The user's organization (centre of the flows)
   const selfNode = data?.nodes.find(n => n.type === 'self');
   const selfName = selfNode?.name || 'Your Organisation';
 
-  // Separate incoming and outgoing links
-  const incomingLinks = data?.links.filter(l => l.target === selfNode?.id) || [];
-  const outgoingLinks = data?.links.filter(l => l.source === selfNode?.id) || [];
+  // One diverging row per partner org: outgoing to the right (red),
+  // incoming to the left (green). Sorted by total throughput, top 10.
+  const chartData = useMemo<FlowDatum[]>(() => {
+    if (!data || !selfNode) return [];
+    const nameOf = (id: string) => data.nodes.find(n => n.id === id)?.name || 'Unknown';
+    const byPartner = new Map<string, { name: string; incoming: number; outgoing: number }>();
 
-  // Get max value for scaling
-  const maxValue = Math.max(
-    ...incomingLinks.map(l => l.value),
-    ...outgoingLinks.map(l => l.value),
-    1
-  );
+    data.links.forEach(link => {
+      if (link.target === selfNode.id) {
+        const e = byPartner.get(link.source) || { name: nameOf(link.source), incoming: 0, outgoing: 0 };
+        e.incoming += link.value;
+        byPartner.set(link.source, e);
+      } else if (link.source === selfNode.id) {
+        const e = byPartner.get(link.target) || { name: nameOf(link.target), incoming: 0, outgoing: 0 };
+        e.outgoing += link.value;
+        byPartner.set(link.target, e);
+      }
+    });
 
-  // Get node name by ID
-  const getNodeName = (nodeId: string): string => {
-    return data?.nodes.find(n => n.id === nodeId)?.name || 'Unknown';
-  };
+    return Array.from(byPartner.values())
+      .map(e => ({
+        name: e.name,
+        incoming: -e.incoming, // negative → diverges left
+        outgoing: e.outgoing, //  positive → diverges right
+        incomingAbs: e.incoming,
+        outgoingAbs: e.outgoing,
+      }))
+      .sort((a, b) => (b.incomingAbs + b.outgoingAbs) - (a.incomingAbs + a.outgoingAbs))
+      .slice(0, 10);
+  }, [data, selfNode]);
+
+  const hasFlows = chartData.length > 0;
+  const chartHeight = Math.max(220, chartData.length * 48);
 
   if (loading) {
     return (
@@ -151,7 +174,11 @@ export function OrgSankeyFlow({
           </div>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[250px] w-full rounded-lg" />
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          <Skeleton className="h-[250px] w-full" />
         </CardContent>
       </Card>
     );
@@ -163,7 +190,7 @@ export function OrgSankeyFlow({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <GitBranch className="h-5 w-5" />
-            My Organisation's Aid Flows
+            My Organisation&apos;s Aid Flows
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -173,8 +200,6 @@ export function OrgSankeyFlow({
     );
   }
 
-  const hasFlows = incomingLinks.length > 0 || outgoingLinks.length > 0;
-
   return (
     <Card className="bg-white">
       <CardHeader>
@@ -182,7 +207,7 @@ export function OrgSankeyFlow({
           <div>
             <CardTitle className="flex items-center gap-2">
               <GitBranch className="h-5 w-5 text-muted-foreground" />
-              My Organisation's Aid Flows
+              My Organisation&apos;s Aid Flows
             </CardTitle>
             <CardDescription>
               Indicative transaction flows for {selfName}
@@ -213,8 +238,15 @@ export function OrgSankeyFlow({
         </div>
       </CardHeader>
       <CardContent>
+        {/* Two hero cards: total incoming / total outgoing — same HeroCard
+            component as the Activity Editor's transaction summary cards. */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <HeroCard title="Total Incoming" value={formatUsdFull(data?.totalIncoming || 0)} variant="success" />
+          <HeroCard title="Total Outgoing" value={formatUsdFull(data?.totalOutgoing || 0)} variant="error-text" />
+        </div>
+
         {!hasFlows ? (
-          <div className="h-[250px] flex items-center justify-center bg-muted rounded-lg">
+          <div className="h-[250px] mt-6 flex items-center justify-center bg-muted">
             <div className="text-center">
               <GitBranch className="h-12 w-12 text-slate-300 mx-auto mb-3" />
               <p className="text-body text-muted-foreground">No transaction flows found</p>
@@ -224,66 +256,47 @@ export function OrgSankeyFlow({
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Summary */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-green-50 rounded-lg p-3">
-                <p className="text-helper text-green-600 font-medium">Total Incoming</p>
-                <p className="text-xl font-bold text-green-700">{formatCurrency(data?.totalIncoming || 0)}</p>
-              </div>
-              <div className="bg-destructive/10 rounded-lg p-3">
-                <p className="text-helper text-destructive font-medium">Total Outgoing</p>
-                <p className="text-xl font-bold text-destructive">{formatCurrency(data?.totalOutgoing || 0)}</p>
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-body font-medium text-foreground">Flows by partner</h4>
+              {/* Legend */}
+              <div className="flex items-center gap-4 text-helper text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: INCOMING_COLOR }} />
+                  Incoming
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: OUTGOING_COLOR }} />
+                  Outgoing
+                </span>
               </div>
             </div>
-
-            {/* Incoming flows */}
-            {incomingLinks.length > 0 && (
-              <div>
-                <h4 className="text-body font-medium text-foreground mb-2">Incoming Flows</h4>
-                <div className="bg-muted rounded-lg p-3 space-y-1">
-                  {incomingLinks.slice(0, 5).map((link, index) => (
-                    <FlowBar
-                      key={`in-${index}`}
-                      source={getNodeName(link.source)}
-                      target={selfName}
-                      value={link.value}
-                      maxValue={maxValue}
-                      isOutgoing={false}
-                    />
-                  ))}
-                  {incomingLinks.length > 5 && (
-                    <p className="text-helper text-muted-foreground text-center pt-2">
-                      +{incomingLinks.length - 5} more flows
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Outgoing flows */}
-            {outgoingLinks.length > 0 && (
-              <div>
-                <h4 className="text-body font-medium text-foreground mb-2">Outgoing Flows</h4>
-                <div className="bg-muted rounded-lg p-3 space-y-1">
-                  {outgoingLinks.slice(0, 5).map((link, index) => (
-                    <FlowBar
-                      key={`out-${index}`}
-                      source={selfName}
-                      target={getNodeName(link.target)}
-                      value={link.value}
-                      maxValue={maxValue}
-                      isOutgoing={true}
-                    />
-                  ))}
-                  {outgoingLinks.length > 5 && (
-                    <p className="text-helper text-muted-foreground text-center pt-2">
-                      +{outgoingLinks.length - 5} more flows
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+            <ResponsiveContainer width="100%" height={chartHeight}>
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                stackOffset="sign"
+                margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
+                barCategoryGap="20%"
+              >
+                <XAxis
+                  type="number"
+                  tickFormatter={(v) => formatCurrency(Math.abs(Number(v)))}
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={130}
+                  tick={{ fontSize: 12 }}
+                  interval={0}
+                />
+                <RechartsTooltip content={<FlowTooltip />} cursor={{ fill: 'rgba(15,23,42,0.04)' }} />
+                <ReferenceLine x={0} stroke="#94a3b8" />
+                <Bar dataKey="incoming" stackId="flow" fill={INCOMING_COLOR} radius={[3, 0, 0, 3]} />
+                <Bar dataKey="outgoing" stackId="flow" fill={OUTGOING_COLOR} radius={[0, 3, 3, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )}
       </CardContent>

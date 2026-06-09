@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 // Tabs removed — all content shown on single page
 import { Skeleton } from '@/components/ui/skeleton'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import {
   ArrowLeft,
   Download,
@@ -157,7 +158,7 @@ function getStatusLabel(status?: string): string {
   const labels: Record<string, string> = {
     '1': 'Pipeline',
     '2': 'Implementation',
-    '3': 'Completion',
+    '3': 'Finalisation',
     '4': 'Closed',
     '5': 'Cancelled',
     '6': 'Suspended',
@@ -704,48 +705,46 @@ export default function SDGProfilePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-helper">
-                      <thead className="bg-surface-muted">
-                        <tr className="border-b border-border bg-muted">
-                          <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Activity</th>
-                          <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Status</th>
-                          <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Committed</th>
-                          <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Disbursed</th>
-                          <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">% Disbursed</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginatedActivities.map(activity => {
-                          const pct = activity.commitments > 0 ? ((activity.disbursements / activity.commitments) * 100).toFixed(1) : '—'
-                          const fmtNum = (v: number) => {
-                            const abs = Math.abs(v)
-                            const sign = v < 0 ? '-' : ''
-                            if (abs >= 1_000_000_000) return `${sign}${(abs / 1_000_000_000).toFixed(1)}B`
-                            if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}M`
-                            if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(1)}k`
-                            return `${sign}${abs.toFixed(0)}`
-                          }
-                          return (
-                            <tr key={activity.id} className="border-b border-border hover:bg-muted/50">
-                              <td className="py-2 px-3">
-                                <div className="flex items-center gap-2">
-                                  <Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline">{(activity.title_narrative || 'Untitled').substring(0, 60)}</Link>
-                                  {activity.iati_identifier && (
-                                    <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="py-2 px-3 text-muted-foreground">{getStatusLabel(activity.activity_status)}</td>
-                              <td className="py-2 px-3 text-right text-foreground">{fmtNum(activity.commitments)} <span className="text-helper text-muted-foreground font-normal">USD</span></td>
-                              <td className="py-2 px-3 text-right text-foreground">{fmtNum(activity.disbursements)} <span className="text-helper text-muted-foreground font-normal">USD</span></td>
-                              <td className="py-2 px-3 text-right text-muted-foreground">{pct}{pct !== '—' ? '%' : ''}</td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table className="border-0">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Activity</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Committed</TableHead>
+                        <TableHead className="text-right">Disbursed</TableHead>
+                        <TableHead className="text-right">% Disbursed</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedActivities.map(activity => {
+                        const pct = activity.commitments > 0 ? ((activity.disbursements / activity.commitments) * 100).toFixed(1) : '—'
+                        const fmtNum = (v: number) => {
+                          const abs = Math.abs(v)
+                          const sign = v < 0 ? '-' : ''
+                          if (abs >= 1_000_000_000) return `${sign}${(abs / 1_000_000_000).toFixed(1)}B`
+                          if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}M`
+                          if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(1)}k`
+                          return `${sign}${abs.toFixed(0)}`
+                        }
+                        return (
+                          <TableRow key={activity.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline">{(activity.title_narrative || 'Untitled').substring(0, 60)}</Link>
+                                {activity.iati_identifier && (
+                                  <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{getStatusLabel(activity.activity_status)}</TableCell>
+                            <TableCell className="text-right text-foreground">{fmtNum(activity.commitments)} <span className="text-helper text-muted-foreground font-normal">USD</span></TableCell>
+                            <TableCell className="text-right text-foreground">{fmtNum(activity.disbursements)} <span className="text-helper text-muted-foreground font-normal">USD</span></TableCell>
+                            <TableCell className="text-right text-muted-foreground">{pct}{pct !== '—' ? '%' : ''}</TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
                 )}
 
                 {totalPages > 1 && (
@@ -864,42 +863,40 @@ export default function SDGProfilePage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-helper">
-                      <thead className="bg-surface-muted">
-                        <tr className="border-b border-border">
-                          <th className="text-left py-2 px-2 text-muted-foreground font-medium">#</th>
-                          <th className="text-left py-2 px-2 text-muted-foreground font-medium">Country</th>
-                          <th className="text-right py-2 px-2 text-muted-foreground font-medium">Committed</th>
-                          <th className="text-right py-2 px-2 text-muted-foreground font-medium">Disbursed</th>
-                          <th className="text-right py-2 px-2 text-muted-foreground font-medium">Activities</th>
-                          <th className="text-right py-2 px-2 text-muted-foreground font-medium">% of Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {geographicDistribution.map((geo, i) => {
-                          const totalGeoValue = geographicDistribution.reduce((s, g) => s + g.value, 0)
-                          const pctOfTotal = totalGeoValue > 0 ? ((geo.value / totalGeoValue) * 100).toFixed(1) : '0.0'
-                          return (
-                            <tr key={geo.countryCode} className="border-b border-border hover:bg-muted/50">
-                              <td className="py-2 px-2 text-muted-foreground">{i + 1}</td>
-                              <td className="py-2 px-2">
-                                <div className="flex items-center gap-2">
-                                  <Flag code={geo.countryCode} style={{ width: 18, height: 13, objectFit: 'cover' }} fallback={<span className="text-[10px]">{geo.countryCode}</span>} />
-                                  <span className="font-medium text-foreground">{geo.countryName}</span>
-                                  <span className="text-muted-foreground">{geo.countryCode}</span>
-                                </div>
-                              </td>
-                              <td className="py-2 px-2 text-right text-muted-foreground">{formatCurrencyShort(geo.commitments)}</td>
-                              <td className="py-2 px-2 text-right font-medium text-foreground">{formatCurrencyShort(geo.disbursements)}</td>
-                              <td className="py-2 px-2 text-right text-muted-foreground">{geo.activityCount}</td>
-                              <td className="py-2 px-2 text-right text-muted-foreground">{pctOfTotal}%</td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table className="border-0">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>#</TableHead>
+                        <TableHead>Country</TableHead>
+                        <TableHead className="text-right">Committed</TableHead>
+                        <TableHead className="text-right">Disbursed</TableHead>
+                        <TableHead className="text-right">Activities</TableHead>
+                        <TableHead className="text-right">% of Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {geographicDistribution.map((geo, i) => {
+                        const totalGeoValue = geographicDistribution.reduce((s, g) => s + g.value, 0)
+                        const pctOfTotal = totalGeoValue > 0 ? ((geo.value / totalGeoValue) * 100).toFixed(1) : '0.0'
+                        return (
+                          <TableRow key={geo.countryCode}>
+                            <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Flag code={geo.countryCode} style={{ width: 18, height: 13, objectFit: 'cover' }} fallback={<span className="text-[10px]">{geo.countryCode}</span>} />
+                                <span className="font-medium text-foreground">{geo.countryName}</span>
+                                <span className="text-muted-foreground">{geo.countryCode}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground">{formatCurrencyShort(geo.commitments)}</TableCell>
+                            <TableCell className="text-right font-medium text-foreground">{formatCurrencyShort(geo.disbursements)}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">{geo.activityCount}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">{pctOfTotal}%</TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
             )}

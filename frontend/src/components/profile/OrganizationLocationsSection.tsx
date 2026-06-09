@@ -570,8 +570,8 @@ export function OrganizationLocationsSection({
                     hideExpandButton
                   />
                 </div>
-                <div className="rounded-lg border">
-                  <div className="overflow-hidden rounded-lg">
+                <div className="border">
+                  <div className="overflow-hidden">
                     <Table>
                       <TableHeader>
                         <TableRow>

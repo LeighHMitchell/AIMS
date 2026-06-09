@@ -1849,8 +1849,8 @@ const router = useRouter();
             options={[
               { value: "1", label: "Pipeline/identification", code: "1" },
               { value: "2", label: "Implementation", code: "2" },
-              { value: "3", label: "Completion", code: "3" },
-              { value: "4", label: "Post-completion", code: "4" },
+              { value: "3", label: "Finalisation", code: "3" },
+              { value: "4", label: "Closed", code: "4" },
               { value: "5", label: "Cancelled", code: "5" },
               { value: "6", label: "Suspended", code: "6" },
             ]}

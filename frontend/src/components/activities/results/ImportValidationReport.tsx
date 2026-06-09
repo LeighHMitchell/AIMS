@@ -95,7 +95,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
   return (
     <div className="space-y-6">
       {/* IATI Element Coverage Table */}
-      <div className="border border-border rounded-lg overflow-hidden">
+      <div className="border border-border overflow-hidden">
         <div className="bg-muted px-4 py-3 border-b border-border">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <FileCode className="h-4 w-4" />
@@ -147,7 +147,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
 
       {/* Errors Display */}
       {errors.length > 0 && (
-        <div className="border border-border rounded-lg overflow-hidden">
+        <div className="border border-border overflow-hidden">
           <div className="bg-muted px-4 py-3 border-b border-border">
             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <XCircle className="h-4 w-4" />
@@ -180,7 +180,7 @@ export function ImportValidationReport({ summary }: ImportValidationReportProps)
 
       {/* Warnings Display */}
       {warnings && warnings.length > 0 && (
-        <div className="border border-border rounded-lg overflow-hidden">
+        <div className="border border-border overflow-hidden">
           <div className="bg-muted px-4 py-3 border-b border-border">
             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <AlertCircle className="h-4 w-4" />

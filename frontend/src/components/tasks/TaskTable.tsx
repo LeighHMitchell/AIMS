@@ -210,7 +210,7 @@ export function TaskTable({
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>

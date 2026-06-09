@@ -212,7 +212,7 @@ export function FundContributionsView({ activityId }: FundContributionsViewProps
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">

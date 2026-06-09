@@ -289,7 +289,7 @@ export function ReferencesSummaryTable({ results, className }: ReferencesSummary
       </div>
 
       {/* Table */}
-      <div className="border rounded-md overflow-hidden">
+      <div className="border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">

@@ -3,12 +3,14 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { 
   AlertCircle, 
@@ -116,6 +118,7 @@ export function DataClinicActivities() {
   const [hasIatiFields, setHasIatiFields] = useState(true);
   const [sortField, setSortField] = useState<'title' | 'iati' | 'aid' | 'finance' | 'flow' | 'status' | 'start' | 'sectors'>('title');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [grouped, setGrouped] = useState(false);
 
   const handleSort = (field: typeof sortField) => {
     if (sortField === field) {
@@ -509,6 +512,10 @@ export function DataClinicActivities() {
                 <SelectItem value="missing_status">Missing Status</SelectItem>
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+              <Switch id="activities-group-by-activity" checked={grouped} onCheckedChange={setGrouped} />
+              <Label htmlFor="activities-group-by-activity" className="text-body whitespace-nowrap cursor-pointer">Group by Activity</Label>
+            </div>
             <Button
               variant="outline"
               onClick={() => fetchActivitiesWithGaps()}
@@ -555,122 +562,120 @@ export function DataClinicActivities() {
       {/* Activities Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-surface-muted border-b border-border">
-                <tr>
-                  {isSuperUser && (
-                    <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground">
-                      <Checkbox
-                        checked={selectedActivities.size === filteredActivities.length && filteredActivities.length > 0}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedActivities(new Set(filteredActivities.map(a => a.id)));
-                          } else {
-                            setSelectedActivities(new Set());
-                          }
-                        }}
-                      />
-                    </th>
-                  )}
-                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
-                    <div className="flex items-center gap-1">Title {getSortIcon('title', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('iati')}>
-                    <div className="flex items-center gap-1">IATI ID {getSortIcon('iati', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('aid')}>
-                    <div className="flex items-center gap-1">Default Aid Type {getSortIcon('aid', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('finance')}>
-                    <div className="flex items-center gap-1">Default Finance Type {getSortIcon('finance', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('flow')}>
-                    <div className="flex items-center gap-1">Default Flow Type {getSortIcon('flow', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('status')}>
-                    <div className="flex items-center gap-1">Status {getSortIcon('status', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('start')}>
-                    <div className="flex items-center gap-1">Start Date {getSortIcon('start', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('sectors')}>
-                    <div className="flex items-center gap-1">Sectors {getSortIcon('sectors', sortField, sortDirection)}</div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedActivities.length === 0 ? (
-                  <tr>
-                    <td colSpan={isSuperUser ? 9 : 8} className="p-8 text-center text-muted-foreground">
-                      No activities found with data gaps
-                    </td>
-                  </tr>
-                ) : (
-                  sortedActivities.map((activity) => (
-                    <tr key={activity.id} className="border-b hover:bg-muted/50">
-                      {isSuperUser && (
-                        <td className="p-4">
-                          <Checkbox
-                            checked={selectedActivities.has(activity.id)}
-                            onCheckedChange={(checked) => {
-                              const newSelected = new Set(selectedActivities);
-                              if (checked) {
-                                newSelected.add(activity.id);
-                              } else {
-                                newSelected.delete(activity.id);
-                              }
-                              setSelectedActivities(newSelected);
-                            }}
-                          />
-                        </td>
-                      )}
-                      <td className="p-4 align-top">
-                        <Link
-                          href={`/activities/${activity.id}`}
-                          className="font-medium break-words no-underline hover:opacity-70 transition-opacity max-w-xs inline-block"
-                        >
-                          {activity.title}
-                          {activity.acronym ? ` (${activity.acronym})` : ''}
-                        </Link>
-                      </td>
-                      <td className="p-4">
-                        {activity.iatiIdentifier
-                          ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>
-                          : <span className="text-body text-muted-foreground">-</span>
+          <Table className="border-0">
+            <TableHeader>
+              <TableRow>
+                {isSuperUser && (
+                  <TableHead className="align-top">
+                    <Checkbox
+                      checked={selectedActivities.size === filteredActivities.length && filteredActivities.length > 0}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedActivities(new Set(filteredActivities.map(a => a.id)));
+                        } else {
+                          setSelectedActivities(new Set());
                         }
-                      </td>
-                      <td className="p-4">
-                        {renderFieldValue(activity, 'default_aid_type')}
-                      </td>
-                      <td className="p-4">
-                        {renderFieldValue(activity, 'default_finance_type')}
-                      </td>
-                      <td className="p-4">
-                        {renderFieldValue(activity, 'default_flow_type')}
-                      </td>
-                      <td className="p-4">
-                        {renderFieldValue(activity, 'activityStatus')}
-                      </td>
-                      <td className="p-4">
-                        {renderStartDate(activity)}
-                      </td>
-                      <td className="p-4">
-                        {activity.sectors && activity.sectors.length > 0 ? (
-                          <span className="text-body">{activity.sectors.length} sectors</span>
-                        ) : (
-                          <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Missing
-                          </Badge>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+                      }}
+                    />
+                  </TableHead>
                 )}
-              </tbody>
-            </table>
-          </div>
+                <TableHead className={`align-top ${sortableHeaderClasses}`} onClick={() => handleSort('title')}>
+                  <div className="flex items-center gap-1">Activity Title {getSortIcon('title', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={`align-top ${sortableHeaderClasses}`} onClick={() => handleSort('iati')}>
+                  <div className="flex items-center gap-1">IATI ID {getSortIcon('iati', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={`align-top ${sortableHeaderClasses}`} onClick={() => handleSort('aid')}>
+                  <div className="flex items-center gap-1">Default Aid Type {getSortIcon('aid', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={`align-top ${sortableHeaderClasses}`} onClick={() => handleSort('finance')}>
+                  <div className="flex items-center gap-1">Default Finance Type {getSortIcon('finance', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={`align-top ${sortableHeaderClasses}`} onClick={() => handleSort('flow')}>
+                  <div className="flex items-center gap-1">Default Flow Type {getSortIcon('flow', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={`align-top ${sortableHeaderClasses}`} onClick={() => handleSort('status')}>
+                  <div className="flex items-center gap-1">Status {getSortIcon('status', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={`align-top ${sortableHeaderClasses}`} onClick={() => handleSort('start')}>
+                  <div className="flex items-center gap-1">Start Date {getSortIcon('start', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={`align-top ${sortableHeaderClasses}`} onClick={() => handleSort('sectors')}>
+                  <div className="flex items-center gap-1">Sectors {getSortIcon('sectors', sortField, sortDirection)}</div>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedActivities.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={isSuperUser ? 9 : 8} className="p-8 text-center text-muted-foreground">
+                    No activities found with data gaps
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedActivities.map((activity) => (
+                  <TableRow key={activity.id}>
+                    {isSuperUser && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedActivities.has(activity.id)}
+                          onCheckedChange={(checked) => {
+                            const newSelected = new Set(selectedActivities);
+                            if (checked) {
+                              newSelected.add(activity.id);
+                            } else {
+                              newSelected.delete(activity.id);
+                            }
+                            setSelectedActivities(newSelected);
+                          }}
+                        />
+                      </TableCell>
+                    )}
+                    <TableCell className="align-top">
+                      <Link
+                        href={`/activities/${activity.id}`}
+                        className="font-medium break-words no-underline hover:opacity-70 transition-opacity max-w-xs inline-block"
+                      >
+                        {activity.title}
+                        {activity.acronym ? ` (${activity.acronym})` : ''}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      {activity.iatiIdentifier
+                        ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>
+                        : <span className="text-body text-muted-foreground">-</span>
+                      }
+                    </TableCell>
+                    <TableCell>
+                      {renderFieldValue(activity, 'default_aid_type')}
+                    </TableCell>
+                    <TableCell>
+                      {renderFieldValue(activity, 'default_finance_type')}
+                    </TableCell>
+                    <TableCell>
+                      {renderFieldValue(activity, 'default_flow_type')}
+                    </TableCell>
+                    <TableCell>
+                      {renderFieldValue(activity, 'activityStatus')}
+                    </TableCell>
+                    <TableCell>
+                      {renderStartDate(activity)}
+                    </TableCell>
+                    <TableCell>
+                      {activity.sectors && activity.sectors.length > 0 ? (
+                        <span className="text-body">{activity.sectors.length} sectors</span>
+                      ) : (
+                        <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Missing
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

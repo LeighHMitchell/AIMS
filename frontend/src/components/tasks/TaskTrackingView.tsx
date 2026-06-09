@@ -476,7 +476,7 @@ export function TaskTrackingView({
                 <CardContent className="pt-0">
                   {/* Assignments Table */}
                   {assignments.length > 0 ? (
-                    <div className="border rounded-lg overflow-hidden w-full">
+                    <div className="border overflow-hidden w-full">
                       <Table className="w-full table-fixed">
                         <TableHeader>
                           <TableRow>

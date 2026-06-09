@@ -390,7 +390,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
           </Button>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border overflow-hidden">
           <table className="w-full">
             <thead className="bg-surface-muted">
               <tr className="bg-muted border-b">

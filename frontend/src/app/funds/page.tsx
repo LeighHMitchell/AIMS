@@ -360,12 +360,12 @@ export default function FundsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Pipeline/identification">Pipeline</SelectItem>
-                <SelectItem value="Implementation">Implementation</SelectItem>
-                <SelectItem value="Completion">Completion</SelectItem>
-                <SelectItem value="Post-completion">Post-completion</SelectItem>
-                <SelectItem value="Cancelled">Cancelled</SelectItem>
-                <SelectItem value="Suspended">Suspended</SelectItem>
+                <SelectItem value="1">Pipeline</SelectItem>
+                <SelectItem value="2">Implementation</SelectItem>
+                <SelectItem value="3">Finalisation</SelectItem>
+                <SelectItem value="4">Closed</SelectItem>
+                <SelectItem value="5">Cancelled</SelectItem>
+                <SelectItem value="6">Suspended</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import {
   ArrowLeft, Download, AlertCircle, LayoutGrid, Table as TableIcon, MapPin, Pencil,
 } from 'lucide-react'
@@ -63,7 +64,7 @@ interface TagData {
 
 // ---- Helpers ----
 function getStatusLabel(status?: string): string {
-  const labels: Record<string, string> = { '1': 'Pipeline', '2': 'Implementation', '3': 'Completion', '4': 'Closed', '5': 'Cancelled', '6': 'Suspended' }
+  const labels: Record<string, string> = { '1': 'Pipeline', '2': 'Implementation', '3': 'Finalisation', '4': 'Closed', '5': 'Cancelled', '6': 'Suspended' }
   return labels[status || ''] || 'Unknown'
 }
 
@@ -542,23 +543,23 @@ export default function TagProfilePage() {
                   ))}
                 </div>
               ) : (
-                <Card><CardContent className="p-0"><div className="overflow-x-auto">
-                  <table className="w-full text-helper"><thead className="bg-surface-muted"><tr className="border-b border-border bg-muted">
-                    <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Title</th>
-                    <th className="text-center py-2.5 px-3 text-muted-foreground font-medium">Status</th>
-                    <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Committed</th>
-                    <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Disbursed</th>
-                  </tr></thead><tbody>
+                <Card><CardContent className="p-0">
+                  <Table className="border-0"><TableHeader><TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-right">Committed</TableHead>
+                    <TableHead className="text-right">Disbursed</TableHead>
+                  </TableRow></TableHeader><TableBody>
                     {paginatedActivities.map(activity => (
-                      <tr key={activity.id} className="border-b border-border hover:bg-muted/50">
-                        <td className="py-2 px-3"><Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline">{(activity.title_narrative || 'Untitled').substring(0, 60)}</Link></td>
-                        <td className="py-2 px-3 text-center"><Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge></td>
-                        <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(activity.commitments)}</td>
-                        <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(activity.disbursements)}</td>
-                      </tr>
+                      <TableRow key={activity.id}>
+                        <TableCell><Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline">{(activity.title_narrative || 'Untitled').substring(0, 60)}</Link></TableCell>
+                        <TableCell className="text-center"><Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge></TableCell>
+                        <TableCell className="text-right text-foreground">{formatCurrencyShort(activity.commitments)}</TableCell>
+                        <TableCell className="text-right text-foreground">{formatCurrencyShort(activity.disbursements)}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody></table>
-                </div></CardContent></Card>
+                  </TableBody></Table>
+                </CardContent></Card>
               )}
 
               {totalPages > 1 && (
@@ -605,30 +606,28 @@ export default function TagProfilePage() {
                     }}><Download className="h-3 w-3" /></Button>
                   </div>
                 </CardHeader><CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-helper">
-                      <thead className="bg-surface-muted"><tr className="border-b border-border bg-muted">
-                        <th className="text-left py-2.5 px-3 text-muted-foreground font-medium w-8">#</th>
-                        <th className="text-left py-2.5 px-3 text-muted-foreground font-medium">Country</th>
-                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Activities</th>
-                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Committed</th>
-                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Disbursed</th>
-                        <th className="text-right py-2.5 px-3 text-muted-foreground font-medium">Total</th>
-                      </tr></thead>
-                      <tbody>
-                        {geographicDistribution.map((g, i) => (
-                          <tr key={g.countryCode} className="border-b border-border hover:bg-muted/50">
-                            <td className="py-2 px-3 text-muted-foreground">{i + 1}</td>
-                            <td className="py-2 px-3"><div className="flex items-center gap-2"><Flag code={g.countryCode} className="w-5 h-3 object-cover rounded-sm" fallback={<MapPin className="w-3 h-3 text-muted-foreground" />} /><span className="text-foreground">{g.countryName}</span><span className="text-muted-foreground">({g.countryCode})</span></div></td>
-                            <td className="py-2 px-3 text-right">{g.activityCount}</td>
-                            <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(g.commitments)}</td>
-                            <td className="py-2 px-3 text-right text-foreground">{formatCurrencyShort(g.disbursements)}</td>
-                            <td className="py-2 px-3 text-right font-medium text-foreground">{formatCurrencyShort(g.value)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table className="border-0">
+                    <TableHeader><TableRow>
+                      <TableHead className="w-8">#</TableHead>
+                      <TableHead>Country</TableHead>
+                      <TableHead className="text-right">Activities</TableHead>
+                      <TableHead className="text-right">Committed</TableHead>
+                      <TableHead className="text-right">Disbursed</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {geographicDistribution.map((g, i) => (
+                        <TableRow key={g.countryCode}>
+                          <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                          <TableCell><div className="flex items-center gap-2"><Flag code={g.countryCode} className="w-5 h-3 object-cover rounded-sm" fallback={<MapPin className="w-3 h-3 text-muted-foreground" />} /><span className="text-foreground">{g.countryName}</span><span className="text-muted-foreground">({g.countryCode})</span></div></TableCell>
+                          <TableCell className="text-right">{g.activityCount}</TableCell>
+                          <TableCell className="text-right text-foreground">{formatCurrencyShort(g.commitments)}</TableCell>
+                          <TableCell className="text-right text-foreground">{formatCurrencyShort(g.disbursements)}</TableCell>
+                          <TableCell className="text-right font-medium text-foreground">{formatCurrencyShort(g.value)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent></Card>
               )}
             </TabsContent>

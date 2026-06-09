@@ -363,7 +363,7 @@ export function ImportResultsDisplay({ importSummary }: ImportResultsDisplayProp
   }
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <div className="border border-border overflow-hidden">
       <div className="bg-muted px-4 py-3 border-b border-border">
         <h3 className="text-lg font-semibold">Detailed Import Results</h3>
       </div>

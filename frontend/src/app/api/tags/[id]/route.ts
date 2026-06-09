@@ -501,6 +501,6 @@ function getTransactionTypeLabel(type: string): string {
 }
 
 function getActivityStatusLabel(status: string): string {
-  const labels: Record<string, string> = { '1': 'Pipeline', '2': 'Implementation', '3': 'Completion', '4': 'Closed', '5': 'Cancelled', '6': 'Suspended' };
+  const labels: Record<string, string> = { '1': 'Pipeline', '2': 'Implementation', '3': 'Finalisation', '4': 'Closed', '5': 'Cancelled', '6': 'Suspended' };
   return labels[status] || `Status ${status}`;
 }

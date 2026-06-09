@@ -38,6 +38,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { apiFetch } from '@/lib/api-fetch'
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
 
@@ -379,58 +380,56 @@ export default function WorkingGroupProfilePage() {
                     <p className="text-helper text-muted-foreground mt-1">Add members to this working group to get started</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-body">
-                      <thead className="bg-surface-muted">
-                        <tr className="border-b border-border">
-                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Name</th>
-                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Role</th>
-                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Organisation</th>
-                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Email</th>
-                          <th className="text-left py-2.5 px-3 text-helper font-medium text-muted-foreground">Joined</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {workingGroup.members.map((member) => (
-                          <tr key={member.id} className="border-b border-border/50 hover:bg-muted/30">
-                            <td className="py-2.5 px-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                  {member.avatar_url ? (
-                                    <img src={member.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                                  ) : (
-                                    <span className="text-helper font-medium text-muted-foreground">
-                                      {member.person_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="font-medium text-foreground">{member.person_name}</span>
+                  <Table className="border-0">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Organisation</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Joined</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {workingGroup.members.map((member) => (
+                        <TableRow key={member.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                {member.avatar_url ? (
+                                  <img src={member.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                ) : (
+                                  <span className="text-helper font-medium text-muted-foreground">
+                                    {member.person_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                  </span>
+                                )}
                               </div>
-                            </td>
-                            <td className="py-2.5 px-3 text-body text-muted-foreground">
-                              {getRoleLabel(member.role)}
-                            </td>
-                            <td className="py-2.5 px-3">
-                              <div className="text-foreground">{member.person_organization || '—'}</div>
-                              {(member.job_title || member.department) && (
-                                <div className="text-helper text-muted-foreground mt-0.5">
-                                  {[member.department, member.job_title].filter(Boolean).join(' · ')}
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-2.5 px-3 text-muted-foreground">
-                              {member.person_email ? (
-                                <a href={`mailto:${member.person_email}`} className="hover:text-foreground transition-colors">{member.person_email}</a>
-                              ) : '—'}
-                            </td>
-                            <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
-                              {member.joined_on ? format(new Date(member.joined_on), 'MMM d, yyyy') : '—'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                              <span className="font-medium text-foreground">{member.person_name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-body text-muted-foreground">
+                            {getRoleLabel(member.role)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-foreground">{member.person_organization || '—'}</div>
+                            {(member.job_title || member.department) && (
+                              <div className="text-helper text-muted-foreground mt-0.5">
+                                {[member.department, member.job_title].filter(Boolean).join(' · ')}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {member.person_email ? (
+                              <a href={`mailto:${member.person_email}`} className="hover:text-foreground transition-colors">{member.person_email}</a>
+                            ) : '—'}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground whitespace-nowrap">
+                            {member.joined_on ? format(new Date(member.joined_on), 'MMM d, yyyy') : '—'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </CardContent>
             </Card>

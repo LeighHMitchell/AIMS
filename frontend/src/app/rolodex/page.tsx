@@ -47,6 +47,7 @@ import {
   BookUser
 } from 'lucide-react';
 import { EmptyState } from "@/components/ui/empty-state"
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 import { PersonCard } from '@/components/rolodex/PersonCard';
 import { FilterPanel } from '@/components/rolodex/FilterPanel';
@@ -383,190 +384,188 @@ export default function RolodexPage() {
               </div>
             ) : (
               <div className="bg-white rounded-md ring-1 ring-border overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full table-auto border-collapse">
-                    <thead className="bg-surface-muted border-b border-border">
-                      <tr>
-                        <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground w-[60px]"></th>
-                        <th 
-                          className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground min-w-[180px] cursor-pointer hover:bg-muted/80 transition-colors"
-                          onClick={() => handleSortChange('name')}
-                        >
-                          <div className="flex items-center">
-                            <span>Name</span>
-                            {getSortIcon('name')}
-                          </div>
-                        </th>
-                        <th 
-                          className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
-                          onClick={() => handleSortChange('email')}
-                        >
-                          <div className="flex items-center">
-                            <span>Email</span>
-                            {getSortIcon('email')}
-                          </div>
-                        </th>
-                        <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground min-w-[140px]">Phone</th>
-                        <th 
-                          className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
-                          onClick={() => handleSortChange('organization')}
-                        >
-                          <div className="flex items-center">
-                            <span>Organisation</span>
-                            {getSortIcon('organization')}
-                          </div>
-                        </th>
-                        <th 
-                          className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground min-w-[120px] cursor-pointer hover:bg-muted/80 transition-colors"
-                          onClick={() => handleSortChange('role')}
-                        >
-                          <div className="flex items-center">
-                            <span>Role</span>
-                            {getSortIcon('role')}
-                          </div>
-                        </th>
-                        <th 
-                          className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground w-[100px] cursor-pointer hover:bg-muted/80 transition-colors"
-                          onClick={() => handleSortChange('source')}
-                        >
-                          <div className="flex items-center">
-                            <span>Type</span>
-                            {getSortIcon('source')}
-                          </div>
-                        </th>
-                        <th className="h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground w-[80px]" />
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border bg-white">
-                      {visiblePeople.map((person) => (
-                        <tr key={person.id} className="group hover:bg-muted transition-colors">
-                          <td className="px-4 py-2 align-top">
-                            <UserAvatar
-                              src={person.profile_photo}
-                              seed={person.id || person.email || person.name || ''}
-                              name={person.name || 'User'}
-                              size="sm"
-                              initials={getInitials(person.name || '')}
-                            />
-                          </td>
-                          <td className="px-4 py-2 text-body text-foreground align-top">
-                            <div className="font-medium text-foreground leading-tight">{person.name}</div>
-                            {person.job_title && (
-                              <div className="text-helper text-muted-foreground">{person.job_title}</div>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-body text-foreground align-top">
-                            {person.email && (
-                              <div className="group/email inline-flex items-center">
-                                <a
-                                  href={`mailto:${person.email}`}
-                                  className="text-body text-foreground inline-flex items-center"
-                                >
-                                  <Mail className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
-                                  <span>{person.email}</span>
-                                </a>
-                                <button
-                                  onClick={(e) => handleCopyEmail(e, person.email!)}
-                                  className="ml-1.5 opacity-0 group-hover/email:opacity-100 transition-opacity flex-shrink-0"
-                                  title="Copy email"
-                                >
-                                  {copiedEmail === person.email ? (
-                                    <Check className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />
-                                  ) : (
-                                    <Copy className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                                  )}
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-body text-foreground align-top">
-                            {person.phone && (
-                              <a 
-                                href={`tel:${person.phone}`}
+                <Table className="border-0">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[60px]"></TableHead>
+                      <TableHead
+                        className="min-w-[180px] cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleSortChange('name')}
+                      >
+                        <div className="flex items-center">
+                          <span>Name</span>
+                          {getSortIcon('name')}
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleSortChange('email')}
+                      >
+                        <div className="flex items-center">
+                          <span>Email</span>
+                          {getSortIcon('email')}
+                        </div>
+                      </TableHead>
+                      <TableHead className="min-w-[140px]">Phone</TableHead>
+                      <TableHead
+                        className="min-w-[200px] cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleSortChange('organization')}
+                      >
+                        <div className="flex items-center">
+                          <span>Organisation</span>
+                          {getSortIcon('organization')}
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="min-w-[120px] cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleSortChange('role')}
+                      >
+                        <div className="flex items-center">
+                          <span>Role</span>
+                          {getSortIcon('role')}
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="w-[100px] cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => handleSortChange('source')}
+                      >
+                        <div className="flex items-center">
+                          <span>Type</span>
+                          {getSortIcon('source')}
+                        </div>
+                      </TableHead>
+                      <TableHead className="w-[80px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visiblePeople.map((person) => (
+                      <TableRow key={person.id} className="group">
+                        <TableCell className="align-top">
+                          <UserAvatar
+                            src={person.profile_photo}
+                            seed={person.id || person.email || person.name || ''}
+                            name={person.name || 'User'}
+                            size="sm"
+                            initials={getInitials(person.name || '')}
+                          />
+                        </TableCell>
+                        <TableCell className="text-body text-foreground align-top">
+                          <div className="font-medium text-foreground leading-tight">{person.name}</div>
+                          {person.job_title && (
+                            <div className="text-helper text-muted-foreground">{person.job_title}</div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-body text-foreground align-top">
+                          {person.email && (
+                            <div className="group/email inline-flex items-center">
+                              <a
+                                href={`mailto:${person.email}`}
                                 className="text-body text-foreground inline-flex items-center"
                               >
-                                <Phone className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
-                                <span>{person.phone}</span>
+                                <Mail className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
+                                <span>{person.email}</span>
                               </a>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-body text-foreground align-top text-left">
-                            {person.organization_name && (
                               <button
-                                onClick={() => person.organization_id && handleOrganizationClick(person.organization_id)}
-                                className="text-body text-foreground hover:text-blue-600 inline-flex items-center justify-start text-left"
-                                disabled={!person.organization_id}
+                                onClick={(e) => handleCopyEmail(e, person.email!)}
+                                className="ml-1.5 opacity-0 group-hover/email:opacity-100 transition-opacity flex-shrink-0"
+                                title="Copy email"
                               >
-                                <Building2 className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
-                                <span className="text-left">
-                                  {person.organization_acronym 
-                                    ? `${person.organization_name} (${person.organization_acronym})`
-                                    : person.organization_name
-                                  }
-                                </span>
-                                {person.organization_id && (
-                                  <ExternalLink className="h-3 w-3 ml-1 text-muted-foreground flex-shrink-0" />
+                                {copiedEmail === person.email ? (
+                                  <Check className="h-3.5 w-3.5 text-[hsl(var(--success-icon))]" />
+                                ) : (
+                                  <Copy className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                                 )}
                               </button>
-                            )}
-                          </td>
-                          <td className="px-4 py-2 text-body text-foreground align-top">
-                            <span>{person.role_label || person.role || '-'}</span>
-                          </td>
-                          <td className="px-4 py-2 text-body align-top">
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs ${
-                                person.source === 'user' 
-                                  ? 'bg-muted text-muted-foreground' 
-                                  : 'bg-purple-100 text-purple-700'
-                              }`}
-                            >
-                              {person.source === 'user' ? 'User' : 'Activity'}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-2 text-body align-top">
-                            <div className="flex items-center gap-1">
-                              {person.activity_id && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0"
-                                  onClick={() => handleActivityClick(person.activity_id!)}
-                                  title="View Activity"
-                                >
-                                  <FileText className="h-4 w-4 text-muted-foreground hover:text-blue-600" />
-                                </Button>
-                              )}
-                              {person.email && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0"
-                                  onClick={() => window.location.href = `mailto:${person.email}`}
-                                  title="Send Email"
-                                >
-                                  <Mail className="h-4 w-4 text-muted-foreground hover:text-blue-600" />
-                                </Button>
-                              )}
-                              {person.source === 'activity_contact' && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0"
-                                  onClick={() => handleDeleteContact(person)}
-                                  title="Delete Contact"
-                                >
-                                  <Trash2 className="h-4 w-4 hover: text-destructive" />
-                                </Button>
-                              )}
                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-body text-foreground align-top">
+                          {person.phone && (
+                            <a
+                              href={`tel:${person.phone}`}
+                              className="text-body text-foreground inline-flex items-center"
+                            >
+                              <Phone className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
+                              <span>{person.phone}</span>
+                            </a>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-body text-foreground align-top text-left">
+                          {person.organization_name && (
+                            <button
+                              onClick={() => person.organization_id && handleOrganizationClick(person.organization_id)}
+                              className="text-body text-foreground hover:text-blue-600 inline-flex items-center justify-start text-left"
+                              disabled={!person.organization_id}
+                            >
+                              <Building2 className="h-3 w-3 mr-1.5 text-muted-foreground flex-shrink-0" />
+                              <span className="text-left">
+                                {person.organization_acronym
+                                  ? `${person.organization_name} (${person.organization_acronym})`
+                                  : person.organization_name
+                                }
+                              </span>
+                              {person.organization_id && (
+                                <ExternalLink className="h-3 w-3 ml-1 text-muted-foreground flex-shrink-0" />
+                              )}
+                            </button>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-body text-foreground align-top">
+                          <span>{person.role_label || person.role || '-'}</span>
+                        </TableCell>
+                        <TableCell className="text-body align-top">
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs ${
+                              person.source === 'user'
+                                ? 'bg-muted text-muted-foreground'
+                                : 'bg-purple-100 text-purple-700'
+                            }`}
+                          >
+                            {person.source === 'user' ? 'User' : 'Activity'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-body align-top">
+                          <div className="flex items-center gap-1">
+                            {person.activity_id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => handleActivityClick(person.activity_id!)}
+                                title="View Activity"
+                              >
+                                <FileText className="h-4 w-4 text-muted-foreground hover:text-blue-600" />
+                              </Button>
+                            )}
+                            {person.email && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => window.location.href = `mailto:${person.email}`}
+                                title="Send Email"
+                              >
+                                <Mail className="h-4 w-4 text-muted-foreground hover:text-blue-600" />
+                              </Button>
+                            )}
+                            {person.source === 'activity_contact' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => handleDeleteContact(person)}
+                                title="Delete Contact"
+                              >
+                                <Trash2 className="h-4 w-4 hover: text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
 

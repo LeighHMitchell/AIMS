@@ -146,7 +146,7 @@ export default function HomePage() {
               {modules.map((m) => (
                 <div
                   key={m.key}
-                  className="relative flex flex-col rounded-xl shadow-md ring-1 ring-inset ring-border bg-background hover:bg-muted/50 dark:hover:bg-gray-800/50 transition-all overflow-hidden h-[560px] group hover:shadow-lg hover:-translate-y-0.5"
+                  className="relative flex flex-col rounded-xl shadow-md ring-1 ring-inset ring-border bg-background transition-all overflow-hidden h-[560px] group hover:shadow-lg hover:-translate-y-0.5"
                 >
                   {/* Top illustration area */}
                   <div className="relative h-[260px] w-full flex-shrink-0">
@@ -165,7 +165,7 @@ export default function HomePage() {
                       {m.description}
                     </p>
                     {m.stats.length > 0 && (
-                      <div className="flex gap-4 mt-3">
+                      <div className="flex gap-4 mt-auto mb-3 justify-center">
                         {m.stats.map((s, i) => (
                           <span key={i} className="text-helper text-muted-foreground/70">
                             {s}
@@ -175,7 +175,7 @@ export default function HomePage() {
                     )}
                     <GlassButton
                       asChild
-                      className="w-full mt-auto bg-gray-900 hover:bg-gray-800"
+                      className={`w-full bg-gray-900 hover:bg-gray-800${m.stats.length > 0 ? "" : " mt-auto"}`}
                       size="default"
                     >
                       <Link href={m.href}>{m.action}</Link>

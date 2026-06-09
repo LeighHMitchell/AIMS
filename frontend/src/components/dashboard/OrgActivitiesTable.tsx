@@ -26,7 +26,6 @@ import {
 } from 'lucide-react';
 import type { ActivityTableVariant, TableFilterConfig, ReportedByFilter } from '@/types/dashboard';
 import { TableRowActionMenu } from './TableRowActionMenu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
 import { useUser } from '@/hooks/useUser';
 import { formatCurrencyCompact } from '@/lib/format';
@@ -158,7 +157,9 @@ export function OrgActivitiesTable({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [reportedBy, setReportedBy] = useState<ReportedByFilter>(filterConfig?.defaultFilter ?? 'all');
+  // Driven by the single "Reported by" filter in the parent OrgFinancialTabs
+  // header (passed via filterConfig.defaultFilter) — no second dropdown here.
+  const reportedBy: ReportedByFilter = filterConfig?.defaultFilter ?? 'all';
 
   type SortField = 'title' | 'activityStatus' | 'status' | 'validationStatus' | 'budget' | 'plannedDisb' | 'updated' | 'endDate' | 'daysRemaining';
   const [sortField, setSortField] = useState<SortField>('updated');
@@ -376,22 +377,6 @@ export function OrgActivitiesTable({
 
   const mainContent = (
     <>
-      {filterConfig && (
-        <div className="flex items-center gap-3 mb-4">
-          <Select value={reportedBy} onValueChange={(val: ReportedByFilter) => { setReportedBy(val); }}>
-            <SelectTrigger className="w-[280px] h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {filterConfig.allowedFilters.map((filter) => (
-                <SelectItem key={filter} value={filter}>
-                  {filterConfig.filterLabels[filter] || filter}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
       {activities.length === 0 ? (
         <div className="text-center py-8">
           <Icon className="h-12 w-12 text-slate-300 mx-auto mb-3" />

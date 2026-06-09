@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { buildSectorTree, getSectorInfo, getBroadCategoryForGroup, BROAD_CATEGORY_ORDER } from '@/lib/sector-hierarchy';
+import {
+  getReportableActivityIds,
+  getPooledFundIds,
+  excludeInternalTransfers,
+  txUsd,
+  COMMITMENT_TYPES,
+  DISBURSEMENT_TYPES,
+} from '@/lib/analytics-transaction-filters';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,8 +21,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Database connection not initialized' }, { status: 500 });
     }
 
-    // Get all activity_sectors with counts
-    const { data: sectorRows, error: sectorError } = await supabase
+    // Canonical scope: only PUBLISHED, non-deleted activities are reportable
+    // (drafts + Recycle Bin excluded), so both activity counts AND funding match
+    // the per-sector profile pages. Pooled-fund internal transfers are excluded.
+    const [reportableIds, pooledFundIds] = await Promise.all([
+      getReportableActivityIds(supabase),
+      getPooledFundIds(supabase),
+    ]);
+    const reportableSet = new Set(reportableIds);
+
+    // Get all activity_sectors, then restrict to reportable activities
+    const { data: sectorRowsRaw, error: sectorError } = await supabase
       .from('activity_sectors')
       .select('activity_id, sector_code, percentage');
 
@@ -23,42 +40,51 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch sector data' }, { status: 500 });
     }
 
-    // Aggregate by sector_code
-    const sectorStats = new Map<string, { activityIds: Set<string>; totalPercentage: number }>();
-    (sectorRows || []).forEach((row: any) => {
+    const sectorRows = (sectorRowsRaw || []).filter(
+      (r: any) => r.activity_id && reportableSet.has(r.activity_id)
+    );
+
+    // Aggregate by sector_code (published activities only). Track each activity's
+    // own allocation % for that sector so funding is pro-rated per activity, not
+    // by a sector-wide average.
+    const sectorStats = new Map<string, { activityPct: Map<string, number> }>();
+    sectorRows.forEach((row: any) => {
       const code = row.sector_code;
       if (!code) return;
       if (!sectorStats.has(code)) {
-        sectorStats.set(code, { activityIds: new Set(), totalPercentage: 0 });
+        sectorStats.set(code, { activityPct: new Map() });
       }
       const stat = sectorStats.get(code)!;
-      stat.activityIds.add(row.activity_id);
-      stat.totalPercentage += row.percentage || 100;
+      const prev = stat.activityPct.get(row.activity_id) || 0;
+      stat.activityPct.set(row.activity_id, Math.max(prev, row.percentage || 100));
     });
 
-    // Get transaction totals per activity for financial aggregation
+    // Canonical per-activity funding = committed (2) + disbursed (3) only,
+    // status 'actual', non-deleted, internal pooled-fund transfers excluded.
     const allActivityIds = new Set<string>();
-    sectorRows?.forEach((r: any) => { if (r.activity_id) allActivityIds.add(r.activity_id); });
+    sectorRows.forEach((r: any) => { if (r.activity_id) allActivityIds.add(r.activity_id); });
 
-    let txByActivity = new Map<string, { commitments: number; disbursements: number; total: number }>();
+    const CANONICAL_TYPES = [...COMMITMENT_TYPES, ...DISBURSEMENT_TYPES];
+    let txByActivity = new Map<string, { total: number }>();
 
     if (allActivityIds.size > 0) {
-      const { data: transactions } = await supabase
-        .from('transactions')
-        .select('activity_id, transaction_type, value_usd, value')
-        .in('activity_id', Array.from(allActivityIds));
+      const { data: transactions } = await excludeInternalTransfers(
+        supabase
+          .from('transactions')
+          .select('activity_id, transaction_type, value_usd, value, currency')
+          .in('activity_id', Array.from(allActivityIds))
+          .in('transaction_type', CANONICAL_TYPES)
+          .eq('status', 'actual')
+          .is('deleted_at', null),
+        pooledFundIds,
+        CANONICAL_TYPES
+      );
 
       (transactions || []).forEach((tx: any) => {
         if (!txByActivity.has(tx.activity_id)) {
-          txByActivity.set(tx.activity_id, { commitments: 0, disbursements: 0, total: 0 });
+          txByActivity.set(tx.activity_id, { total: 0 });
         }
-        // Currency-safe: only fall back to raw value when currency === 'USD'.
-        const v = (tx.value_usd != null && Number.isFinite(Number(tx.value_usd))) ? Number(tx.value_usd)
-          : ((tx.currency ?? '').toString().toUpperCase() === 'USD' ? Number(tx.value) || 0 : 0);
-        const d = txByActivity.get(tx.activity_id)!;
-        d.total += v;
-        if (tx.transaction_type === '2' || tx.transaction_type === '11') d.commitments += v;
-        else if (tx.transaction_type === '3') d.disbursements += v;
+        txByActivity.get(tx.activity_id)!.total += txUsd(tx);
       });
     }
 
@@ -81,15 +107,14 @@ export async function GET(request: NextRequest) {
 
         const sectors = (cat.children || []).map(sector => {
           const stats = sectorStats.get(sector.code);
-          const activityCount = stats?.activityIds.size || 0;
+          const activityCount = stats?.activityPct.size || 0;
           let totalValue = 0;
 
           if (stats) {
-            stats.activityIds.forEach(aid => {
+            stats.activityPct.forEach((pct, aid) => {
               const txData = txByActivity.get(aid);
               if (txData) {
-                const pct = (stats.totalPercentage / stats.activityIds.size) / 100;
-                totalValue += txData.total * Math.min(pct, 1);
+                totalValue += txData.total * Math.min(pct / 100, 1);
               }
               catActivityIds.add(aid);
               groupActivityIds.add(aid);
@@ -133,7 +158,7 @@ export async function GET(request: NextRequest) {
     const totalActivities = allActivityIds.size;
     let totalFunding = 0;
     txByActivity.forEach(v => { totalFunding += v.total; });
-    const activeSectors = Array.from(sectorStats.values()).filter(s => s.activityIds.size > 0).length;
+    const activeSectors = Array.from(sectorStats.values()).filter(s => s.activityPct.size > 0).length;
 
     return NextResponse.json({
       groups: groupsWithStats,

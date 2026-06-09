@@ -1280,7 +1280,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
             {activitiesLoading && !data?.chartData?.sectorData ? (
               <ChartLoadingPlaceholder />
             ) : data?.chartData?.sectorData ? (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow className="sticky top-0 bg-muted z-10 [&>th]:align-bottom">

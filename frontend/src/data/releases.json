@@ -1,7 +1,24 @@
 {
-  "currentVersion": "4.0.6",
-  "narrativeSummary": "This update sharpens the Data Clinic's financial views and makes fixing data faster. The Financial Dates tab adds a transactions-per-year bar chart with a year filter, and the Financial Completeness tab gains an overspend view that flags where disbursements exceed budgets — both with chart/table toggles, CSV export and full-screen expand. Inline edit dropdowns now open the moment you click, so corrections take one less click. The Sectors browser is clearer too: the whole banner links through to a sector's profile and the list view drills open on demand. Plus a round of colour, hierarchy and consistency polish behind the scenes.",
+  "currentVersion": "4.0.7",
+  "narrativeSummary": "This update enriches organisation records and tidies the look of tables across the platform. Organisations can now carry social links and a separate country-office address, and the funding-envelope view is better aligned with the IATI standard. A new workspace organisation switcher makes it quicker to move between the organisations you work with. Throughout the app, tables now share clean, square corners for a more consistent feel, search is sharper, and there's a round of polish across the Data Clinic, dashboards and profiles.",
   "releases": [
+    {
+      "version": "4.0.7",
+      "date": "2026-06-09",
+      "narrativeSummary": "This update enriches organisation records and tidies the look of tables across the platform. Organisations can now carry social links and a separate country-office address, and the funding-envelope view is better aligned with the IATI standard. A new workspace organisation switcher makes it quicker to move between the organisations you work with. Throughout the app, tables now share clean, square corners for a more consistent feel, search is sharper, and there's a round of polish across the Data Clinic, dashboards and profiles.",
+      "changes": [
+        "<b>Richer organisation profiles</b>",
+        "&nbsp;&nbsp;Organisations can now record social links and a separate country-office address. Why it helps: more complete, contactable organisation records in one place.",
+        "<b>IATI-aligned funding envelopes</b>",
+        "&nbsp;&nbsp;The organisation funding-envelope view is better aligned with the IATI standard. Why it helps: figures and fields line up with the standard your data is published against.",
+        "<b>Quicker organisation switching</b>",
+        "&nbsp;&nbsp;A new workspace organisation switcher lets you move between the organisations you work with without hunting through menus. Why it helps: less navigation, faster day-to-day work.",
+        "<b>Cleaner, more consistent tables</b>",
+        "&nbsp;&nbsp;Tables across the platform now share clean, square corners and sharper search. Why it helps: a steadier, more consistent look wherever you read data.",
+        "<b>Behind the scenes</b>",
+        "&nbsp;&nbsp;A round of polish across the Data Clinic, dashboards and profiles. Why it helps: a smoother, more reliable platform."
+      ]
+    },
     {
       "version": "4.0.6",
       "date": "2026-06-08",

@@ -66,7 +66,6 @@ export function GlobalSearchBar({
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<SearchResult[]>([])
-  const [popularSearches, setPopularSearches] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -75,7 +74,7 @@ export function GlobalSearchBar({
 
   // In-session cache of suggestion responses (keyed by lowercased query) so
   // repeats and backspacing are instant — no spinner, no network round-trip.
-  const suggestionsCacheRef = useRef<Map<string, { suggestions: SearchResult[]; popularSearches: string[] }>>(new Map())
+  const suggestionsCacheRef = useRef<Map<string, { suggestions: SearchResult[] }>>(new Map())
   // Tracks the in-flight suggestions request so stale responses can be aborted.
   const suggestionsAbortRef = useRef<AbortController | null>(null)
 
@@ -133,7 +132,6 @@ export function GlobalSearchBar({
     const cached = suggestionsCacheRef.current.get(searchQuery.trim().toLowerCase())
     if (!cached) return false
     setSuggestions(cached.suggestions)
-    setPopularSearches(cached.popularSearches)
     setShowSuggestions(true)
     setIsLoadingSuggestions(false)
     return true
@@ -144,7 +142,6 @@ export function GlobalSearchBar({
     const q = searchQuery.trim()
     if (q.length < 2) {
       setSuggestions([])
-      setPopularSearches([])
       setShowSuggestions(false)
       setIsLoadingSuggestions(false)
       return
@@ -181,18 +178,15 @@ export function GlobalSearchBar({
       const data = await response.json()
       // Normalize suggestions to the new type format
       const normalizedSuggestions = normalizeSearchResults(data.suggestions || [])
-      const popular: string[] = data.popularSearches || []
-      suggestionsCacheRef.current.set(q.toLowerCase(), { suggestions: normalizedSuggestions, popularSearches: popular })
+      suggestionsCacheRef.current.set(q.toLowerCase(), { suggestions: normalizedSuggestions })
 
       // Ignore if a newer request superseded this one.
       if (controller.signal.aborted) return
       setSuggestions(normalizedSuggestions)
-      setPopularSearches(popular)
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return
       console.error('Suggestions error:', err)
       setSuggestions([])
-      setPopularSearches([])
     } finally {
       // Only clear the spinner if this is still the latest request.
       if (suggestionsAbortRef.current === controller) {
@@ -230,7 +224,6 @@ export function GlobalSearchBar({
       debouncedFetchSuggestions.cancel()
       setShowSuggestions(false)
       setSuggestions([])
-      setPopularSearches([])
     }
   }, [debouncedFetchSuggestions, applyCachedSuggestions])
 
@@ -267,20 +260,6 @@ export function GlobalSearchBar({
         }
     }
   }, [router, onSearch])
-
-  // Handle popular search click — run the full search (page mode) or navigate
-  // to the search results page (nav mode).
-  const handlePopularSearchClick = useCallback((searchTerm: string) => {
-    setQuery(searchTerm)
-    setOpen(false)
-    setShowSuggestions(false)
-    if (onSearch) {
-      onSearch(searchTerm)
-    } else {
-      setIsExpanded(false)
-      router.push(`/search?q=${encodeURIComponent(searchTerm)}`)
-    }
-  }, [onSearch, router])
 
   // Navigate to full search results page or call onSearch callback
   const handleSearchSubmit = useCallback(() => {
@@ -442,35 +421,8 @@ export function GlobalSearchBar({
                             </CommandGroup>
                           )}
 
-                          {/* Show popular searches if there are no suggestions */}
-                          {popularSearches.length > 0 && suggestions.length === 0 && (
-                            <CommandGroup>
-                              <div className="px-2 py-1.5 text-helper font-semibold text-muted-foreground border-b border-border">
-                                Popular Searches
-                              </div>
-                              {popularSearches.map((search, idx) => (
-                                <CommandItem
-                                  key={`popular-${idx}`}
-                                  onSelect={() => handlePopularSearchClick(search)}
-                                  className="cursor-pointer py-3 px-2 hover:bg-muted"
-                                >
-                                  <div className="flex items-start gap-3 w-full">
-                                    <div className="flex-shrink-0 mt-0.5">
-                                      <Search className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-medium text-body truncate text-foreground">
-                                        {search}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          )}
-
                           {/* Empty state — no quick matches, but full search is still one click away */}
-                          {!isLoadingSuggestions && suggestions.length === 0 && popularSearches.length === 0 && (
+                          {!isLoadingSuggestions && suggestions.length === 0 && (
                             <div className="px-2 py-3 text-center text-body text-muted-foreground">
                               No quick matches — press Enter to search everything
                             </div>

@@ -259,7 +259,7 @@ export async function GET(
     });
 
     const statusLabels: Record<string, string> = {
-      '1': 'Pipeline', '2': 'Implementation', '3': 'Completion',
+      '1': 'Pipeline', '2': 'Implementation', '3': 'Finalisation',
       '4': 'Closed', '5': 'Cancelled', '6': 'Suspended', 'unknown': 'Unknown'
     };
 

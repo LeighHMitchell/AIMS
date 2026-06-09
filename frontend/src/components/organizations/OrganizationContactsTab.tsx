@@ -607,21 +607,24 @@ function ContactCard({
           )}
 
           {organization && (
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 min-w-0">
               {organization.logo ? (
                 <img
                   src={organization.logo}
                   alt={organization.name}
-                  className="w-5 h-5 object-contain rounded"
+                  className="w-5 h-5 object-contain rounded flex-shrink-0"
                 />
               ) : (
-                <div className="w-5 h-5 bg-muted rounded flex items-center justify-center">
+                <div className="w-5 h-5 bg-muted rounded flex items-center justify-center flex-shrink-0">
                   <span className="text-[10px] font-medium text-muted-foreground">
                     {organization.acronym?.charAt(0) || organization.name.charAt(0)}
                   </span>
                 </div>
               )}
-              <span className="text-body text-muted-foreground">
+              <span
+                className="text-body text-muted-foreground truncate"
+                title={`${organization.name}${organization.acronym ? ` (${organization.acronym})` : ''}`}
+              >
                 {organization.name}
                 {organization.acronym && ` (${organization.acronym})`}
               </span>
@@ -688,7 +691,7 @@ function ContactsTable({
   onDelete: (id: string) => void;
   organization?: OrganizationInfo;
 }) {
-  const [sortField, setSortField] = useState<'name' | 'role' | 'email' | 'type'>('name');
+  const [sortField, setSortField] = useState<'name' | 'role' | 'department' | 'email' | 'type'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const handleSort = (field: typeof sortField) => {
@@ -710,6 +713,8 @@ function ContactsTable({
           return dir * nameA.localeCompare(nameB);
         case 'role':
           return dir * (a.jobTitle || '').localeCompare(b.jobTitle || '');
+        case 'department':
+          return dir * (a.department || '').localeCompare(b.department || '');
         case 'email':
           return dir * (a.email || '').localeCompare(b.email || '');
         case 'type':
@@ -724,8 +729,8 @@ function ContactsTable({
     // Two wrappers: outer carries the border (no `overflow-` class so the
     // global "[class*=overflow-] { border: none }" rule in globals.css can't
     // strip it), inner clips children into the rounded corners.
-    <div className="rounded-lg border w-full">
-      <div className="overflow-hidden rounded-lg">
+    <div className="border w-full">
+      <div className="overflow-hidden">
         <table className="w-full">
           <thead className="bg-surface-muted">
           <tr className="border-b border-border">
@@ -734,6 +739,9 @@ function ContactsTable({
             </th>
             <th className={`text-left py-3 px-4 text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('role')}>
               <div className="flex items-center gap-1">Role {getSortIcon('role', sortField, sortDirection)}</div>
+            </th>
+            <th className={`text-left py-3 px-4 text-body font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('department')}>
+              <div className="flex items-center gap-1">Department {getSortIcon('department', sortField, sortDirection)}</div>
             </th>
             <th className={`text-left py-3 px-4 text-sm font-medium text-muted-foreground ${sortableHeaderClasses}`} onClick={() => handleSort('email')}>
               <div className="flex items-center gap-1">Email {getSortIcon('email', sortField, sortDirection)}</div>
@@ -769,18 +777,10 @@ function ContactsTable({
                   </div>
                 </td>
                 <td className="py-3 px-4">
-                  {contact.jobTitle || contact.department ? (
-                    <>
-                      {contact.jobTitle && (
-                        <p className="text-body text-foreground">{contact.jobTitle}</p>
-                      )}
-                      {contact.department && (
-                        <p className="text-body text-foreground">{contact.department}</p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-body text-foreground">—</p>
-                  )}
+                  <p className="text-body text-foreground">{contact.jobTitle || '—'}</p>
+                </td>
+                <td className="py-3 px-4">
+                  <p className="text-body text-foreground">{contact.department || '—'}</p>
                 </td>
                 <td className="py-3 px-4">
                   {contact.email ? (

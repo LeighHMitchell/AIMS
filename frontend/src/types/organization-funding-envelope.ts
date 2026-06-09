@@ -24,13 +24,14 @@ export interface OrganizationFundingEnvelope {
   usd_conversion_date?: string | null;
   usd_convertible?: boolean;
   
-  // Classification
-  flow_direction: 'incoming' | 'outgoing';
-  organization_role: 'original_funder' | 'fund_manager' | 'implementer';
-  funding_type_flags: FundingTypeFlag[];
-  
-  // Status
-  status: 'actual' | 'current' | 'indicative';
+  // Classification (legacy — no longer collected; kept optional for back-compat
+  // with existing rows. New entries are IATI recipient-country-budgets.)
+  flow_direction?: 'incoming' | 'outgoing' | null;
+  organization_role?: 'original_funder' | 'fund_manager' | 'implementer' | null;
+  funding_type_flags?: FundingTypeFlag[];
+
+  // Status — IATI recipient-country-budget/@status: indicative | committed
+  status: 'indicative' | 'committed';
   confidence_level?: 'low' | 'medium' | 'high' | null;
   
   // Notes
@@ -87,20 +88,15 @@ export const FUNDING_TYPE_FLAGS = [
 ] as const;
 
 export const ENVELOPE_STATUSES = [
-  { 
-    value: 'actual', 
-    label: 'Actual', 
-    description: 'Historical confirmed figures' 
+  {
+    value: 'indicative',
+    label: 'Indicative',
+    description: 'Planned or forecast figure that may change'
   },
-  { 
-    value: 'current', 
-    label: 'Current', 
-    description: 'Current year or active period' 
-  },
-  { 
-    value: 'indicative', 
-    label: 'Indicative/Planned',
-    description: 'Future projections' 
+  {
+    value: 'committed',
+    label: 'Committed',
+    description: 'Firm, contracted or confirmed figure'
   }
 ] as const;
 
@@ -150,7 +146,7 @@ export const FIELD_HELP_TEXTS = {
 
   organization_role: `Describes your organisation's role in relation to these funds. "Original Funder" means your organisation is the ultimate source of the funds. "Fund Manager/Channel" means you receive funds from others and pass them on. "Implementer" means you receive funds to directly implement activities. This helps clarify the funding chain and prevents aggregation errors.`,
 
-  status: `Indicates the certainty level of this funding figure. "Actual" is for confirmed, historical figures that have been realised. "Current" is for the active funding period with high certainty. "Indicative/Planned" is for future projections, pledges, or estimates that may change. IATI requires clear status classification to help data users understand the reliability of figures.`,
+  status: `The IATI budget status. "Indicative" is a planned or forecast figure that may still change (pledges, projections, estimates). "Committed" is a firm, contracted, or confirmed figure. These are the only two values the IATI recipient-country-budget standard allows.`,
 
   confidence_level: `An optional indicator of how confident you are in the accuracy of this figure. "High" means the figure is based on confirmed documentation or contracts. "Medium" means the figure is a reasonable estimate based on available information. "Low" means the figure is preliminary or subject to significant change. This helps data users assess the reliability of reported amounts.`,
 

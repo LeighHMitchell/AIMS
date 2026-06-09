@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,8 +22,6 @@ import {
   AlertCircle,
   FileText,
   ArrowLeftRight,
-  Building2,
-  Copy,
 } from "lucide-react";
 
 const ALLOWED_ROLES = ["super_user", "gov_partner_tier_1"];
@@ -37,9 +35,6 @@ interface SummaryCounts {
   activitiesMissingDates: number;
   transactionsMissingDate: number;
   transactionsMissingFinanceType: number;
-  organizationsMissingType: number;
-  organizationsMissingIdentifier: number;
-  duplicatePairs: number;
 }
 
 type CountKey = keyof SummaryCounts;
@@ -51,21 +46,17 @@ const ROW_CONFIG: {
   category: string;
   issue: string;
 }[] = [
-  { key: "activitiesMissingSector", tab: "activities", icon: FileText, category: "Activities", issue: "Missing a sector" },
-  { key: "activitiesMissingLocation", tab: "activities", icon: FileText, category: "Activities", issue: "Missing a location" },
+  { key: "activitiesMissingSector", tab: "sectors", icon: FileText, category: "Activities", issue: "Missing a sector" },
+  { key: "activitiesMissingLocation", tab: "locations", icon: FileText, category: "Activities", issue: "Missing a location" },
   { key: "activitiesMissingAidType", tab: "activities", icon: FileText, category: "Activities", issue: "Missing an aid type" },
   { key: "activitiesMissingFinanceType", tab: "activities", icon: FileText, category: "Activities", issue: "Missing a finance type" },
   { key: "activitiesMissingStatus", tab: "activities", icon: FileText, category: "Activities", issue: "Missing a status" },
   { key: "activitiesMissingDates", tab: "activities", icon: FileText, category: "Activities", issue: "Missing start dates" },
   { key: "transactionsMissingDate", tab: "transactions", icon: ArrowLeftRight, category: "Transactions", issue: "Missing a date" },
   { key: "transactionsMissingFinanceType", tab: "transactions", icon: ArrowLeftRight, category: "Transactions", issue: "Missing a finance type" },
-  { key: "organizationsMissingType", tab: "organizations", icon: Building2, category: "Organisations", issue: "Missing a type" },
-  { key: "organizationsMissingIdentifier", tab: "organizations", icon: Building2, category: "Organisations", issue: "Missing an IATI identifier" },
-  { key: "duplicatePairs", tab: "duplicates", icon: Copy, category: "Records", issue: "Potential duplicates" },
 ];
 
 export function DataQualitySummaryCard({ className }: { className?: string }) {
-  const router = useRouter();
   const { user } = useUser();
   const [counts, setCounts] = useState<SummaryCounts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,7 +104,7 @@ export function DataQualitySummaryCard({ className }: { className?: string }) {
           Data Quality
         </CardTitle>
         <CardDescription>
-          System-wide data gaps from the Data Clinic — click a row to review and fix
+          Data gaps in your organisation&apos;s activities — click an issue to review and fix
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -133,11 +124,11 @@ export function DataQualitySummaryCard({ className }: { className?: string }) {
             <CheckCircle2 className="h-10 w-10 text-muted-foreground mb-3" />
             <p className="font-medium text-body text-foreground">No data quality issues found</p>
             <p className="text-helper text-muted-foreground mt-0.5">
-              Every checked field is complete across the portfolio.
+              Every checked field is complete across your organisation&apos;s activities.
             </p>
           </div>
         ) : (
-          <div className="border border-border rounded-lg overflow-hidden">
+          <div className="border border-border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -151,12 +142,9 @@ export function DataQualitySummaryCard({ className }: { className?: string }) {
                 {rows.map((r) => {
                   const Icon = r.icon;
                   const n = counts![r.key];
+                  const href = `/data-clinic?tab=${r.tab}`;
                   return (
-                    <TableRow
-                      key={r.key}
-                      className="cursor-pointer hover:bg-muted"
-                      onClick={() => router.push(`/data-clinic?tab=${r.tab}`)}
-                    >
+                    <TableRow key={r.key}>
                       <TableCell className="text-right">
                         <Badge variant="secondary">{n}</Badge>
                       </TableCell>
@@ -166,9 +154,20 @@ export function DataQualitySummaryCard({ className }: { className?: string }) {
                           {r.category}
                         </span>
                       </TableCell>
-                      <TableCell className="text-body text-foreground">{r.issue}</TableCell>
+                      {/* Only the issue text (and the arrow) act as a link — clicking
+                          elsewhere in the row does nothing. */}
+                      <TableCell className="text-body">
+                        <Link
+                          href={href}
+                          className="text-foreground hover:text-primary hover:underline underline-offset-2"
+                        >
+                          {r.issue}
+                        </Link>
+                      </TableCell>
                       <TableCell>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        <Link href={href} aria-label={`Review: ${r.issue}`} className="inline-flex">
+                          <ArrowRight className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                        </Link>
                       </TableCell>
                     </TableRow>
                   );

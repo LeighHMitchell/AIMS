@@ -53,9 +53,10 @@ import {
   sortableHeaderClasses,
 } from "@/components/ui/table"
 import { RailBlock } from "@/components/profile/RailBlock"
+import { OrganizationSocialLinks } from "@/components/organizations/OrganizationSocialLinks"
 import { countries as COUNTRY_LIST } from "@/data/countries"
 import { isInstitutionalGroup } from "@/data/location-groups"
-import { Mail, Phone, Twitter, Facebook, Linkedin, Instagram, Youtube, MapPin, Building2, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react"
+import { Mail, Phone, MapPin, Building2, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react"
 import Flag from "react-world-flags"
 import { getActivityStatusLabel } from "@/lib/activity-status-utils"
 
@@ -636,27 +637,15 @@ function RailContactInformation({ organization }: { organization: any }) {
   const phone = organization?.phone?.trim()
   const website = organization?.website?.trim()
   const address = organization?.address?.trim()
+  const countryOfficeAddress = organization?.country_office_address?.trim()
 
-  // Each social entry pairs the icon with the org field key. Filter to only
-  // those with a value so we don't render empty placeholder buttons.
-  const socials: Array<{ key: string; label: string; href: string; Icon: any }> = (
-    [
-      { key: "twitter", label: "Twitter / X", url: organization?.twitter, Icon: Twitter },
-      { key: "facebook", label: "Facebook", url: organization?.facebook, Icon: Facebook },
-      { key: "linkedin", label: "LinkedIn", url: organization?.linkedin, Icon: Linkedin },
-      { key: "instagram", label: "Instagram", url: organization?.instagram, Icon: Instagram },
-      { key: "youtube", label: "YouTube", url: organization?.youtube, Icon: Youtube },
-    ] as const
+  // Whether any social profile is set — drives the "return null" guard and the
+  // branded social-links row below.
+  const hasSocials = ["twitter", "facebook", "linkedin", "instagram", "youtube"].some(
+    (k) => typeof organization?.[k] === "string" && organization[k].trim().length > 0
   )
-    .filter((s) => typeof s.url === "string" && s.url.trim().length > 0)
-    .map((s) => ({
-      key: s.key,
-      label: s.label,
-      href: s.url!.startsWith("http") ? s.url! : `https://${s.url}`,
-      Icon: s.Icon,
-    }))
 
-  if (!email && !phone && !website && !address && socials.length === 0) {
+  if (!email && !phone && !website && !address && !countryOfficeAddress && !hasSocials) {
     return null
   }
 
@@ -702,26 +691,32 @@ function RailContactInformation({ organization }: { organization: any }) {
         {address && (
           <div className="grid grid-cols-[28px_1fr] gap-2 items-start">
             <dt className="pt-0.5 text-muted-foreground"><MapPin className="h-4 w-4" /></dt>
-            <dd className="text-foreground min-w-0 break-words whitespace-pre-line">{address}</dd>
+            <dd className="text-foreground min-w-0 break-words">
+              <span className="block text-[11px] uppercase tracking-wide text-muted-foreground">Headquarters</span>
+              <span className="block whitespace-pre-line">{address}</span>
+            </dd>
+          </div>
+        )}
+        {countryOfficeAddress && (
+          <div className="grid grid-cols-[28px_1fr] gap-2 items-start">
+            <dt className="pt-0.5 text-muted-foreground"><MapPin className="h-4 w-4" /></dt>
+            <dd className="text-foreground min-w-0 break-words">
+              <span className="block text-[11px] uppercase tracking-wide text-muted-foreground">In-Country Office</span>
+              <span className="block whitespace-pre-line">{countryOfficeAddress}</span>
+            </dd>
           </div>
         )}
       </dl>
 
-      {socials.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-border/40 flex flex-wrap gap-2">
-          {socials.map(({ key, label, href, Icon }) => (
-            <a
-              key={key}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={label}
-              aria-label={label}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-foreground transition-colors hover:bg-muted/40"
-            >
-              <Icon className="h-4 w-4" />
-            </a>
-          ))}
+      {hasSocials && (
+        <div className="mt-4 pt-3 border-t border-border/40">
+          <OrganizationSocialLinks
+            twitter={organization?.twitter}
+            facebook={organization?.facebook}
+            linkedin={organization?.linkedin}
+            instagram={organization?.instagram}
+            youtube={organization?.youtube}
+          />
         </div>
       )}
     </RailBlock>

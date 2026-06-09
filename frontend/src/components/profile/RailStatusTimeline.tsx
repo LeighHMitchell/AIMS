@@ -11,7 +11,7 @@ const STATUS_COLOUR: Record<string, { dot: string; label: string }> = {
   pipeline: { dot: "bg-blue-500", label: "Planning" },
   identification: { dot: "bg-blue-500", label: "Identification" },
   finalisation: { dot: "bg-amber-500", label: "Finalisation" },
-  completion: { dot: "bg-amber-500", label: "Completion" },
+  completion: { dot: "bg-amber-500", label: "Finalisation" },
   closed: { dot: "bg-muted-foreground", label: "Closed" },
   cancelled: { dot: "bg-muted-foreground", label: "Cancelled" },
   suspended: { dot: "bg-amber-500", label: "Suspended" },

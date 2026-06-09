@@ -176,7 +176,7 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
         </div>
       </CardHeader>
       <CardContent>
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>

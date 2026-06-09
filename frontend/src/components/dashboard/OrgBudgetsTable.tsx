@@ -4,13 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Table,
   TableBody,
   TableCell,
@@ -74,7 +67,9 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
   const [totalCount, setTotalCount] = useState(0);
   const [sortField, setSortField] = useState('period_start');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [reportedBy, setReportedBy] = useState<ReportedByFilter>(filterConfig?.defaultFilter ?? 'my_org');
+  // Driven by the single "Reported by" filter in the parent OrgFinancialTabs
+  // header (passed via filterConfig.defaultFilter) — no second dropdown here.
+  const reportedBy: ReportedByFilter = filterConfig?.defaultFilter ?? 'my_org';
   const runDelete = useDeleteWithUndo();
 
   const deleteBudget = (row: BudgetRow) => {
@@ -170,24 +165,6 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
 
   return (
     <>
-      {/* Filters — only shown when filterConfig is provided */}
-      {filterConfig && (
-        <div className="flex items-center gap-3 mb-4">
-          <Select value={reportedBy} onValueChange={(val: ReportedByFilter) => { setReportedBy(val); setPage(1); }}>
-            <SelectTrigger className="w-[280px] h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {filterConfig.allowedFilters.map((filter) => (
-                <SelectItem key={filter} value={filter}>
-                  {filterConfig.filterLabels[filter] || filter}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
       {budgets.length === 0 ? (
         <div className="text-center py-8">
           <Wallet className="h-12 w-12 text-slate-300 mx-auto mb-3" />

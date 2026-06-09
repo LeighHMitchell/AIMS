@@ -9,7 +9,7 @@ const Table = React.forwardRef<
   <div className="relative w-full overflow-x-auto overflow-y-visible">
     <table
       ref={ref}
-      className={cn("w-full caption-bottom text-body border border-border dark:border-gray-700 rounded-lg", className)}
+      className={cn("w-full caption-bottom text-body border border-border dark:border-gray-700", className)}
       {...props}
     />
   </div>
@@ -18,9 +18,9 @@ Table.displayName = "Table"
 
 /**
  * Standard wrapper for bordered tables — gives the table a single, consistent
- * rounded-lg border that clips the header background corners cleanly. Use this
- * around <Table> instead of hand-rolled `<div className="rounded-md border">`
- * or `<div className="border-2 border-gray-300 rounded-lg">` wrappers.
+ * square-cornered border that clips the header background cleanly. Use this
+ * around <Table> instead of hand-rolled `<div className="border">` wrappers.
+ * Tables use square corners app-wide (no rounded-lg).
  */
 const TableContainer = React.forwardRef<
   HTMLDivElement,
@@ -28,7 +28,7 @@ const TableContainer = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("rounded-lg border overflow-hidden w-full", className)}
+    className={cn("border overflow-hidden w-full", className)}
     {...props}
   />
 ))

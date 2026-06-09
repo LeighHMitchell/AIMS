@@ -44,7 +44,7 @@ jest.mock('@/components/forms/ActivityStatusSelect', () => ({
       <option value="">Select Activity Status</option>
       <option value="1">Planning</option>
       <option value="2">Implementation</option>
-      <option value="3">Completion</option>
+      <option value="3">Finalisation</option>
     </select>
   )
 }));

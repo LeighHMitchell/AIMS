@@ -241,8 +241,8 @@ export default function TagsListingPage() {
                             <div className="text-foreground truncate">{tag.name}</div>
                           </div>
                         </TableCell>
-                        <TableCell className="hidden lg:table-cell text-foreground max-w-xs">
-                          <span className="block truncate">{tag.description || <span className="text-muted-foreground">—</span>}</span>
+                        <TableCell className="hidden lg:table-cell text-foreground max-w-xs align-top">
+                          <span className="block whitespace-normal break-words">{tag.description || <span className="text-muted-foreground">—</span>}</span>
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-foreground">
                           {isCustomTag(tag.vocabulary) ? 'Custom' : getTagVocabularyLabel(tag.vocabulary)}
@@ -253,9 +253,9 @@ export default function TagsListingPage() {
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
-                                  variant="ghost"
+                                  variant="outline"
                                   size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                  className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100"
                                   aria-label="Tag actions"
                                 >
                                   <MoreVertical className="h-4 w-4" />

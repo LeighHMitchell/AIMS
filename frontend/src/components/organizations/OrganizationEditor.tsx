@@ -181,7 +181,9 @@ export function OrganizationEditor({
   const getFormTab = (section: string) => {
     const mapping: Record<string, string> = {
       'general': 'basic',
+      'reporting': 'reporting',
       'contact': 'contact',
+      'social': 'social',
       'aliases': 'aliases',
       'merge': 'merge' // Merge has its own tab
     }
@@ -193,7 +195,9 @@ export function OrganizationEditor({
   // the user sees in the sidebar.
   const sectionOrder = [
     'general',
+    'reporting',
     'contact',
+    'social',
     'contacts',
     'funding-envelope',
     'iati-import',
@@ -242,7 +246,7 @@ export function OrganizationEditor({
     }
 
     // For form sections, use OrganizationFormContent with inline mode
-    if (['general', 'contact', 'aliases', 'merge'].includes(activeSection)) {
+    if (['general', 'reporting', 'contact', 'social', 'aliases', 'merge'].includes(activeSection)) {
       return (
         <OrganizationFormContent
           organization={organization}
@@ -348,7 +352,7 @@ export function OrganizationEditor({
       {/* Footer for standalone-component sections — the form sections render
           their own footer inside OrganizationFormContent, so we only render
           this one when a non-form section is active to avoid duplicates. */}
-      {!['general', 'contact', 'aliases', 'merge'].includes(activeSection) && (
+      {!['general', 'reporting', 'contact', 'social', 'aliases', 'merge'].includes(activeSection) && (
         <footer className="fixed bottom-0 right-0 left-72 bg-card/60 dark:bg-gray-900/60 backdrop-blur-md py-4 px-8 z-[60]">
           <div className="max-w-full flex items-center justify-end gap-3">
             {/* Comments Button */}

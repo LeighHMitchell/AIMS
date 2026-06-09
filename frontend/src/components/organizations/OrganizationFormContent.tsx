@@ -91,6 +91,7 @@ import { LabelSaveIndicator } from '@/components/ui/save-indicator'
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip'
 import { SubSection } from '@/components/activities/SubSection'
 import { OrganizationComments } from './OrganizationComments'
+import { OrganizationSocialLinks } from './OrganizationSocialLinks'
 import { exportOrganizationToExcel } from '@/lib/organization-export'
 import { useOrganizationAutosave } from '@/hooks/use-organization-autosave'
 import { apiFetch } from '@/lib/api-fetch';
@@ -238,6 +239,7 @@ export interface Organization {
   email?: string
   phone?: string
   address?: string
+  country_office_address?: string
   logo?: string
   logo_scale?: number
   banner?: string
@@ -438,10 +440,15 @@ export function OrganizationFormContent({
     debounceMs: 1500,
     enabled: !!organizationId 
   })
-  const addressAutosave = useOrganizationAutosave('address', { 
-    organizationId, 
+  const addressAutosave = useOrganizationAutosave('address', {
+    organizationId,
     debounceMs: 2000,
-    enabled: !!organizationId 
+    enabled: !!organizationId
+  })
+  const countryOfficeAddressAutosave = useOrganizationAutosave('country_office_address', {
+    organizationId,
+    debounceMs: 2000,
+    enabled: !!organizationId
   })
   // Social media autosave hooks
   const twitterAutosave = useOrganizationAutosave('twitter', { 
@@ -560,6 +567,7 @@ export function OrganizationFormContent({
         email: organization.email || '',
         phone: organization.phone || '',
         address: organization.address || '',
+        country_office_address: organization.country_office_address || '',
         // Alias fields
         alias_refs: organization.alias_refs || [],
         name_aliases: organization.name_aliases || [],
@@ -601,6 +609,7 @@ export function OrganizationFormContent({
         alias_refs: [],
         name_aliases: [],
         address: '',
+        country_office_address: '',
         // Social media fields
         twitter: '',
         facebook: '',
@@ -655,6 +664,7 @@ export function OrganizationFormContent({
         email: emailAutosave,
         phone: phoneAutosave,
         address: addressAutosave,
+        country_office_address: countryOfficeAddressAutosave,
         twitter: twitterAutosave,
         facebook: facebookAutosave,
         linkedin: linkedinAutosave,
@@ -918,7 +928,9 @@ export function OrganizationFormContent({
           onValueChange={setActiveTab}
           options={[
             { value: 'basic', label: 'General', icon: Info },
+            { value: 'reporting', label: 'Reporting', icon: Calendar },
             { value: 'contact', label: 'Contact', icon: Mail },
+            { value: 'social', label: 'Social Media', icon: Globe },
             { value: 'aliases', label: 'Aliases', icon: Tag },
             { value: 'budgets', label: 'IATI Budgets', icon: DollarSign },
             { value: 'documents', label: 'IATI Documents', icon: FileText },
@@ -934,7 +946,7 @@ export function OrganizationFormContent({
           {/* Page Heading */}
           <div className="flex items-center gap-3">
             <h2 className="text-3xl font-semibold text-foreground">General</h2>
-            <HelpTextTooltip content="This tab brings together the core details that define the organisation, including its name, acronym, branding imagery, classification, and reporting defaults. Completing this section establishes the basic profile of the organisation and provides a clear reference point for all other information entered elsewhere.">
+            <HelpTextTooltip content="This tab brings together the core details that define the organisation, including its name, acronym, branding imagery, classification, and description. Completing this section establishes the basic profile of the organisation and provides a clear reference point for all other information entered elsewhere.">
               <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
             </HelpTextTooltip>
           </div>
@@ -1433,57 +1445,70 @@ export function OrganizationFormContent({
 
         <SubSection
           title="Description"
-          intro="A brief overview of the organisation's mandate and activities."
+          intro="A brief overview of the organisation's mandate and activities, plus an optional short mission statement."
         >
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={descriptionAutosave.state.isSaving}
-            isSaved={!!descriptionAutosave.state.lastSaved}
-            hasValue={!!formData.description}
-          >
-            <div className="flex items-center gap-2">
-              Description
-              <HelpTextTooltip>
-                A brief overview of the organisation's mandate and activities. Supports rich text formatting.
-              </HelpTextTooltip>
-            </div>
-          </LabelSaveIndicator>
-          <RichTextEditor
-            content={formData.description || ''}
-            onChange={(content) => handleInputChange('description', content)}
-            placeholder="Brief description of the organisation"
-            rows={6}
-          />
-        </div>
-        </SubSection>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <LabelSaveIndicator
+              isSaving={descriptionAutosave.state.isSaving}
+              isSaved={!!descriptionAutosave.state.lastSaved}
+              hasValue={!!formData.description}
+            >
+              <div className="flex items-center gap-2">
+                Description
+                <HelpTextTooltip>
+                  A brief overview of the organisation's mandate and activities. Supports rich text formatting.
+                </HelpTextTooltip>
+              </div>
+            </LabelSaveIndicator>
+            <RichTextEditor
+              content={formData.description || ''}
+              onChange={(content) => handleInputChange('description', content)}
+              placeholder="Brief description of the organisation"
+              rows={6}
+            />
+          </div>
 
-        <SubSection
-          title="Mission"
-          intro="A short mission statement displayed beside the description on the organisation profile."
-        >
-        <div className="space-y-2">
-          <LabelSaveIndicator
-            isSaving={missionAutosave.state.isSaving}
-            isSaved={!!missionAutosave.state.lastSaved}
-            hasValue={!!formData.mission}
-          >
-            <div className="flex items-center gap-2">
-              Mission
-              <HelpTextTooltip>
-                A one- or two-sentence statement of the organisation's purpose. Shown under "Mission" on the public profile.
-              </HelpTextTooltip>
-            </div>
-          </LabelSaveIndicator>
-          <Textarea
-            id="mission"
-            value={formData.mission || ''}
-            onChange={(e) => handleInputChange('mission', e.target.value)}
-            placeholder="e.g. Delivering a world where every pregnancy is wanted, every childbirth is safe and every young person's potential is fulfilled."
-            rows={3}
-            className="resize-none"
-          />
+          <div className="space-y-2">
+            <LabelSaveIndicator
+              isSaving={missionAutosave.state.isSaving}
+              isSaved={!!missionAutosave.state.lastSaved}
+              hasValue={!!formData.mission}
+            >
+              <div className="flex items-center gap-2">
+                Mission
+                <HelpTextTooltip>
+                  A one- or two-sentence statement of the organisation's purpose. Shown under "Mission" on the public profile.
+                </HelpTextTooltip>
+              </div>
+            </LabelSaveIndicator>
+            <Textarea
+              id="mission"
+              value={formData.mission || ''}
+              onChange={(e) => handleInputChange('mission', e.target.value)}
+              placeholder="e.g. Delivering a world where every pregnancy is wanted, every childbirth is safe and every young person's potential is fulfilled."
+              rows={3}
+              className="resize-none"
+            />
+          </div>
         </div>
         </SubSection>
+        </div>
+
+      </div>
+      )}
+
+      {/* Reporting Defaults Tab */}
+      {activeTab === 'reporting' && (
+      <div className="h-full overflow-y-auto px-2 mt-4">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
+          {/* Page Heading */}
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-semibold text-foreground">Reporting Defaults</h2>
+            <HelpTextTooltip content="The default currency, language, and financial year applied when this organisation reports data. These act as fallbacks where a value isn't otherwise specified.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
 
         <SubSection
           title="Reporting Defaults"
@@ -1701,14 +1726,14 @@ export function OrganizationFormContent({
       </div>
       )}
 
-      {/* Social & Web Tab */}
+      {/* Contact Tab */}
       {activeTab === 'contact' && (
       <div className="h-full overflow-y-auto px-2 mt-4">
         <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
           {/* Page Heading */}
           <div className="flex items-center gap-3">
             <h2 className="text-3xl font-semibold text-foreground">Contact</h2>
-            <HelpTextTooltip content="Contact details and social media presence used to reach this organisation and link to its public profiles.">
+            <HelpTextTooltip content="Contact details used to reach this organisation. Social media profiles are managed in the Social Media tab.">
               <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
             </HelpTextTooltip>
           </div>
@@ -1778,13 +1803,38 @@ export function OrganizationFormContent({
                 hasValue={!!formData.address}
               >
                 <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
-                Mailing Address
+                Headquarters Address
+                <HelpTextTooltip>
+                  The main headquarters / home-country mailing address of the organisation.
+                </HelpTextTooltip>
               </LabelSaveIndicator>
               <Textarea
                 id="address"
                 value={formData.address || ''}
                 onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="Full mailing address"
+                placeholder="Full headquarters / home-country address"
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+
+            <div className="space-y-2 md:col-span-2">
+              <LabelSaveIndicator
+                isSaving={countryOfficeAddressAutosave.state.isSaving}
+                isSaved={!!countryOfficeAddressAutosave.state.lastSaved}
+                hasValue={!!formData.country_office_address}
+              >
+                <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
+                In-Country Office Address
+                <HelpTextTooltip>
+                  The local or regional office address in the country of operation, if different from the headquarters.
+                </HelpTextTooltip>
+              </LabelSaveIndicator>
+              <Textarea
+                id="country_office_address"
+                value={formData.country_office_address || ''}
+                onChange={(e) => handleInputChange('country_office_address', e.target.value)}
+                placeholder="In-country office address"
                 rows={3}
                 className="resize-none"
               />
@@ -1792,9 +1842,39 @@ export function OrganizationFormContent({
           </div>
           </SubSection>
 
+        </div>
+      </div>
+      )}
+
+      {/* Social Media Tab */}
+      {activeTab === 'social' && (
+      <div className="h-full overflow-y-auto px-2 mt-4">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
+          {/* Page Heading */}
+          <div className="flex items-center gap-3">
+            <h2 className="text-3xl font-semibold text-foreground">Social Media</h2>
+            <HelpTextTooltip content="Public social media profiles where stakeholders can follow this organisation. These appear as branded links on the organisation profile.">
+              <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+            </HelpTextTooltip>
+          </div>
+
           <SubSection
-            title="Social Media"
-            intro="Public social media profiles where stakeholders can follow this organisation."
+            title="Preview"
+            intro="How the social links will appear on the organisation profile. Only platforms with a value are shown."
+          >
+            <OrganizationSocialLinks
+              twitter={formData.twitter}
+              facebook={formData.facebook}
+              linkedin={formData.linkedin}
+              instagram={formData.instagram}
+              youtube={formData.youtube}
+              emptyHint="Add a profile link below to see it here."
+            />
+          </SubSection>
+
+          <SubSection
+            title="Profiles"
+            intro="Enter the full URL (or @handle) for each platform this organisation uses."
           >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">

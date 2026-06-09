@@ -7,6 +7,7 @@ import { Download } from 'lucide-react'
 import { TOOLTIP_CLASSES } from '@/lib/chart-utils'
 import { formatCurrencyShort, formatAxisCurrency } from '@/lib/format'
 import { exportChartToCSV } from '@/lib/chart-export'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 
 interface DonorData {
   id: string
@@ -134,37 +135,35 @@ export function SDGDonorRankings({ donors, sdgColor, compact = false }: SDGDonor
 
       {/* Ranked Table */}
       {!compact && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-helper">
-            <thead className="bg-surface-muted">
-              <tr className="border-b border-border">
-                <th className="text-left py-2 px-2 text-muted-foreground font-medium">#</th>
-                <th className="text-left py-2 px-2 text-muted-foreground font-medium">Organisation</th>
-                <th className="text-right py-2 px-2 text-muted-foreground font-medium">Activities</th>
-                <th className="text-right py-2 px-2 text-muted-foreground font-medium">Committed</th>
-                <th className="text-right py-2 px-2 text-muted-foreground font-medium">Disbursed</th>
-                <th className="text-right py-2 px-2 text-muted-foreground font-medium">% of Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedDonors.map((donor, i) => (
-                <tr key={donor.id} className="border-b border-border hover:bg-muted/50">
-                  <td className="py-2 px-2 text-muted-foreground">{i + 1}</td>
-                  <td className="py-2 px-2">
-                    <span className="font-medium text-foreground">{donor.name}</span>
-                    {donor.acronym && <span className="text-muted-foreground ml-1">({donor.acronym})</span>}
-                  </td>
-                  <td className="py-2 px-2 text-right text-muted-foreground">{donor.activityCount}</td>
-                  <td className="py-2 px-2 text-right text-muted-foreground">{formatCurrencyShort(donor.totalCommitted)}</td>
-                  <td className="py-2 px-2 text-right font-medium text-foreground">{formatCurrencyShort(donor.totalDisbursed)}</td>
-                  <td className="py-2 px-2 text-right text-muted-foreground">
-                    {totalDisbursed > 0 ? ((donor.totalDisbursed / totalDisbursed) * 100).toFixed(1) : '0.0'}%
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table className="border-0">
+          <TableHeader>
+            <TableRow>
+              <TableHead>#</TableHead>
+              <TableHead>Organisation</TableHead>
+              <TableHead className="text-right">Activities</TableHead>
+              <TableHead className="text-right">Committed</TableHead>
+              <TableHead className="text-right">Disbursed</TableHead>
+              <TableHead className="text-right">% of Total</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedDonors.map((donor, i) => (
+              <TableRow key={donor.id}>
+                <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                <TableCell>
+                  <span className="font-medium text-foreground">{donor.name}</span>
+                  {donor.acronym && <span className="text-muted-foreground ml-1">({donor.acronym})</span>}
+                </TableCell>
+                <TableCell className="text-right text-muted-foreground">{donor.activityCount}</TableCell>
+                <TableCell className="text-right text-muted-foreground">{formatCurrencyShort(donor.totalCommitted)}</TableCell>
+                <TableCell className="text-right font-medium text-foreground">{formatCurrencyShort(donor.totalDisbursed)}</TableCell>
+                <TableCell className="text-right text-muted-foreground">
+                  {totalDisbursed > 0 ? ((donor.totalDisbursed / totalDisbursed) * 100).toFixed(1) : '0.0'}%
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
     </div>
   )

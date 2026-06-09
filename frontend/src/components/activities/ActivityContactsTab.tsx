@@ -356,7 +356,7 @@ export default function ActivityContactsTab({ activityId }: ActivityContactsTabP
   // Render table view
   const renderTableView = () => {
     return (
-      <div className="border border-border rounded-lg overflow-hidden">
+      <div className="border border-border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">

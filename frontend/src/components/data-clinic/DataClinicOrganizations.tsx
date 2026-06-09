@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react";
-import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
 import { renderMoney } from "./formatters";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -322,151 +322,149 @@ export function DataClinicOrganizations() {
       {/* Organizations Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b bg-surface-muted">
-                <tr>
-                  {isSuperUser && (
-                    <th className="p-4 text-left">
-                      <Checkbox
-                        checked={selectedOrganizations.size === filteredOrganizations.length && filteredOrganizations.length > 0}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedOrganizations(new Set(filteredOrganizations.map(o => o.id)));
-                          } else {
-                            setSelectedOrganizations(new Set());
-                          }
-                        }}
-                      />
-                    </th>
-                  )}
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('name')}>
-                    <div className="flex items-center gap-1">Name {getSortIcon('name', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('acronym')}>
-                    <div className="flex items-center gap-1">Acronym {getSortIcon('acronym', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('identifier')}>
-                    <div className="flex items-center gap-1">IATI Identifier {getSortIcon('identifier', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
-                    <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('country')}>
-                    <div className="flex items-center gap-1">Location Represented {getSortIcon('country', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('currency')}>
-                    <div className="flex items-center gap-1">Currency {getSortIcon('currency', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('budget')}>
-                    <div className="flex items-center gap-1">Budget {getSortIcon('budget', sortField, sortDirection)}</div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedOrganizations.length === 0 ? (
-                  <tr>
-                    <td colSpan={isSuperUser ? 8 : 7} className="p-8 text-center text-muted-foreground">
-                      No organizations found with data gaps
-                    </td>
-                  </tr>
-                ) : (
-                  sortedOrganizations.map((organization) => (
-                    <tr key={organization.id} className="border-b hover:bg-muted/50">
-                      {isSuperUser && (
-                        <td className="p-4">
-                          <Checkbox
-                            checked={selectedOrganizations.has(organization.id)}
-                            onCheckedChange={(checked) => {
-                              const newSelected = new Set(selectedOrganizations);
-                              if (checked) {
-                                newSelected.add(organization.id);
-                              } else {
-                                newSelected.delete(organization.id);
-                              }
-                              setSelectedOrganizations(newSelected);
-                            }}
-                          />
-                        </td>
-                      )}
-                      <td className="p-4">
-                        <div className="max-w-xs">
-                          <Building2 className="inline-block h-4 w-4 text-muted-foreground align-middle mr-2" />
-                          <Link
-                            href={`/organizations/${organization.id}`}
-                            className="font-medium break-words hover:opacity-70 transition-opacity"
-                          >
-                            {organization.name}
-                          </Link>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <EditableCell
-                          organizationId={organization.id}
-                          field="acronym"
-                          value={organization.acronym}
-                          onSave={saveFieldValue}
-                          isEditable={isSuperUser}
-                        />
-                      </td>
-                      <td className="p-4">
-                        <EditableCell
-                          organizationId={organization.id}
-                          field="iati_org_id"
-                          value={organization.iati_org_id}
-                          onSave={saveFieldValue}
-                          isEditable={isSuperUser}
-                          isValidIdentifier={isValidIdentifier}
-                        />
-                      </td>
-                      <td className="p-4">
-                        <EditableCell
-                          organizationId={organization.id}
-                          field="type"
-                          value={organization.type}
-                          onSave={saveFieldValue}
-                          isEditable={isSuperUser}
-                        />
-                      </td>
-                      <td className="p-4">
-                        <EditableCell
-                          organizationId={organization.id}
-                          field="country_represented"
-                          value={organization.country_represented}
-                          onSave={saveFieldValue}
-                          isEditable={isSuperUser}
-                        />
-                      </td>
-                      <td className="p-4">
-                        <EditableCell
-                          organizationId={organization.id}
-                          field="default_currency"
-                          value={organization.default_currency}
-                          onSave={saveFieldValue}
-                          isEditable={isSuperUser}
-                        />
-                      </td>
-                      <td className="p-4">
-                        {organization.totalBudget || organization.recipientOrgBudget ? (
-                          <span className="text-body">
-                            {renderMoney(
-                              (organization.totalBudget || organization.recipientOrgBudget)!,
-                              organization.default_currency,
-                            )}
-                          </span>
-                        ) : (
-                          <Badge variant="outline" className="text-helper border border-gray-300 text-gray-500 bg-transparent">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Missing
-                          </Badge>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {isSuperUser && (
+                  <TableHead>
+                    <Checkbox
+                      checked={selectedOrganizations.size === filteredOrganizations.length && filteredOrganizations.length > 0}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedOrganizations(new Set(filteredOrganizations.map(o => o.id)));
+                        } else {
+                          setSelectedOrganizations(new Set());
+                        }
+                      }}
+                    />
+                  </TableHead>
                 )}
-              </tbody>
-            </table>
-          </div>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('name')}>
+                  <div className="flex items-center gap-1">Name {getSortIcon('name', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('acronym')}>
+                  <div className="flex items-center gap-1">Acronym {getSortIcon('acronym', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('identifier')}>
+                  <div className="flex items-center gap-1">IATI Identifier {getSortIcon('identifier', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('type')}>
+                  <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('country')}>
+                  <div className="flex items-center gap-1">Location Represented {getSortIcon('country', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('currency')}>
+                  <div className="flex items-center gap-1">Currency {getSortIcon('currency', sortField, sortDirection)}</div>
+                </TableHead>
+                <TableHead className={sortableHeaderClasses} onClick={() => handleSort('budget')}>
+                  <div className="flex items-center gap-1">Budget {getSortIcon('budget', sortField, sortDirection)}</div>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedOrganizations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={isSuperUser ? 8 : 7} className="text-center text-muted-foreground">
+                    No organizations found with data gaps
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedOrganizations.map((organization) => (
+                  <TableRow key={organization.id}>
+                    {isSuperUser && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedOrganizations.has(organization.id)}
+                          onCheckedChange={(checked) => {
+                            const newSelected = new Set(selectedOrganizations);
+                            if (checked) {
+                              newSelected.add(organization.id);
+                            } else {
+                              newSelected.delete(organization.id);
+                            }
+                            setSelectedOrganizations(newSelected);
+                          }}
+                        />
+                      </TableCell>
+                    )}
+                    <TableCell>
+                      <div className="max-w-xs">
+                        <Building2 className="inline-block h-4 w-4 text-muted-foreground align-middle mr-2" />
+                        <Link
+                          href={`/organizations/${organization.id}`}
+                          className="font-medium break-words hover:opacity-70 transition-opacity"
+                        >
+                          {organization.name}
+                        </Link>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <EditableCell
+                        organizationId={organization.id}
+                        field="acronym"
+                        value={organization.acronym}
+                        onSave={saveFieldValue}
+                        isEditable={isSuperUser}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <EditableCell
+                        organizationId={organization.id}
+                        field="iati_org_id"
+                        value={organization.iati_org_id}
+                        onSave={saveFieldValue}
+                        isEditable={isSuperUser}
+                        isValidIdentifier={isValidIdentifier}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <EditableCell
+                        organizationId={organization.id}
+                        field="type"
+                        value={organization.type}
+                        onSave={saveFieldValue}
+                        isEditable={isSuperUser}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <EditableCell
+                        organizationId={organization.id}
+                        field="country_represented"
+                        value={organization.country_represented}
+                        onSave={saveFieldValue}
+                        isEditable={isSuperUser}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <EditableCell
+                        organizationId={organization.id}
+                        field="default_currency"
+                        value={organization.default_currency}
+                        onSave={saveFieldValue}
+                        isEditable={isSuperUser}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {organization.totalBudget || organization.recipientOrgBudget ? (
+                        <span className="text-body">
+                          {renderMoney(
+                            (organization.totalBudget || organization.recipientOrgBudget)!,
+                            organization.default_currency,
+                          )}
+                        </span>
+                      ) : (
+                        <Badge variant="outline" className="text-helper border border-gray-300 text-gray-500 bg-transparent">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Missing
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

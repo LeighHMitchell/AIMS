@@ -456,7 +456,7 @@ export function PendingValidationsManagement() {
                 <p className="text-body">No activities pending validation</p>
               </div>
             ) : (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
@@ -499,7 +499,7 @@ export function PendingValidationsManagement() {
                 <p className="text-body">No transactions pending validation</p>
               </div>
             ) : (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">

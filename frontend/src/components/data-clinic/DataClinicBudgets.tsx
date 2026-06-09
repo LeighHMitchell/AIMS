@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
@@ -27,7 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useUser } from "@/hooks/useUser";
 import { BUDGET_TYPE_LABELS, BUDGET_STATUS_LABELS } from "@/types/budget";
-import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
 import { renderMoney, formatClinicDate } from "./formatters";
 
 type Budget = {
@@ -62,6 +64,7 @@ export function DataClinicBudgets() {
   const [bulkEditValue, setBulkEditValue] = useState<string>('');
   const [sortField, setSortField] = useState<'activity' | 'start' | 'end' | 'type' | 'status' | 'currency' | 'value' | 'valueDate' | 'usd'>('activity');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [grouped, setGrouped] = useState(false);
 
   const handleSort = (field: typeof sortField) => {
     if (sortField === field) {
@@ -99,6 +102,19 @@ export function DataClinicBudgets() {
       }
     });
   }, [filteredBudgets, sortField, sortDirection]);
+
+  // Budgets grouped by their activity (preserving sort order of groups)
+  const budgetGroups = useMemo(() => {
+    const map = new Map<string, { activityId: string; title: string; acronym?: string; rows: Budget[] }>();
+    for (const b of sortedBudgets) {
+      const key = b.activity_id || b.activityTitle || 'unknown';
+      if (!map.has(key)) {
+        map.set(key, { activityId: b.activity_id, title: b.activityTitle || 'Untitled Activity', acronym: b.activityAcronym, rows: [] });
+      }
+      map.get(key)!.rows.push(b);
+    }
+    return Array.from(map.values());
+  }, [sortedBudgets]);
 
   const isSuperUser = user?.role === 'super_user';
 
@@ -409,6 +425,12 @@ export function DataClinicBudgets() {
                 <SelectItem value="missing_usd_value">Missing USD Value</SelectItem>
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+              <Switch id="budget-group-by-activity" checked={grouped} onCheckedChange={setGrouped} />
+              <Label htmlFor="budget-group-by-activity" className="text-body cursor-pointer whitespace-nowrap">
+                Group by Activity
+              </Label>
+            </div>
             <Button
               variant="outline"
               onClick={() => fetchBudgetsWithGaps()}
@@ -454,12 +476,11 @@ export function DataClinicBudgets() {
       {/* Budgets Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="border-b bg-surface-muted">
-                <tr>
+          <Table className="border-0">
+              <TableHeader>
+                <TableRow>
                   {isSuperUser && (
-                    <th className="p-4 text-left">
+                    <TableHead>
                       <Checkbox
                         checked={selectedBudgets.size === filteredBudgets.length && filteredBudgets.length > 0}
                         onCheckedChange={(checked) => {
@@ -470,49 +491,64 @@ export function DataClinicBudgets() {
                           }
                         }}
                       />
-                    </th>
+                    </TableHead>
                   )}
-                  <th className={`p-4 text-left text-sm font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('activity')}>
-                    <div className="flex items-center gap-1">Activity {getSortIcon('activity', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('start')}>
+                  <TableHead className={sortableHeaderClasses} onClick={() => handleSort('activity')}>
+                    <div className="flex items-center gap-1">Activity Title {getSortIcon('activity', sortField, sortDirection)}</div>
+                  </TableHead>
+                  <TableHead className={sortableHeaderClasses} onClick={() => handleSort('start')}>
                     <div className="flex items-center gap-1">Start Date {getSortIcon('start', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('end')}>
+                  </TableHead>
+                  <TableHead className={sortableHeaderClasses} onClick={() => handleSort('end')}>
                     <div className="flex items-center gap-1">End Date {getSortIcon('end', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
+                  </TableHead>
+                  <TableHead className={sortableHeaderClasses} onClick={() => handleSort('type')}>
                     <div className="flex items-center gap-1">Type {getSortIcon('type', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('status')}>
+                  </TableHead>
+                  <TableHead className={sortableHeaderClasses} onClick={() => handleSort('status')}>
                     <div className="flex items-center gap-1">Status {getSortIcon('status', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('currency')}>
+                  </TableHead>
+                  <TableHead className={sortableHeaderClasses} onClick={() => handleSort('currency')}>
                     <div className="flex items-center gap-1">Currency {getSortIcon('currency', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-right text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
+                  </TableHead>
+                  <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
                     <div className="flex items-center justify-end gap-1">Value {getSortIcon('value', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-left text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('valueDate')}>
+                  </TableHead>
+                  <TableHead className={sortableHeaderClasses} onClick={() => handleSort('valueDate')}>
                     <div className="flex items-center gap-1">Value Date {getSortIcon('valueDate', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`p-4 text-right text-body font-medium ${sortableHeaderClasses}`} onClick={() => handleSort('usd')}>
+                  </TableHead>
+                  <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => handleSort('usd')}>
                     <div className="flex items-center justify-end gap-1">USD Value {getSortIcon('usd', sortField, sortDirection)}</div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filteredBudgets.length === 0 ? (
-                  <tr>
-                    <td colSpan={isSuperUser ? 11 : 10} className="p-8 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={isSuperUser ? 11 : 10} className="p-8 text-center text-muted-foreground">
                       No budgets found with data gaps
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  sortedBudgets.map((budget) => (
-                    <tr key={budget.id} className="border-b hover:bg-muted/50">
+                  (grouped
+                    ? budgetGroups.flatMap((g) => [{ _header: g } as any, ...g.rows.map((b) => ({ _b: b } as any))])
+                    : sortedBudgets.map((b) => ({ _b: b } as any))
+                  ).map((item: any) => item._header ? (
+                    <TableRow key={`grp-${item._header.activityId || item._header.title}`} className="bg-surface-muted/60">
+                      <TableCell colSpan={isSuperUser ? 11 : 10}>
+                        <Link
+                          href={`/activities/${item._header.activityId}`}
+                          className="font-medium no-underline hover:opacity-70 transition-opacity"
+                        >
+                          {item._header.title}{item._header.acronym ? ` (${item._header.acronym})` : ''}
+                        </Link>
+                        <span className="ml-2 text-helper text-muted-foreground">({item._header.rows.length})</span>
+                      </TableCell>
+                    </TableRow>
+                  ) : (() => { const budget = item._b; return (
+                    <TableRow key={budget.id}>
                       {isSuperUser && (
-                        <td className="p-4">
+                        <TableCell>
                           <Checkbox
                             checked={selectedBudgets.has(budget.id)}
                             onCheckedChange={(checked) => {
@@ -525,32 +561,34 @@ export function DataClinicBudgets() {
                               setSelectedBudgets(newSelected);
                             }}
                           />
-                        </td>
+                        </TableCell>
                       )}
-                      <td className="p-4 align-top">
-                        <div className="max-w-xs">
-                          <Link
-                            href={`/activities/${budget.activity_id}`}
-                            className="font-medium break-words no-underline hover:opacity-70 transition-opacity"
-                          >
-                            {budget.activityTitle || 'Untitled Activity'}
-                            {budget.activityAcronym ? ` (${budget.activityAcronym})` : ''}
-                          </Link>
-                        </div>
-                      </td>
-                      <td className="p-4 align-top">
+                      <TableCell className="align-top">
+                        {!grouped && (
+                          <div className="max-w-xs">
+                            <Link
+                              href={`/activities/${budget.activity_id}`}
+                              className="font-medium break-words no-underline hover:opacity-70 transition-opacity"
+                            >
+                              {budget.activityTitle || 'Untitled Activity'}
+                              {budget.activityAcronym ? ` (${budget.activityAcronym})` : ''}
+                            </Link>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="align-top">
                         {renderFieldValue(budget, 'period_start')}
-                      </td>
-                      <td className="p-4">
+                      </TableCell>
+                      <TableCell>
                         {renderFieldValue(budget, 'period_end')}
-                      </td>
-                      <td className="p-4">
+                      </TableCell>
+                      <TableCell>
                         {renderFieldValue(budget, 'type')}
-                      </td>
-                      <td className="p-4">
+                      </TableCell>
+                      <TableCell>
                         {renderFieldValue(budget, 'status')}
-                      </td>
-                      <td className="p-4">
+                      </TableCell>
+                      <TableCell>
                         {budget.currency ? (
                           <span className="text-sm font-mono">{budget.currency}</span>
                         ) : (
@@ -559,14 +597,14 @@ export function DataClinicBudgets() {
                             Missing
                           </Badge>
                         )}
-                      </td>
-                      <td className="p-4 text-right">
+                      </TableCell>
+                      <TableCell className="text-right">
                         {renderFieldValue(budget, 'value')}
-                      </td>
-                      <td className="p-4">
+                      </TableCell>
+                      <TableCell>
                         {renderFieldValue(budget, 'value_date')}
-                      </td>
-                      <td className="p-4 text-right">
+                      </TableCell>
+                      <TableCell className="text-right">
                         {budget.value_usd || budget.usd_value ? (
                           <span className="text-body font-medium">
                             {renderMoney(budget.value_usd || budget.usd_value || 0, 'USD')}
@@ -577,13 +615,12 @@ export function DataClinicBudgets() {
                             Missing
                           </Badge>
                         )}
-                      </td>
-                    </tr>
-                  ))
+                      </TableCell>
+                    </TableRow>
+                  ); })())
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
         </CardContent>
       </Card>
     </div>

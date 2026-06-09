@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { 
   AlertCircle, 
@@ -145,6 +147,7 @@ export function DataClinicTransactions() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [organizations, setOrganizations] = useState<ComboboxOrg[]>([]);
   const [linking, setLinking] = useState<{ id: string; side: 'provider' | 'receiver' } | null>(null);
+  const [grouped, setGrouped] = useState(false);
 
   // Org list for the "link organisation" dropdown on unlinked transactions
   useEffect(() => {
@@ -314,6 +317,19 @@ export function DataClinicTransactions() {
       }
     });
   }, [filteredTransactions, sortField, sortDirection]);
+
+  // Transactions grouped by their activity (preserving sort order of groups)
+  const txGroups = useMemo(() => {
+    const map = new Map<string, { activityId: string; title: string; acronym?: string; rows: Transaction[] }>();
+    for (const t of sortedTransactions) {
+      const key = t.activityId || t.activityTitle || 'unknown';
+      if (!map.has(key)) {
+        map.set(key, { activityId: t.activityId, title: t.activityTitle || 'Unknown Activity', acronym: t.activityAcronym, rows: [] });
+      }
+      map.get(key)!.rows.push(t);
+    }
+    return Array.from(map.values());
+  }, [sortedTransactions]);
 
   const isSuperUser = user?.role === 'super_user';
 
@@ -626,6 +642,12 @@ export function DataClinicTransactions() {
                 <SelectItem value="missing_value">Missing Value</SelectItem>
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-2 px-3 py-1.5 border rounded-md bg-background">
+              <Switch id="tx-group-by-activity" checked={grouped} onCheckedChange={setGrouped} />
+              <Label htmlFor="tx-group-by-activity" className="text-body cursor-pointer whitespace-nowrap">
+                Group by Activity
+              </Label>
+            </div>
             <Button
               variant="outline"
               onClick={() => fetchTransactionsWithGaps()}
@@ -672,12 +694,11 @@ export function DataClinicTransactions() {
       {/* Transactions Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1120px]">
-              <thead className="border-b bg-surface-muted">
-                <tr>
+          <Table className="border-0 min-w-[1120px]">
+              <TableHeader>
+                <TableRow>
                   {isSuperUser && (
-                    <th className="px-4 py-3 text-left w-10">
+                    <TableHead className="w-10">
                       <Checkbox
                         checked={selectedTransactions.size === filteredTransactions.length && filteredTransactions.length > 0}
                         onCheckedChange={(checked) => {
@@ -688,52 +709,67 @@ export function DataClinicTransactions() {
                           }
                         }}
                       />
-                    </th>
+                    </TableHead>
                   )}
-                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[240px] ${sortableHeaderClasses}`} onClick={() => handleSort('activity')}>
-                    <div className="flex items-center gap-1 whitespace-nowrap">Activity {getSortIcon('activity', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[140px] ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
+                  <TableHead className={`align-top min-w-[240px] ${sortableHeaderClasses}`} onClick={() => handleSort('activity')}>
+                    <div className="flex items-center gap-1 whitespace-nowrap">Activity Title {getSortIcon('activity', sortField, sortDirection)}</div>
+                  </TableHead>
+                  <TableHead className={`align-top min-w-[140px] ${sortableHeaderClasses}`} onClick={() => handleSort('type')}>
                     <div className="flex items-center gap-1 whitespace-nowrap">Type {getSortIcon('type', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[120px] ${sortableHeaderClasses}`} onClick={() => handleSort('date')}>
+                  </TableHead>
+                  <TableHead className={`align-top min-w-[120px] ${sortableHeaderClasses}`} onClick={() => handleSort('date')}>
                     <div className="flex items-center gap-1 whitespace-nowrap">Date {getSortIcon('date', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`px-4 py-3 text-right align-top text-body font-medium min-w-[140px] ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
+                  </TableHead>
+                  <TableHead className={`text-right align-top min-w-[140px] ${sortableHeaderClasses}`} onClick={() => handleSort('value')}>
                     <div className="flex items-center justify-end gap-1 whitespace-nowrap">Original Value {getSortIcon('value', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`px-4 py-3 text-right align-top text-body font-medium min-w-[140px] ${sortableHeaderClasses}`} onClick={() => handleSort('usdValue')}>
+                  </TableHead>
+                  <TableHead className={`text-right align-top min-w-[140px] ${sortableHeaderClasses}`} onClick={() => handleSort('usdValue')}>
                     <div className="flex items-center justify-end gap-1 whitespace-nowrap">USD Value {getSortIcon('usdValue', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[170px] ${sortableHeaderClasses}`} onClick={() => handleSort('financeType')}>
+                  </TableHead>
+                  <TableHead className={`align-top min-w-[170px] ${sortableHeaderClasses}`} onClick={() => handleSort('financeType')}>
                     <div className="flex items-center gap-1 whitespace-nowrap">Finance Type {getSortIcon('financeType', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[190px] ${sortableHeaderClasses}`} onClick={() => handleSort('aidType')}>
+                  </TableHead>
+                  <TableHead className={`align-top min-w-[190px] ${sortableHeaderClasses}`} onClick={() => handleSort('aidType')}>
                     <div className="flex items-center gap-1 whitespace-nowrap">Aid Type {getSortIcon('aidType', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[120px] ${sortableHeaderClasses}`} onClick={() => handleSort('flowType')}>
+                  </TableHead>
+                  <TableHead className={`align-top min-w-[120px] ${sortableHeaderClasses}`} onClick={() => handleSort('flowType')}>
                     <div className="flex items-center gap-1 whitespace-nowrap">Flow Type {getSortIcon('flowType', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('provider')}>
+                  </TableHead>
+                  <TableHead className={`align-top min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('provider')}>
                     <div className="flex items-center gap-1 whitespace-nowrap">Provider {getSortIcon('provider', sortField, sortDirection)}</div>
-                  </th>
-                  <th className={`px-4 py-3 text-left align-top text-body font-medium min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('receiver')}>
+                  </TableHead>
+                  <TableHead className={`align-top min-w-[200px] ${sortableHeaderClasses}`} onClick={() => handleSort('receiver')}>
                     <div className="flex items-center gap-1 whitespace-nowrap">Receiver {getSortIcon('receiver', sortField, sortDirection)}</div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {sortedTransactions.length === 0 ? (
-                  <tr>
-                    <td colSpan={isSuperUser ? 11 : 10} className="p-8 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={isSuperUser ? 11 : 10} className="p-8 text-center text-muted-foreground">
                       No transactions found with data gaps
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  sortedTransactions.map((transaction) => (
-                    <tr key={transaction.id} className="border-b hover:bg-muted/50">
+                  (grouped
+                    ? txGroups.flatMap((g) => [{ _header: g } as any, ...g.rows.map((t) => ({ _tx: t } as any))])
+                    : sortedTransactions.map((t) => ({ _tx: t } as any))
+                  ).map((item: any) => item._header ? (
+                    <TableRow key={`grp-${item._header.activityId || item._header.title}`} className="bg-surface-muted/60">
+                      <TableCell colSpan={isSuperUser ? 11 : 10}>
+                        <Link
+                          href={`/activities/${item._header.activityId}`}
+                          className="font-medium no-underline hover:opacity-70 transition-opacity"
+                        >
+                          {item._header.title}{item._header.acronym ? ` (${item._header.acronym})` : ''}
+                        </Link>
+                        <span className="ml-2 text-helper text-muted-foreground">({item._header.rows.length})</span>
+                      </TableCell>
+                    </TableRow>
+                  ) : (() => { const transaction = item._tx; return (
+                    <TableRow key={transaction.id}>
                       {isSuperUser && (
-                        <td className="px-4 py-3 align-top">
+                        <TableCell className="align-top">
                           <Checkbox
                             checked={selectedTransactions.has(transaction.id)}
                             onCheckedChange={(checked) => {
@@ -746,21 +782,23 @@ export function DataClinicTransactions() {
                               setSelectedTransactions(newSelected);
                             }}
                           />
-                        </td>
+                        </TableCell>
                       )}
-                      <td className="px-4 py-3 align-top group">
-                        <Link
-                          href={`/activities/${transaction.activityId}`}
-                          className="font-medium break-words no-underline hover:opacity-70 transition-opacity"
-                        >
-                          {transaction.activityTitle || 'Unknown Activity'}
-                          {transaction.activityAcronym ? ` (${transaction.activityAcronym})` : ''}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 align-top">
+                      <TableCell className="align-top group">
+                        {!grouped && (
+                          <Link
+                            href={`/activities/${transaction.activityId}`}
+                            className="font-medium break-words no-underline hover:opacity-70 transition-opacity"
+                          >
+                            {transaction.activityTitle || 'Unknown Activity'}
+                            {transaction.activityAcronym ? ` (${transaction.activityAcronym})` : ''}
+                          </Link>
+                        )}
+                      </TableCell>
+                      <TableCell className="align-top">
                         {renderFieldValue(transaction, 'transactionType')}
-                      </td>
-                      <td className="px-4 py-3 align-top">
+                      </TableCell>
+                      <TableCell className="align-top">
                         {transaction.transactionDate ? (
                           <div className="flex items-center gap-2">
                             <span className="text-body whitespace-nowrap">
@@ -785,8 +823,8 @@ export function DataClinicTransactions() {
                             Missing
                           </Badge>
                         )}
-                      </td>
-                      <td className="px-4 py-3 align-top text-right">
+                      </TableCell>
+                      <TableCell className="align-top text-right">
                         {transaction.value && transaction.currency ? (
                           <span className="text-body font-medium">
                             {renderMoney(transaction.value, transaction.currency)}
@@ -797,8 +835,8 @@ export function DataClinicTransactions() {
                             Missing
                           </Badge>
                         )}
-                      </td>
-                      <td className="px-4 py-3 align-top text-right">
+                      </TableCell>
+                      <TableCell className="align-top text-right">
                         {transaction.valueUsd != null ? (
                           <span className="text-body font-medium">
                             {renderMoney(transaction.valueUsd, 'USD')}
@@ -809,28 +847,27 @@ export function DataClinicTransactions() {
                             Missing
                           </Badge>
                         )}
-                      </td>
-                      <td className="px-4 py-3 align-top">
+                      </TableCell>
+                      <TableCell className="align-top">
                         {renderFieldValue(transaction, 'financeType')}
-                      </td>
-                      <td className="px-4 py-3 align-top">
+                      </TableCell>
+                      <TableCell className="align-top">
                         {renderFieldValue(transaction, 'aidType')}
-                      </td>
-                      <td className="px-4 py-3 align-top">
+                      </TableCell>
+                      <TableCell className="align-top">
                         {renderFieldValue(transaction, 'flowType')}
-                      </td>
-                      <td className="px-4 py-3 align-top">
+                      </TableCell>
+                      <TableCell className="align-top">
                         {renderOrgCell(transaction, 'provider')}
-                      </td>
-                      <td className="px-4 py-3 align-top">
+                      </TableCell>
+                      <TableCell className="align-top">
                         {renderOrgCell(transaction, 'receiver')}
-                      </td>
-                    </tr>
-                  ))
+                      </TableCell>
+                    </TableRow>
+                  ); })())
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
         </CardContent>
       </Card>
     </div>

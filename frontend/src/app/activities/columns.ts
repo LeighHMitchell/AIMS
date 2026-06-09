@@ -107,7 +107,7 @@ export const activityColumns: ColumnConfig<ActivityColumnId>[] = [
   // Default columns
   { id: "checkbox", label: "Select", group: "default", alwaysVisible: true, defaultVisible: true, description: "Select activities for bulk actions like export or delete." },
   { id: "title", label: "Activity Title", group: "default", defaultVisible: true, description: "The name of the activity. Click to view or edit details." },
-  { id: "activityStatus", label: "Activity Status", group: "default", defaultVisible: true, description: "Current lifecycle stage: Pipeline, Implementation, Completion, etc." },
+  { id: "activityStatus", label: "Activity Status", group: "default", defaultVisible: true, description: "Current lifecycle stage: Pipeline, Implementation, Finalisation, etc." },
   { id: "publicationStatus", label: "Publication Status", group: "default", defaultVisible: true, description: "Whether the activity is Draft or Published to external systems." },
   { id: "reportedBy", label: "Reported By", group: "default", defaultVisible: true, description: "The organisation responsible for reporting this activity." },
   { id: "totalBudgeted", label: "Total Budgeted", group: "default", defaultVisible: true, description: "Sum of all budget periods for this activity in USD." },

@@ -49,9 +49,29 @@ export function DiagramDialog({
         // assigning the returned svg to innerHTML below is safe.
         mermaid.initialize({
           startOnLoad: false,
-          theme: "default",
+          theme: "base",
           securityLevel: "strict",
-          flowchart: { useMaxWidth: true, htmlLabels: false, curve: "basis" },
+          // Tier band titles: larger + bold. Injected into the SVG's <style>;
+          // survives securityLevel 'strict' (verified).
+          themeCSS:
+            ".cluster-label text, .cluster-label tspan, .cluster-label .nodeLabel { font-weight: 700; font-size: 19px; }",
+          themeVariables: {
+            fontFamily:
+              'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+            fontSize: "13px",
+            lineColor: "#94a3b8",
+            primaryColor: "#f1f5f9",
+            primaryBorderColor: "#cbd5e1",
+            primaryTextColor: "#334155",
+          },
+          flowchart: {
+            useMaxWidth: true,
+            htmlLabels: false,
+            curve: "basis",
+            nodeSpacing: 45,
+            rankSpacing: 70,
+            padding: 10,
+          },
         });
         const id = "pl-mermaid-" + Math.random().toString(36).slice(2);
         const { svg } = await mermaid.render(id, definition);

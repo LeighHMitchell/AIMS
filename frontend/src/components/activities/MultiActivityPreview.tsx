@@ -146,8 +146,8 @@ export function MultiActivityPreview({
     const statusMap: Record<string, string> = {
       '1': 'Pipeline/Identification',
       '2': 'Implementation',
-      '3': 'Completion',
-      '4': 'Post-completion',
+      '3': 'Finalisation',
+      '4': 'Closed',
       '5': 'Cancelled',
       '6': 'Suspended',
     };

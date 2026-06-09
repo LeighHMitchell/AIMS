@@ -64,11 +64,11 @@ const getStatusLabel = (status?: string) => {
   
   const statusMap: { [key: string]: string } = {
     '1': 'Pipeline',
-    '2': 'Active',
-    '3': 'Completed',
-    '4': 'Suspended',
+    '2': 'Implementation',
+    '3': 'Finalisation',
+    '4': 'Closed',
     '5': 'Cancelled',
-    '6': 'Post-Completion'
+    '6': 'Suspended'
   };
   
   return statusMap[status] || 'Unknown';

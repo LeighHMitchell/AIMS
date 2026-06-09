@@ -358,7 +358,7 @@ export default function BudgetMappingTab({
             </div>
 
             {/* Skeleton for first budget mapping */}
-            <div className="bg-white rounded-lg overflow-hidden shadow-sm">
+            <div className="bg-white overflow-hidden shadow-sm">
               <div className="bg-white px-4 py-3 flex items-center justify-between border-b">
                 <div className="flex-1">
                   <Skeleton className="h-5 w-64 mb-2" />

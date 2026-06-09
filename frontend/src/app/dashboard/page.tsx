@@ -29,8 +29,6 @@ import {
   ClipboardList,
   Bell,
   Users,
-  Minimize2,
-  Maximize2,
 } from "lucide-react"
 import {
   AidFlowsIcon,
@@ -45,6 +43,7 @@ import { DashboardHeroCards } from "@/components/dashboard/DashboardHeroCards"
 import { RecencyCards } from "@/components/dashboard/RecencyCards"
 import { ActionsRequiredPanel } from "@/components/dashboard/ActionsRequiredPanel"
 import { DataQualitySummaryCard } from "@/components/dashboard/DataQualitySummaryCard"
+import { WorkspaceOrgSwitcher, ViewingAsIndicator } from "@/components/dashboard/WorkspaceOrgSwitcher"
 import { OrgFinancialTabs } from "@/components/dashboard/OrgFinancialTabs"
 import { OrgActivitiesMap } from "@/components/dashboard/OrgActivitiesMap"
 import { OrgSankeyFlow } from "@/components/dashboard/OrgSankeyFlow"
@@ -68,28 +67,13 @@ export default function Dashboard() {
   const { data: unreadNotificationCount = 0 } = useNotificationCount(user?.id);
 
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
-  const [isCompact, setIsCompact] = useState(false);
+  // Header always renders expanded — the compact-mode toggle was removed.
+  const isCompact = false;
+  // Super users can view the workspace from another organisation's perspective.
+  // null = the user's own organisation; otherwise the selected org's id.
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
 
   const isVisitor = isVisitorUser(user);
-
-  // Load compact-mode preference from localStorage
-  useEffect(() => {
-    try {
-      if (window.localStorage.getItem('aims:dashboard-compact') === 'true') {
-        setIsCompact(true);
-      }
-    } catch {}
-  }, []);
-
-  const toggleCompact = () => {
-    setIsCompact((prev) => {
-      const next = !prev;
-      try {
-        window.localStorage.setItem('aims:dashboard-compact', String(next));
-      } catch {}
-      return next;
-    });
-  };
 
   // Sync tab with URL search params (e.g. when navigating from nav bar)
   // For visitors, force blocked tabs to 'overview'
@@ -252,7 +236,12 @@ export default function Dashboard() {
     );
   }
 
-  // Main dashboard view - organization scoped
+  // Main dashboard view - organization scoped. Super users can switch the
+  // viewed organisation; everyone else is pinned to their own org.
+  const isSuperUser = user.role === USER_ROLES.SUPER_USER;
+  // This render is only reached once the user's organisation is resolved (see
+  // the no-org guard above), so the viewed org id is always a string.
+  const viewOrgId = ((isSuperUser && selectedOrgId) || user.organizationId) as string;
   return (
     <MainLayout>
       <div className="w-full">
@@ -333,6 +322,10 @@ export default function Dashboard() {
                               <span> ({user.organization.acronym})</span>
                             )}
                           </Link>
+                          {/* Super user viewing another org's perspective */}
+                          {isSuperUser && selectedOrgId && selectedOrgId !== user.organizationId && (
+                            <ViewingAsIndicator orgId={selectedOrgId} />
+                          )}
                         </p>
                       )}
                     </>
@@ -340,17 +333,16 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Compact-mode toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleCompact}
-                aria-label={isCompact ? "Expand dashboard header" : "Compact dashboard view"}
-                title={isCompact ? "Expand header" : "Compact view"}
-                className="shrink-0 mt-1 text-muted-foreground hover:text-foreground"
-              >
-                {isCompact ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
-              </Button>
+              {/* Super-user org-perspective switcher (top-right of the header) */}
+              {isSuperUser && (
+                <div className="shrink-0 mt-1">
+                  <WorkspaceOrgSwitcher
+                    value={viewOrgId}
+                    onChange={setSelectedOrgId}
+                    onReset={() => setSelectedOrgId(null)}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Dashboard Tabs */}
@@ -411,23 +403,23 @@ export default function Dashboard() {
               <TabsContent value="overview" className="space-y-6">
                 {/* Row 1: Dashboard Hero Cards (dual-metric cards) */}
                 <div data-tour="hero-cards">
-                  <DashboardHeroCards organizationId={user.organizationId} userId={user.id} />
+                  <DashboardHeroCards organizationId={viewOrgId} userId={user.id} />
                 </div>
 
                 {/* Row 2: Hero Visualization Cards (charts) */}
                 <div data-tour="hero-charts">
-                  <HeroVisualizationCards organizationId={user.organizationId} />
+                  <HeroVisualizationCards organizationId={viewOrgId} />
                 </div>
 
                 {/* Row 3: Recency Cards */}
                 <div data-tour="recency-cards">
-                  <RecencyCards organizationId={user.organizationId} />
+                  <RecencyCards organizationId={viewOrgId} />
                 </div>
 
                 {/* Row 4: Actions Required Panel (Highest Priority) */}
                 <div data-tour="actions-required">
                 <ActionsRequiredPanel
-                  organizationId={user.organizationId}
+                  organizationId={viewOrgId}
                   userId={user.id}
                 />
                 </div>
@@ -437,29 +429,29 @@ export default function Dashboard() {
 
                 {/* Row 5: Organisation Financial Data Tabs */}
                 <div data-tour="org-financial-data">
-                  <OrgFinancialTabs organizationId={user.organizationId} userId={user.id} context="overview" />
+                  <OrgFinancialTabs organizationId={viewOrgId} userId={user.id} context="overview" />
                 </div>
               </TabsContent>
 
               {/* My Portfolio Tab Content */}
               <TabsContent value="my-portfolio" className="space-y-6">
-                <MyPortfolioTab userId={user.id} organizationId={user.organizationId} />
+                <MyPortfolioTab userId={user.id} organizationId={viewOrgId} />
               </TabsContent>
 
 
               {/* Locations Tab Content */}
               <TabsContent value="locations" className="space-y-6">
-                <OrgActivitiesMap organizationId={user.organizationId} />
+                <OrgActivitiesMap organizationId={viewOrgId} />
               </TabsContent>
 
               {/* Aid Flows Tab Content */}
               <TabsContent value="flows" className="space-y-6">
-                <OrgSankeyFlow organizationId={user.organizationId} />
+                <OrgSankeyFlow organizationId={viewOrgId} />
               </TabsContent>
 
               {/* Validation Rules Check Tab Content */}
               <TabsContent value="data-clinic" className="space-y-6">
-                <ValidationRulesCard organizationId={user.organizationId} />
+                <ValidationRulesCard organizationId={viewOrgId} />
               </TabsContent>
 
               {/* Bookmarks Tab Content */}
@@ -489,7 +481,7 @@ export default function Dashboard() {
 
               {/* My Team Tab Content */}
               <TabsContent value="my-team" className="space-y-6">
-                <MyTeamTab organizationId={user.organizationId} />
+                <MyTeamTab organizationId={viewOrgId} />
               </TabsContent>
 
               {/* Notifications Tab Content */}

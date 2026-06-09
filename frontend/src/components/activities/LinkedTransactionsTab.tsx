@@ -280,7 +280,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-card rounded-lg shadow overflow-hidden">
+      <div className="bg-card shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-border">
             <thead className="bg-surface-muted">

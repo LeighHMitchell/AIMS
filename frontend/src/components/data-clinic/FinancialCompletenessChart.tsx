@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   BarChart,
   Bar,
@@ -87,9 +88,8 @@ function SeverityBadge({ severity }: { severity: Severity }) {
 }
 
 // Custom Y-axis tick component that renders clickable, wrapping activity titles
-const CustomYAxisTick = ({ x, y, payload, data, width }: any) => {
+const CustomYAxisTick = ({ x, y, payload, data, maxChars = 45 }: any) => {
   const activity = data.find((d: any) => d.title === payload.value);
-  const maxWidth = width - 10;
   const lineHeight = 14;
   
   const handleClick = () => {
@@ -98,8 +98,8 @@ const CustomYAxisTick = ({ x, y, payload, data, width }: any) => {
     }
   };
 
-  // Simple word wrapping
-  const wrapText = (text: string, maxCharsPerLine: number): string[] => {
+  // Simple word wrapping, capped at `maxLines` (last line ellipsised).
+  const wrapText = (text: string, maxCharsPerLine: number, maxLines: number): string[] => {
     const words = text.split(' ');
     const lines: string[] = [];
     let currentLine = '';
@@ -113,18 +113,23 @@ const CustomYAxisTick = ({ x, y, payload, data, width }: any) => {
       }
     });
     if (currentLine) lines.push(currentLine);
-    
-    // Limit to 3 lines max
-    if (lines.length > 3) {
-      lines.length = 3;
-      lines[2] = lines[2].substring(0, lines[2].length - 3) + '...';
+
+    if (lines.length > maxLines) {
+      lines.length = maxLines;
+      lines[maxLines - 1] = lines[maxLines - 1].substring(0, lines[maxLines - 1].length - 3) + '...';
     }
-    
+
     return lines;
   };
 
-  const labelText = activity?.acronym ? `${payload.value} (${activity.acronym})` : payload.value;
-  const lines = wrapText(labelText, 45);
+  // Wrap the title alone, then render the acronym (if any) as its own
+  // guaranteed line so it's never truncated away by a long title.
+  const acronym = activity?.acronym as string | undefined;
+  const titleLines = wrapText(payload.value, maxChars, acronym ? 2 : 3);
+  const lines = [
+    ...titleLines.map((text) => ({ text, muted: false })),
+    ...(acronym ? [{ text: `(${acronym})`, muted: true }] : []),
+  ];
   const totalHeight = lines.length * lineHeight;
   const startY = -totalHeight / 2 + lineHeight / 2;
 
@@ -136,11 +141,12 @@ const CustomYAxisTick = ({ x, y, payload, data, width }: any) => {
           x={-5}
           y={startY + index * lineHeight}
           textAnchor="end"
-          fill="#334155"
+          fill={line.muted ? '#64748b' : '#334155'}
           fontSize={11}
+          fontWeight={line.muted ? 600 : 400}
           className="hover:font-medium"
         >
-          {line}
+          {line.text}
         </text>
       ))}
     </g>
@@ -152,6 +158,9 @@ export function FinancialCompletenessChart({ data, loading, collapsedHeight = 38
   const [sortField, setSortField] = useState<SortField>('overspend');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [isExpanded, setIsExpanded] = useState(false);
+  // Latest cursor position (page coords), so the portal'd tooltip can sit at
+  // the cursor without being clipped by the chart's scroll container.
+  const mouseRef = useRef({ x: 0, y: 0 });
 
   // Drive the chart/table order from the filters' "Sort by" selection.
   React.useEffect(() => {
@@ -222,14 +231,29 @@ export function FinancialCompletenessChart({ data, loading, collapsedHeight = 38
     });
   }, [data, sortField, sortDirection]);
 
-  // Custom tooltip component
+  // Custom tooltip component — rendered in a portal at the cursor so it is
+  // never clipped by the chart's scroll/overflow container in the expanded modal.
   const CustomTooltip = ({ active, payload }: any) => {
     if (!active || !payload || payload.length === 0) return null;
-    
+    if (typeof document === 'undefined') return null;
+
     const item = payload[0].payload as FinancialCompletenessActivity & { fullName: string };
 
-    return (
-      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-sm">
+    const TT_W = 320;
+    const TT_H = 240;
+    const PAD = 12;
+    const { x, y } = mouseRef.current;
+    let left = x + 16;
+    let top = y + 16;
+    if (left + TT_W > window.innerWidth - PAD) left = x - TT_W - 16;
+    if (left < PAD) left = PAD;
+    if (top + TT_H > window.innerHeight - PAD) top = Math.max(PAD, window.innerHeight - TT_H - PAD);
+
+    return createPortal(
+      <div
+        style={{ position: 'fixed', left, top, width: TT_W, zIndex: 10010, pointerEvents: 'none' }}
+        className="bg-white border border-border rounded-lg shadow-lg overflow-hidden"
+      >
         <div className="bg-muted px-3 py-2 border-b border-border">
           <p className="font-semibold text-foreground text-body">
             {item.fullName}{item.acronym ? ` (${item.acronym})` : ''}
@@ -241,42 +265,43 @@ export function FinancialCompletenessChart({ data, loading, collapsedHeight = 38
           )}
         </div>
         <div className="p-2">
-          <table className="w-full text-body">
-            <tbody>
-              <tr className="border-b border-border">
-                <td className="py-1.5 pr-4 text-foreground font-medium">Budgeted</td>
-                <td className="py-1.5 text-right font-semibold text-foreground">
+          <Table className="w-full text-body">
+            <TableBody>
+              <TableRow>
+                <TableCell className="pr-4 text-foreground font-medium">Budgeted</TableCell>
+                <TableCell className="text-right font-semibold text-foreground">
                   {formatCurrencyFull(item.total_budgeted_usd)}
-                </td>
-              </tr>
-              <tr className="border-b border-border">
-                <td className="py-1.5 pr-4 text-foreground font-medium">Disbursed</td>
-                <td className="py-1.5 text-right font-semibold text-foreground">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pr-4 text-foreground font-medium">Disbursed</TableCell>
+                <TableCell className="text-right font-semibold text-foreground">
                   {formatCurrencyFull(item.total_disbursed_usd)}
-                </td>
-              </tr>
-              <tr className="border-b border-border">
-                <td className="py-1.5 pr-4 text-foreground font-medium">Overspend</td>
-                <td className="py-1.5 text-right font-semibold text-destructive">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pr-4 text-foreground font-medium">Overspend</TableCell>
+                <TableCell className="text-right font-semibold text-destructive">
                   {formatCurrencyFull(item.overspend_usd)}
-                </td>
-              </tr>
-              <tr className="border-b border-border">
-                <td className="py-1.5 pr-4 text-foreground font-medium">% Spent</td>
-                <td className="py-1.5 text-right font-semibold text-foreground">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pr-4 text-foreground font-medium">% Spent</TableCell>
+                <TableCell className="text-right font-semibold text-foreground">
                   {formatPercentage(item.percentage_spent)}
-                </td>
-              </tr>
-              <tr>
-                <td className="py-1.5 pr-4 text-foreground font-medium">Budget Periods</td>
-                <td className="py-1.5 text-right font-semibold text-foreground">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="pr-4 text-foreground font-medium">Budget Periods</TableCell>
+                <TableCell className="text-right font-semibold text-foreground">
                   {item.budget_period_count}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   };
 
@@ -325,11 +350,18 @@ export function FinancialCompletenessChart({ data, loading, collapsedHeight = 38
   // Calculate dynamic height based on number of items - taller to accommodate wrapped titles
   const chartHeight = Math.max(400, chartData.length * 70);
 
-  const barChartEl = (
+  // `compact` (collapsed card) uses a narrow label gutter so bars aren't
+  // crammed to the right; the expanded modal gives titles more room. The
+  // left margin is kept small — the YAxis `width` is the single source of
+  // the label gutter (having both pushed the plot area off the card).
+  const renderBarChart = (compact: boolean) => (
     <BarChart
       data={chartData}
       layout="vertical"
-      margin={{ top: 5, right: 30, left: 300, bottom: 5 }}
+      margin={{ top: 5, right: 30, left: 8, bottom: 5 }}
+      onMouseMove={(_state: any, e: any) => {
+        if (e && typeof e.clientX === 'number') mouseRef.current = { x: e.clientX, y: e.clientY };
+      }}
     >
       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
       <XAxis
@@ -341,11 +373,15 @@ export function FinancialCompletenessChart({ data, loading, collapsedHeight = 38
       <YAxis
         type="category"
         dataKey="title"
-        tick={<CustomYAxisTick data={chartData} />}
+        tick={<CustomYAxisTick data={chartData} maxChars={compact ? 22 : 42} />}
         axisLine={{ stroke: '#cbd5e1' }}
-        width={290}
+        width={compact ? 160 : 300}
       />
-      <Tooltip content={<CustomTooltip />} />
+      <Tooltip
+        content={<CustomTooltip />}
+        allowEscapeViewBox={{ x: true, y: true }}
+        wrapperStyle={{ zIndex: 50 }}
+      />
       <Bar dataKey="overspend_usd" radius={[0, 4, 4, 0]}>
         {chartData.map((entry, index) => (
           <Cell key={`cell-${index}`} fill={getSeverityColorFromPercentage(entry.percentage_spent)} />
@@ -536,11 +572,9 @@ export function FinancialCompletenessChart({ data, loading, collapsedHeight = 38
         </div>
       </CardHeader>
       <CardContent>
-        <div className="bg-white rounded-lg border border-border p-4">
-          <ResponsiveContainer width="100%" height={collapsedHeight}>
-            {barChartEl}
-          </ResponsiveContainer>
-        </div>
+        <ResponsiveContainer width="100%" height={collapsedHeight}>
+          {renderBarChart(true)}
+        </ResponsiveContainer>
       </CardContent>
     </Card>
 
@@ -557,7 +591,7 @@ export function FinancialCompletenessChart({ data, loading, collapsedHeight = 38
         <div className="flex-1 mt-4 min-h-0 overflow-auto">
           {viewMode === 'chart' ? (
             <ResponsiveContainer width="100%" height={Math.max(chartHeight, 600)}>
-              {barChartEl}
+              {renderBarChart(false)}
             </ResponsiveContainer>
           ) : tableEl}
         </div>

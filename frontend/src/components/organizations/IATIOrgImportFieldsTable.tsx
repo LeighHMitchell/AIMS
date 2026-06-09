@@ -234,7 +234,7 @@ export function IATIOrgImportFieldsTable({
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>

@@ -5,6 +5,7 @@ import { iatiAnalytics } from '@/lib/analytics';
 import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transaction-usd-helper';
 import { resolveCurrencySync, resolveValueDate } from '@/lib/currency-helpers';
 import { getSystemHomeCountry } from '@/lib/system-settings';
+import { normalizeActivityStatusCode } from '@/lib/activity-status-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -227,7 +228,7 @@ export async function POST(request: NextRequest) {
                 title: isAllowed('iati-activity/title') ? (activity as any).title : null,
                 description: isAllowed('iati-activity/description') ? (activity as any).description : null,
                 iati_id: (activity as any).iatiIdentifier,
-                activity_status: (activity as any).status === 'Implementation' ? 'active' : (activity as any).status === 'Completion' ? 'completed' : (activity as any).status === 'Cancelled' ? 'cancelled' : 'planned',
+                activity_status: normalizeActivityStatusCode((activity as any).status),
                 planned_start_date: isAllowed('iati-activity/activity-date[@type=start-planned]') ? (activity as any).startDate : null,
                 planned_end_date: isAllowed('iati-activity/activity-date[@type=end-planned]') ? (activity as any).endDate : null,
                 partner_id: partnerId,
@@ -332,7 +333,7 @@ export async function POST(request: NextRequest) {
                   title: `[Auto-created] ${(transaction as any).activityRef}`,
                   description: 'Auto-created for imported transaction',
                   iati_id: (transaction as any).activityRef,
-                  activity_status: 'active',
+                  activity_status: '2', // Implementation — minimal stub for an orphan transaction
                   publication_status: 'draft',
                   submission_status: 'not_submitted',
                   planned_start_date: (transaction as any).date || new Date().toISOString().split('T')[0],
@@ -739,10 +740,8 @@ export async function POST_LEGACY(request: NextRequest) {
           title: activity.title,
           description: activity.description,
           iati_id: activity.iatiIdentifier,
-          // Map IATI status to database status
-          activity_status: activity.status === 'Implementation' ? 'active' : 
-                          activity.status === 'Completion' ? 'completed' : 
-                          activity.status === 'Cancelled' ? 'cancelled' : 'planned',
+          // Map IATI status (numeric code or text alias) to canonical IATI code
+          activity_status: normalizeActivityStatusCode(activity.status),
           planned_start_date: activity.startDate,
           planned_end_date: activity.endDate,
           partner_id: partnerId, // Use partner_id instead of implementing_organization_id
@@ -1009,7 +1008,7 @@ export async function POST_LEGACY(request: NextRequest) {
             title: `[Auto-created] ${activityRef}`,
             description: `This activity was automatically created to accommodate imported transactions. Please update with complete activity details.`,
             iati_id: activityRef,
-            activity_status: 'active',
+            activity_status: '2', // Implementation — minimal stub for orphan transactions
             publication_status: 'draft',
             submission_status: 'not_submitted',
             // Try to infer dates from transactions

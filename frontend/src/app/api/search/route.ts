@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
 
 
   const startTime = Date.now()
-  let searchAnalyticsData = null
 
   try {
     const searchParams = request.nextUrl.searchParams
@@ -54,15 +53,6 @@ export async function GET(request: NextRequest) {
         limit,
         hasMore: false
       })
-    }
-
-    // Track search analytics with authenticated user ID
-    searchAnalyticsData = {
-      search_query: query,
-      search_type: 'global',
-      user_id: user?.id || null,
-      ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-      user_agent: request.headers.get('user-agent') || 'unknown'
     }
 
     const searchTerm = query  // Already sanitized above
@@ -242,22 +232,6 @@ export async function GET(request: NextRequest) {
 
     const hasMore = offset + limit < totalResults
     const responseTime = Date.now() - startTime
-
-    // Record search analytics (don't await to not block response)
-    if (searchAnalyticsData) {
-      supabase
-        .from('search_analytics')
-        .insert({
-          ...searchAnalyticsData,
-          result_count: totalResults,
-          response_time_ms: responseTime
-        })
-        .then(() => {})
-        .catch((analyticsError) => {
-          console.warn('[AIMS API] Failed to record search analytics:', analyticsError)
-        })
-    }
-
 
     // Extract search terms for highlighting
     const searchTerms = extractSearchTerms(query)

@@ -17,6 +17,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  getSortIcon,
+  sortableHeaderClasses,
 } from "@/components/ui/table"
 import {
   Dialog,
@@ -29,7 +31,8 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
-import { Plus, Pencil, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon, HelpCircle, ChevronDown, X, RefreshCw } from 'lucide-react'
+import { useSystemSettings } from '@/contexts/SystemSettingsContext'
+import { Plus, Pencil, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon, HelpCircle, ChevronDown, X, RefreshCw, MapPin } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed'
@@ -69,6 +72,10 @@ export default function OrganizationFundingEnvelopeTab({
   readOnly = false
 }: OrganizationFundingEnvelopeTabProps) {
   const { confirm, ConfirmDialog } = useConfirmDialog()
+  const { settings } = useSystemSettings()
+  // The AIMS deployment country — every funding envelope is an annual budget
+  // for this country (IATI recipient-country-budget).
+  const deploymentCountryName = settings?.homeCountryData?.name || settings?.homeCountry || 'this country'
   const [envelopes, setEnvelopes] = useState<OrganizationFundingEnvelope[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -161,11 +168,7 @@ export default function OrganizationFundingEnvelopeTab({
         amount: 0,
         currency: 'USD',
         value_date: null,
-        flow_direction: 'incoming',
-        organization_role: 'original_funder',
-        funding_type_flags: [],
         status: 'indicative',
-        confidence_level: null,
         notes: null
       })
     }
@@ -190,22 +193,12 @@ export default function OrganizationFundingEnvelopeTab({
       errors.year_start = 'Valid year (1990-2100) is required'
     }
 
-    if (editingEnvelope.period_type === 'multi_year') {
-      if (!editingEnvelope.year_end || editingEnvelope.year_end < editingEnvelope.year_start) {
-        errors.year_end = 'End year must be >= start year'
-      }
-    }
-
     if (!editingEnvelope.amount || editingEnvelope.amount <= 0) {
       errors.amount = 'Amount must be greater than 0'
     }
 
     if (!editingEnvelope.currency) {
       errors.currency = 'Currency is required'
-    }
-
-    if (!editingEnvelope.organization_role) {
-      errors.organization_role = 'Organisation role is required'
     }
 
     if (!editingEnvelope.status) {
@@ -430,21 +423,59 @@ export default function OrganizationFundingEnvelopeTab({
     return 'Future'
   }
 
-  // Sort all envelopes by year (descending) then by category
-  const sortedEnvelopes = useMemo(() => {
-    return [...envelopes].sort((a, b) => {
-      const aEnd = a.year_end || a.year_start
-      const bEnd = b.year_end || b.year_start
-      if (bEnd !== aEnd) {
-        return bEnd - aEnd
+  // Sortable columns. Default: by Period, most recent first.
+  type EnvelopeSortField = 'category' | 'period' | 'amount' | 'valueDate' | 'usd' | 'status'
+  const [sortField, setSortField] = useState<EnvelopeSortField>('period')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+
+  const handleSort = (field: EnvelopeSortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortField(field)
+      // Period and amount feel most useful descending first; text columns ascending.
+      setSortDirection(field === 'period' || field === 'amount' || field === 'usd' ? 'desc' : 'asc')
+    }
+  }
+
+  // Return a comparable value for a given column.
+  const getSortValue = (envelope: OrganizationFundingEnvelope, field: EnvelopeSortField): number | string => {
+    switch (field) {
+      case 'category': {
+        const order = { past: 0, current: 1, future: 2 }
+        return order[getTemporalCategory(envelope, currentYear)]
       }
-      // If same year, sort by category: Past, Current, Future
-      const aCat = getTemporalCategory(a, currentYear)
-      const bCat = getTemporalCategory(b, currentYear)
-      const order = { past: 0, current: 1, future: 2 }
-      return order[aCat] - order[bCat]
+      case 'period':
+        return envelope.year_end || envelope.year_start
+      case 'amount':
+        return envelope.amount_usd ?? envelope.amount ?? 0
+      case 'usd':
+        return envelope.amount_usd ?? 0
+      case 'valueDate':
+        return envelope.value_date ? new Date(envelope.value_date).getTime() : 0
+      case 'status':
+        return ENVELOPE_STATUSES.find(s => s.value === envelope.status)?.label || envelope.status || ''
+      default:
+        return 0
+    }
+  }
+
+  const sortedEnvelopes = useMemo(() => {
+    const dir = sortDirection === 'asc' ? 1 : -1
+    return [...envelopes].sort((a, b) => {
+      const av = getSortValue(a, sortField)
+      const bv = getSortValue(b, sortField)
+      let cmp: number
+      if (typeof av === 'number' && typeof bv === 'number') {
+        cmp = av - bv
+      } else {
+        cmp = String(av).localeCompare(String(bv))
+      }
+      if (cmp !== 0) return dir * cmp
+      // Stable tie-break: most recent period first.
+      return (b.year_end || b.year_start) - (a.year_end || a.year_start)
     })
-  }, [envelopes, currentYear])
+  }, [envelopes, currentYear, sortField, sortDirection])
 
   return (
     <div className="space-y-6">
@@ -475,34 +506,13 @@ export default function OrganizationFundingEnvelopeTab({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg">Funding Envelopes</CardTitle>
+                  <CardTitle className="text-lg">Annual Country Budgets</CardTitle>
                   <p className="text-body text-muted-foreground mt-1">
-                    Record past, current, and future organisation-level funding declarations
+                    Record annual organisation-level budgets for {deploymentCountryName}
                   </p>
                 </div>
                 {!readOnly && (
-                  <Button
-                    onClick={() => {
-                      const newEnvelope: OrganizationFundingEnvelope = {
-                        organization_id: organizationId,
-                        period_type: 'single_year',
-                        year_type: 'calendar',
-                        year_start: currentYear,
-                        year_end: null,
-                        fiscal_year_start_month: null,
-                        amount: 0,
-                        currency: 'USD',
-                        value_date: null,
-                        flow_direction: 'incoming',
-                        organization_role: 'original_funder',
-                        funding_type_flags: [],
-                        status: 'indicative',
-                        confidence_level: null,
-                        notes: null
-                      }
-                      openModal(newEnvelope)
-                    }}
-                  >
+                  <Button onClick={() => openModal()}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Entry
                   </Button>
@@ -537,27 +547,36 @@ export default function OrganizationFundingEnvelopeTab({
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Period</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Value Date</TableHead>
-                          <TableHead>USD Value</TableHead>
-                          <TableHead>Flow</TableHead>
-                          <TableHead>Role</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Funding Types</TableHead>
-                          {!readOnly && <TableHead className="w-[100px] sticky right-0 z-20 bg-surface-muted border-l border-border" />}
+                          <TableHead className={sortableHeaderClasses} onClick={() => handleSort('category')}>
+                            <div className="flex items-center gap-1">Category {getSortIcon('category', sortField, sortDirection)}</div>
+                          </TableHead>
+                          <TableHead className={sortableHeaderClasses} onClick={() => handleSort('period')}>
+                            <div className="flex items-center gap-1">Period {getSortIcon('period', sortField, sortDirection)}</div>
+                          </TableHead>
+                          <TableHead className={sortableHeaderClasses} onClick={() => handleSort('amount')}>
+                            <div className="flex items-center gap-1">Amount {getSortIcon('amount', sortField, sortDirection)}</div>
+                          </TableHead>
+                          <TableHead className={sortableHeaderClasses} onClick={() => handleSort('valueDate')}>
+                            <div className="flex items-center gap-1">Value Date {getSortIcon('valueDate', sortField, sortDirection)}</div>
+                          </TableHead>
+                          <TableHead className={sortableHeaderClasses} onClick={() => handleSort('usd')}>
+                            <div className="flex items-center gap-1">USD Value {getSortIcon('usd', sortField, sortDirection)}</div>
+                          </TableHead>
+                          <TableHead className={sortableHeaderClasses} onClick={() => handleSort('status')}>
+                            <div className="flex items-center gap-1">Status {getSortIcon('status', sortField, sortDirection)}</div>
+                          </TableHead>
+                          {!readOnly && <TableHead className="w-[100px] sticky right-0 z-20 bg-surface-muted text-right">Actions</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {sortedEnvelopes.map((envelope) => {
                           const category = getTemporalCategoryLabel(envelope)
                           return (
-                            <TableRow key={envelope.id}>
+                            <TableRow key={envelope.id} className="group">
                               <TableCell>
                                 {category}
                               </TableCell>
-                              <TableCell className="font-mono text-sm">
+                              <TableCell>
                                 {formatYearRange(envelope)}
                               </TableCell>
                               <TableCell>
@@ -586,39 +605,28 @@ export default function OrganizationFundingEnvelopeTab({
                                 )}
                               </TableCell>
                               <TableCell>
-                                {FLOW_DIRECTIONS.find(f => f.value === envelope.flow_direction)?.label || envelope.flow_direction}
-                              </TableCell>
-                              <TableCell>
-                                {ORGANIZATION_ROLES.find(r => r.value === envelope.organization_role)?.label || envelope.organization_role}
-                              </TableCell>
-                              <TableCell>
                                 {ENVELOPE_STATUSES.find(s => s.value === envelope.status)?.label || envelope.status}
                               </TableCell>
-                              <TableCell>
-                                {envelope.funding_type_flags && envelope.funding_type_flags.length > 0 ? (
-                                  envelope.funding_type_flags
-                                    .map(flag => FUNDING_TYPE_FLAGS.find(f => f.value === flag)?.label || flag)
-                                    .join(', ')
-                                ) : (
-                                  <span className="text-muted-foreground">None</span>
-                                )}
-                              </TableCell>
                               {!readOnly && (
-                                <TableCell className="sticky right-0 z-10 bg-card border-l border-border">
-                                  <div className="flex items-center gap-1">
+                                <TableCell className="sticky right-0 z-10 bg-card">
+                                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                                     <Button
                                       variant="ghost"
-                                      size="sm"
+                                      size="icon"
                                       onClick={() => openModal(envelope)}
                                       disabled={deleteLoading === envelope.id}
+                                      className="h-8 w-8 hover:bg-muted"
+                                      title="Edit envelope"
                                     >
                                       <Pencil className="h-4 w-4 text-muted-foreground" />
                                     </Button>
                                     <Button
                                       variant="ghost"
-                                      size="sm"
+                                      size="icon"
                                       onClick={() => envelope.id && handleDelete(envelope.id)}
                                       disabled={deleteLoading === envelope.id}
+                                      className="h-8 w-8 hover:bg-destructive/10 text-destructive hover:text-destructive"
+                                      title="Delete envelope"
                                     >
                                       {deleteLoading === envelope.id ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -683,62 +691,41 @@ export default function OrganizationFundingEnvelopeTab({
 
             return (
               <div className="space-y-4 py-4">
-                {/* Period Type and Year Type Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Period Type */}
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Label>Period Type <RequiredDot /></Label>
-                      <HelpIcon helpKey="period_type" />
-                    </div>
-                    <Select
-                      value={editingEnvelope.period_type}
-                      onValueChange={(value: 'single_year' | 'multi_year') => {
-                        updateField('period_type', value)
-                        if (value === 'single_year') {
-                          updateField('year_end', null)
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="single_year">Single Year</SelectItem>
-                        <SelectItem value="multi_year">Multi-Year Range</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Country context — every envelope is an annual budget for the
+                    AIMS deployment country (IATI recipient-country-budget). */}
+                <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-body text-muted-foreground">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span>Annual budget for <span className="font-medium text-foreground">{deploymentCountryName}</span></span>
+                </div>
 
-                  {/* Year Type */}
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Label>Year Type <RequiredDot /></Label>
-                      <HelpIcon helpKey="year_type" />
-                    </div>
-                    <Select
-                      value={editingEnvelope.year_type || 'calendar'}
-                      onValueChange={(value: YearType) => {
-                        updateField('year_type', value)
-                        if (value === 'calendar') {
-                          updateField('fiscal_year_start_month', null)
-                        } else if (!editingEnvelope.fiscal_year_start_month) {
-                          updateField('fiscal_year_start_month', 4) // Default to April
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {YEAR_TYPES.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                {/* Year Type */}
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <Label>Year Type <RequiredDot /></Label>
+                    <HelpIcon helpKey="year_type" />
                   </div>
+                  <Select
+                    value={editingEnvelope.year_type || 'calendar'}
+                    onValueChange={(value: YearType) => {
+                      updateField('year_type', value)
+                      if (value === 'calendar') {
+                        updateField('fiscal_year_start_month', null)
+                      } else if (!editingEnvelope.fiscal_year_start_month) {
+                        updateField('fiscal_year_start_month', 4) // Default to April
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {YEAR_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Fiscal Year Start Month (only when fiscal year is selected) */}
@@ -763,12 +750,11 @@ export default function OrganizationFundingEnvelopeTab({
                   </div>
                 )}
 
-                {/* Year Selection Row */}
+                {/* Budget Year — annual budgets only (single year/period) */}
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Year Start */}
                   <div className="space-y-2">
                     <div className="flex items-center">
-                      <Label>{editingEnvelope.period_type === 'multi_year' ? <>Start Year <RequiredDot /></> : <>Year <RequiredDot /></>}</Label>
+                      <Label>Budget Year <RequiredDot /></Label>
                       <HelpIcon helpKey="year_start" />
                     </div>
                     <Select
@@ -792,40 +778,6 @@ export default function OrganizationFundingEnvelopeTab({
                       <p className="text-body text-destructive">{fieldErrors.year_start}</p>
                     )}
                   </div>
-
-                  {/* Year End (only for multi-year) */}
-                  {editingEnvelope.period_type === 'multi_year' ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center">
-                        <Label>End Year <RequiredDot /></Label>
-                        <HelpIcon helpKey="year_end" />
-                      </div>
-                      <Select
-                        value={editingEnvelope.year_end?.toString() || ''}
-                        onValueChange={(value) => updateField('year_end', parseInt(value) || null)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select year" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[200px]">
-                          {yearOptions
-                            .filter(year => year >= (editingEnvelope.year_start || 1990))
-                            .map((year) => (
-                              <SelectItem key={year} value={year.toString()}>
-                                {editingEnvelope.year_type === 'fiscal'
-                                  ? getFiscalYearLabel(year, editingEnvelope.fiscal_year_start_month)
-                                  : year}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      {fieldErrors.year_end && (
-                        <p className="text-body text-destructive">{fieldErrors.year_end}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <div></div>
-                  )}
                 </div>
 
                 {/* Amount, Currency, and Value Date Row */}
@@ -1012,69 +964,8 @@ export default function OrganizationFundingEnvelopeTab({
                   </div>
                 )}
 
-                {/* Flow Direction and Organisation Role Row */}
+                {/* Status — IATI recipient-country-budget @status */}
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Flow Direction */}
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Label>Flow Direction <RequiredDot /></Label>
-                      <HelpIcon helpKey="flow_direction" />
-                    </div>
-                    <Select
-                      value={editingEnvelope.flow_direction}
-                      onValueChange={(value: 'incoming' | 'outgoing') => updateField('flow_direction', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FLOW_DIRECTIONS.map((dir) => (
-                          <SelectItem key={dir.value} value={dir.value}>
-                            {dir.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Organisation Role */}
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Label>Organisation Role <RequiredDot /></Label>
-                      <HelpIcon helpKey="organization_role" />
-                    </div>
-                    <Select
-                      value={editingEnvelope.organization_role}
-                      onValueChange={(value: 'original_funder' | 'fund_manager' | 'implementer') =>
-                        updateField('organization_role', value)
-                      }
-                    >
-                      <SelectTrigger className="h-auto min-h-[40px]">
-                        <span className="text-left py-1">
-                          <span className="block">{selectedRole?.label}</span>
-                          <span className="block text-helper text-muted-foreground">{selectedRole?.description}</span>
-                        </span>
-                      </SelectTrigger>
-                      <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                        {ORGANIZATION_ROLES.map((role) => (
-                          <SelectItem key={role.value} value={role.value} className="py-2">
-                            <div className="text-left">
-                              <div className="font-medium">{role.label}</div>
-                              <div className="text-helper text-muted-foreground">{role.description}</div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {fieldErrors.organization_role && (
-                      <p className="text-body text-destructive">{fieldErrors.organization_role}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Status and Confidence Level Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Status */}
                   <div className="space-y-2">
                     <div className="flex items-center">
                       <Label>Status <RequiredDot /></Label>
@@ -1082,7 +973,7 @@ export default function OrganizationFundingEnvelopeTab({
                     </div>
                     <Select
                       value={editingEnvelope.status}
-                      onValueChange={(value: 'actual' | 'current' | 'indicative') => updateField('status', value)}
+                      onValueChange={(value: 'indicative' | 'committed') => updateField('status', value)}
                     >
                       <SelectTrigger className="h-auto min-h-[40px]">
                         <span className="text-left py-1">
@@ -1104,90 +995,6 @@ export default function OrganizationFundingEnvelopeTab({
                     {fieldErrors.status && (
                       <p className="text-body text-destructive">{fieldErrors.status}</p>
                     )}
-                  </div>
-
-                  {/* Confidence Level */}
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Label>Confidence Level</Label>
-                      <HelpIcon helpKey="confidence_level" />
-                    </div>
-                    <Select
-                      value={editingEnvelope.confidence_level || 'none'}
-                      onValueChange={(value: string) => updateField('confidence_level', value === 'none' ? null : value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select confidence level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {CONFIDENCE_LEVELS.map((level) => (
-                          <SelectItem key={level.value} value={level.value}>
-                            {level.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Funding Type Flags - Full Width Dropdown */}
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <Label>Funding Type Flags</Label>
-                    <HelpIcon helpKey="funding_type_flags" />
-                  </div>
-                  <div className="relative">
-                    <Select
-                      value="_multiselect_placeholder"
-                      onValueChange={(value) => {
-                        if (value !== '_multiselect_placeholder') {
-                          toggleFundingTypeFlag(value as FundingTypeFlag)
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="h-auto min-h-[40px] py-2">
-                        <div className="flex flex-wrap gap-1 items-center w-full">
-                          {editingEnvelope.funding_type_flags && editingEnvelope.funding_type_flags.length > 0 ? (
-                            editingEnvelope.funding_type_flags.map(flag => (
-                              <Badge
-                                key={flag}
-                                variant="secondary"
-                                className="flex items-center gap-1 pr-1 text-helper"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleFundingTypeFlag(flag)
-                                }}
-                              >
-                                {FUNDING_TYPE_FLAGS.find(f => f.value === flag)?.label || flag}
-                                <X className="h-3 w-3 hover:bg-gray-300 rounded-full cursor-pointer" />
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-muted-foreground">Select funding types...</span>
-                          )}
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FUNDING_TYPE_FLAGS.map((flag) => {
-                          const isSelected = editingEnvelope.funding_type_flags?.includes(flag.value as FundingTypeFlag)
-                          return (
-                            <SelectItem
-                              key={flag.value}
-                              value={flag.value}
-                              className="cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2">
-                                <div className={`w-4 h-4 border rounded flex items-center justify-center ${isSelected ? 'bg-primary border-primary' : 'border-input'}`}>
-                                  {isSelected && <span className="text-white text-helper">✓</span>}
-                                </div>
-                                <span>{flag.label}</span>
-                              </div>
-                            </SelectItem>
-                          )
-                        })}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 

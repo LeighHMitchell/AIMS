@@ -2285,7 +2285,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         <div className="flex items-center gap-2">
           <h3 className="text-body font-semibold text-foreground">Activity Dates</h3>
           <HelpTextTooltip>
-            The Actual Start Date field becomes available once the activity status is set to Implementation or beyond. The Actual End Date field becomes available once the status is set to Completion, Post-completion, or if the activity is marked as Cancelled or Suspended.
+            The Actual Start Date field becomes available once the activity status is set to Implementation or beyond. The Actual End Date field becomes available once the status is set to Finalisation, Closed, or if the activity is marked as Cancelled or Suspended.
           </HelpTextTooltip>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -1,13 +1,99 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, ReactNode } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { AlertCircle, Calendar } from "lucide-react"
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
+import { AlertCircle, Calendar, BarChart3, Table as TableIcon, Download } from "lucide-react"
+import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 import { supabase } from "@/lib/supabase"
+import { Button } from "@/components/ui/button"
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+import { ExpandableChartCard } from "@/components/analytics/ExpandableChartCard"
 import { ActivityFreshnessChart } from "./ActivityFreshnessChart"
 import { StaleTransactionsTable } from "./StaleTransactionsTable"
+
+// Download rows as a CSV file.
+function downloadCsv(filename: string, headers: string[], rows: (string | number)[][]) {
+  const esc = (c: any) => `"${String(c ?? '').replace(/"/g, '""')}"`
+  const csv = [headers.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// Shaded-header hover card for the simple year/count charts.
+function YearCountTooltip({ active, payload, valueLabel = 'Activities' }: any) {
+  if (!active || !payload || payload.length === 0) return null
+  const d = payload[0].payload
+  return (
+    <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-muted px-3 py-2 border-b border-border">
+        <p className="font-semibold text-foreground text-body">Year {d.year}</p>
+      </div>
+      <div className="px-3 py-2 text-body">
+        <span className="text-muted-foreground">{valueLabel}: </span>
+        <span className="font-semibold text-foreground">{d.count}</span>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * A Timeliness chart in the dashboard card style: collapsed shows just the
+ * chart; the expand modal adds the chart/table toggle (icons only), CSV
+ * download, the legend, and an explanatory paragraph.
+ */
+function TimelinessChartCard({
+  title,
+  description,
+  height = 380,
+  renderChart,
+  renderTable,
+  onCsv,
+  footer,
+}: {
+  title: string
+  description: string
+  height?: number
+  renderChart: (expanded: boolean) => ReactNode
+  renderTable: () => ReactNode
+  onCsv: () => void
+  footer: ReactNode
+}) {
+  const [view, setView] = useState<'chart' | 'table'>('chart')
+  const controls = (
+    <div className="flex items-center justify-end gap-1">
+      <div className="flex items-center border rounded-md">
+        <Button variant={view === 'chart' ? 'default' : 'ghost'} size="icon" className="h-8 w-8 rounded-r-none" title="Chart view" onClick={() => setView('chart')}>
+          <BarChart3 className="h-4 w-4" />
+        </Button>
+        <Button variant={view === 'table' ? 'default' : 'ghost'} size="icon" className="h-8 w-8 rounded-l-none" title="Table view" onClick={() => setView('table')}>
+          <TableIcon className="h-4 w-4" />
+        </Button>
+      </div>
+      <Button variant="ghost" size="icon" className="h-8 w-8" title="Download CSV" onClick={onCsv}>
+        <Download className="h-4 w-4" />
+      </Button>
+    </div>
+  )
+  return (
+    <ExpandableChartCard
+      title={title}
+      description={description}
+      height={height}
+      expandedFill
+      expandedControls={controls}
+      expandedChildren={view === 'table' ? renderTable() : renderChart(true)}
+      expandedFooter={footer}
+    >
+      {renderChart(false)}
+    </ExpandableChartCard>
+  )
+}
 
 interface TimelinessData {
   year: number
@@ -220,24 +306,24 @@ export function DataClinicTimeliness() {
           </p>
         </div>
         <div className="p-2">
-          <table className="w-full text-body">
-            <tbody>
+          <Table className="w-full text-body">
+            <TableBody>
               {payload.map((entry: any, index: number) => (
-                <tr key={index} className="border-b border-border last:border-b-0">
-                  <td className="py-1.5 pr-4 flex items-center gap-2">
+                <TableRow key={index}>
+                  <TableCell className="pr-4 flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: entry.color }}
                     />
                     <span className="text-foreground font-medium">{entry.name}</span>
-                  </td>
-                  <td className="py-1.5 text-right font-semibold text-foreground">
+                  </TableCell>
+                  <TableCell className="text-right font-semibold text-foreground">
                     {entry.value}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
     )
@@ -291,323 +377,164 @@ export function DataClinicTimeliness() {
       {/* Activity Data Freshness Chart */}
       <ActivityFreshnessChart />
 
-      {/* Activity Dates Distribution Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Activity Dates Distribution by Year
-          </CardTitle>
-          <CardDescription>
-            Number of activities with planned/actual start/end dates for each year
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {chartData.length === 0 ? (
-            <div className="flex items-center justify-center h-96 text-muted-foreground">
-              <div className="text-center">
-                <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p className="font-medium">No activity date data available</p>
-              </div>
-            </div>
-          ) : (
-          <ResponsiveContainer width="100%" height={500}>
-            <BarChart
-              data={chartData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
-              <XAxis
-                dataKey="year"
-                stroke="#64748B"
-                fontSize={12}
-                angle={0}
-                textAnchor="middle"
-              />
-              <YAxis
-                stroke="#64748B"
-                fontSize={12}
-                label={{ value: 'Number of Activities', angle: -90, position: 'insideLeft' }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ paddingTop: '20px' }} />
-              <Bar
-                dataKey="planned_start"
-                name="Planned Start"
-                fill="#3b82f6"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="actual_start"
-                name="Actual Start"
-                fill="#10b981"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="planned_end"
-                name="Planned End"
-                fill="#f59e0b"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="actual_end"
-                name="Actual End"
-                fill="#ef4444"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* Charts (two-column dashboard style) */}
+      <div className="grid gap-6 lg:grid-cols-2 items-stretch">
+        {/* Activity Dates Distribution by Year */}
+        <TimelinessChartCard
+          title="Activity Dates Distribution by Year"
+          description="Activities with planned/actual start & end dates per year"
+          onCsv={() => downloadCsv('activity-dates-distribution.csv', ['Year', 'Planned Start', 'Actual Start', 'Planned End', 'Actual End'], chartData.map((d) => [d.year, d.planned_start, d.actual_start, d.planned_end, d.actual_end]))}
+          renderChart={(expanded) => (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 16, right: 16, left: 8, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
+                <XAxis dataKey="year" stroke="#64748B" fontSize={12} />
+                <YAxis stroke="#64748B" fontSize={12} />
+                <Tooltip content={<CustomTooltip />} />
+                {expanded && <Legend wrapperStyle={{ paddingTop: 12 }} />}
+                <Bar dataKey="planned_start" name="Planned Start" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="actual_start" name="Actual Start" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="planned_end" name="Planned End" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="actual_end" name="Actual End" fill="#ef4444" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           )}
-        </CardContent>
-      </Card>
+          renderTable={() => (
+            <div className="h-full overflow-auto rounded-md border">
+              <Table className="w-full text-body">
+                <TableHeader className="bg-surface-muted sticky top-0"><TableRow>
+                  <TableHead>Year</TableHead>
+                  <TableHead className="text-right">Planned Start</TableHead>
+                  <TableHead className="text-right">Actual Start</TableHead>
+                  <TableHead className="text-right">Planned End</TableHead>
+                  <TableHead className="text-right">Actual End</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>{chartData.map((d) => (
+                  <TableRow key={d.year}>
+                    <TableCell>{d.year}</TableCell>
+                    <TableCell className="text-right">{d.planned_start}</TableCell>
+                    <TableCell className="text-right">{d.actual_start}</TableCell>
+                    <TableCell className="text-right">{d.planned_end}</TableCell>
+                    <TableCell className="text-right">{d.actual_end}</TableCell>
+                  </TableRow>
+                ))}</TableBody>
+              </Table>
+            </div>
+          )}
+          footer={<p className="text-body text-muted-foreground leading-relaxed">For each year, this compares how many activities recorded a planned versus an actual start date, and a planned versus an actual end date. Where the actual bars sit well below the planned ones — or a year has plans but few actuals — it usually means real start/end dates haven't been entered yet. Use it to find where date reporting is lagging and backfill the actual dates, so the activity timeline stays accurate.</p>}
+        />
 
-      {/* Future End Dates Chart */}
-      <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-orange-600" />
-              Activities with Actual End Dates by Year
-            </CardTitle>
-            <CardDescription>
-              Activities with actual end dates in future years may indicate data quality issues
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {futureEndDateData.length === 0 ? (
-              <div className="flex items-center justify-center h-96 text-muted-foreground">
-                <div className="text-center">
-                  <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="font-medium">No future end date data available</p>
-                </div>
-              </div>
-            ) : (
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart
-                data={futureEndDateData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-              >
+        {/* Activities with Actual End Dates by Year */}
+        <TimelinessChartCard
+          title="Activities with Actual End Dates by Year"
+          description="Actual end dates in future years may indicate data-quality issues"
+          onCsv={() => downloadCsv('actual-end-dates-by-year.csv', ['Year', 'Activities', 'Future'], futureEndDateData.map((d) => [d.year, d.count, d.isFuture ? 'Yes' : 'No']))}
+          renderChart={() => (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={futureEndDateData} margin={{ top: 16, right: 16, left: 8, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
-                <XAxis
-                  dataKey="year"
-                  stroke="#64748B"
-                  fontSize={12}
-                  angle={0}
-                  textAnchor="middle"
-                />
-                <YAxis
-                  stroke="#64748B"
-                  fontSize={12}
-                  label={{ value: 'Number of Activities', angle: -90, position: 'insideLeft' }}
-                />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (!active || !payload || payload.length === 0) return null
-                    const data = payload[0].payload
-                    return (
-                      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
-                        <div className="bg-muted px-3 py-2 border-b border-border">
-                          <p className="font-semibold text-foreground text-body">
-                            Year {data.year}
-                          </p>
-                        </div>
-                        <div className="p-2">
-                          <table className="w-full text-body">
-                            <tbody>
-                              <tr className="border-b border-border">
-                                <td className="py-1.5 pr-4">
-                                  <span className="text-foreground font-medium">Activities</span>
-                                </td>
-                                <td className="py-1.5 text-right font-semibold text-foreground">
-                                  {data.count}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-1.5 pr-4">
-                                  <span className="text-foreground font-medium">Status</span>
-                                </td>
-                                <td className="py-1.5 text-right">
-                                  {data.isFuture ? (
-                                    <span className="text-orange-600 font-semibold">Future</span>
-                                  ) : (
-                                    <span className="text-muted-foreground">Past/Current</span>
-                                  )}
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )
-                  }}
-                />
-                <Bar
-                  dataKey="count"
-                  radius={[4, 4, 0, 0]}
-                  fill={(entry: any) => entry.isFuture ? '#f59e0b' : '#10b981'}
-                />
+                <XAxis dataKey="year" stroke="#64748B" fontSize={12} />
+                <YAxis stroke="#64748B" fontSize={12} />
+                <Tooltip content={<YearCountTooltip />} />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {futureEndDateData.map((d, i) => (
+                    <Cell key={i} fill={d.isFuture ? '#f59e0b' : '#10b981'} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+          )}
+          renderTable={() => (
+            <div className="h-full overflow-auto rounded-md border">
+              <Table className="w-full text-body">
+                <TableHeader className="bg-surface-muted sticky top-0"><TableRow>
+                  <TableHead>Year</TableHead>
+                  <TableHead className="text-right">Activities</TableHead>
+                  <TableHead>Future</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>{futureEndDateData.map((d) => (
+                  <TableRow key={d.year}>
+                    <TableCell>{d.year}</TableCell>
+                    <TableCell className="text-right">{d.count}</TableCell>
+                    <TableCell>{d.isFuture ? 'Future' : 'Past/Current'}</TableCell>
+                  </TableRow>
+                ))}</TableBody>
+              </Table>
+            </div>
+          )}
+          footer={<p className="text-body text-muted-foreground leading-relaxed">This counts activities by the year of their actual end date; bars sitting in future years (highlighted) are flagged, because an activity cannot truthfully have ended in the future. Those are almost always mistyped or placeholder end dates. Use it to find and correct them so closed-activity reporting can be trusted.</p>}
+        />
 
-      {/* Finalisation Stage with Actual End Date Chart */}
-      <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-purple-600" />
-              Finalisation Stage Activities with Actual End Dates
-            </CardTitle>
-            <CardDescription>
-              Activities in finalisation stage should not have actual end dates - indicates potential status mismatch
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {finalisationWithActualEndData.length === 0 ? (
-              <div className="flex items-center justify-center h-96 text-muted-foreground">
-                <div className="text-center">
-                  <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="font-medium">No finalisation stage data available</p>
-                </div>
-              </div>
-            ) : (
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart
-                data={finalisationWithActualEndData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-              >
+        {/* Finalisation Stage with Actual End Dates */}
+        <TimelinessChartCard
+          title="Finalisation Stage Activities with Actual End Dates"
+          description="Finalisation-stage activities should not yet have actual end dates"
+          onCsv={() => downloadCsv('finalisation-with-actual-end.csv', ['Year', 'Activities'], finalisationWithActualEndData.map((d) => [d.year, d.count]))}
+          renderChart={() => (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={finalisationWithActualEndData} margin={{ top: 16, right: 16, left: 8, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
-                <XAxis
-                  dataKey="year"
-                  stroke="#64748B"
-                  fontSize={12}
-                  angle={0}
-                  textAnchor="middle"
-                />
-                <YAxis
-                  stroke="#64748B"
-                  fontSize={12}
-                  label={{ value: 'Number of Activities', angle: -90, position: 'insideLeft' }}
-                />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (!active || !payload || payload.length === 0) return null
-                    const data = payload[0].payload
-                    return (
-                      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
-                        <div className="bg-muted px-3 py-2 border-b border-border">
-                          <p className="font-semibold text-foreground text-body">
-                            Year {data.year}
-                          </p>
-                        </div>
-                        <div className="p-2">
-                          <table className="w-full text-body">
-                            <tbody>
-                              <tr>
-                                <td className="py-1.5 pr-4">
-                                  <span className="text-foreground font-medium">Finalisation Activities</span>
-                                </td>
-                                <td className="py-1.5 text-right font-semibold text-foreground">
-                                  {data.count}
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )
-                  }}
-                />
-                <Bar
-                  dataKey="count"
-                  name="Finalisation with Actual End"
-                  fill="#a855f7"
-                  radius={[4, 4, 0, 0]}
-                />
+                <XAxis dataKey="year" stroke="#64748B" fontSize={12} />
+                <YAxis stroke="#64748B" fontSize={12} />
+                <Tooltip content={<YearCountTooltip valueLabel="Finalisation activities" />} />
+                <Bar dataKey="count" name="Finalisation with Actual End" fill="#a855f7" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+          )}
+          renderTable={() => (
+            <div className="h-full overflow-auto rounded-md border">
+              <Table className="w-full text-body">
+                <TableHeader className="bg-surface-muted sticky top-0"><TableRow>
+                  <TableHead>Year</TableHead>
+                  <TableHead className="text-right">Activities</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>{finalisationWithActualEndData.map((d) => (
+                  <TableRow key={d.year}>
+                    <TableCell>{d.year}</TableCell>
+                    <TableCell className="text-right">{d.count}</TableCell>
+                  </TableRow>
+                ))}</TableBody>
+              </Table>
+            </div>
+          )}
+          footer={<p className="text-body text-muted-foreground leading-relaxed">Activities still in the finalisation stage shouldn't yet carry an actual end date. This counts, by year, those that do — a likely mismatch between an activity's status and its dates. Use it to reconcile each activity's status with its recorded dates so the two stay consistent.</p>}
+        />
 
-      {/* Closed Activities with Only Planned End Date Chart */}
-      <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-rose-600" />
-              Closed Activities with Only Planned End Dates
-            </CardTitle>
-            <CardDescription>
-              Closed activities should have actual end dates, not just planned dates - indicates missing data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {closedWithPlannedEndData.length === 0 ? (
-              <div className="flex items-center justify-center h-96 text-muted-foreground">
-                <div className="text-center">
-                  <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="font-medium">No closed activities data available</p>
-                </div>
-              </div>
-            ) : (
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart
-                data={closedWithPlannedEndData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-              >
+        {/* Closed Activities with Only Planned End Dates */}
+        <TimelinessChartCard
+          title="Closed Activities with Only Planned End Dates"
+          description="Closed activities should record an actual end date, not just a planned one"
+          onCsv={() => downloadCsv('closed-with-planned-end.csv', ['Year', 'Activities'], closedWithPlannedEndData.map((d) => [d.year, d.count]))}
+          renderChart={() => (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={closedWithPlannedEndData} margin={{ top: 16, right: 16, left: 8, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
-                <XAxis
-                  dataKey="year"
-                  stroke="#64748B"
-                  fontSize={12}
-                  angle={0}
-                  textAnchor="middle"
-                />
-                <YAxis
-                  stroke="#64748B"
-                  fontSize={12}
-                  label={{ value: 'Number of Activities', angle: -90, position: 'insideLeft' }}
-                />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (!active || !payload || payload.length === 0) return null
-                    const data = payload[0].payload
-                    return (
-                      <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden">
-                        <div className="bg-muted px-3 py-2 border-b border-border">
-                          <p className="font-semibold text-foreground text-body">
-                            Year {data.year}
-                          </p>
-                        </div>
-                        <div className="p-2">
-                          <table className="w-full text-body">
-                            <tbody>
-                              <tr>
-                                <td className="py-1.5 pr-4">
-                                  <span className="text-foreground font-medium">Closed Activities</span>
-                                </td>
-                                <td className="py-1.5 text-right font-semibold text-foreground">
-                                  {data.count}
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )
-                  }}
-                />
-                <Bar
-                  dataKey="count"
-                  name="Closed with Only Planned End"
-                  fill="#f43f5e"
-                  radius={[4, 4, 0, 0]}
-                />
+                <XAxis dataKey="year" stroke="#64748B" fontSize={12} />
+                <YAxis stroke="#64748B" fontSize={12} />
+                <Tooltip content={<YearCountTooltip valueLabel="Closed activities" />} />
+                <Bar dataKey="count" name="Closed with Only Planned End" fill="#f43f5e" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+          )}
+          renderTable={() => (
+            <div className="h-full overflow-auto rounded-md border">
+              <Table className="w-full text-body">
+                <TableHeader className="bg-surface-muted sticky top-0"><TableRow>
+                  <TableHead>Year</TableHead>
+                  <TableHead className="text-right">Activities</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>{closedWithPlannedEndData.map((d) => (
+                  <TableRow key={d.year}>
+                    <TableCell>{d.year}</TableCell>
+                    <TableCell className="text-right">{d.count}</TableCell>
+                  </TableRow>
+                ))}</TableBody>
+              </Table>
+            </div>
+          )}
+          footer={<p className="text-body text-muted-foreground leading-relaxed">Closed activities should record an actual end date, not only a planned one. This counts, by year, closed activities that are still missing an actual end date. Use it to add the real end dates so your closure data is complete and the activity history reads correctly.</p>}
+        />
+      </div>
     </div>
   )
 }

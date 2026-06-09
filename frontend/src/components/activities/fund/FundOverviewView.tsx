@@ -172,7 +172,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
           </CardContent>
         </Card>
 
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">
@@ -197,7 +197,7 @@ export function FundOverviewView({ activityId }: FundOverviewViewProps) {
           </Table>
         </div>
 
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted">

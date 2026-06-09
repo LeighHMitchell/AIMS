@@ -127,7 +127,7 @@ function flattenIssues(data: ValidationRulesResponse): DataQualityIssue[] {
       category: 'Location', rule: "Percentages Not 100%",
       activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
       status: statusLabel(item.activity_status),
-      details: `Total: ${item.total_percentage}% across ${item.location_count} locations`,
+      details: `${item.total_percentage}% across ${item.location_count} locations`,
       editHref: href(item.id, 'locations'),
     });
   });
@@ -173,7 +173,7 @@ function flattenIssues(data: ValidationRulesResponse): DataQualityIssue[] {
       category: 'Sector', rule: "Percentages Not 100%",
       activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
       status: statusLabel(item.activity_status),
-      details: `Total: ${item.total_sector_percentage}% across ${item.sector_count} sectors`,
+      details: `${item.total_sector_percentage}% across ${item.sector_count} sectors`,
       editHref: href(item.id, 'sectors'),
     });
   });
@@ -188,14 +188,6 @@ function flattenIssues(data: ValidationRulesResponse): DataQualityIssue[] {
 
   return issues;
 }
-
-const CATEGORY_BADGE: Record<string, string> = {
-  Activity: 'bg-blue-50 text-blue-700',
-  Transaction: 'bg-emerald-50 text-emerald-700',
-  Location: 'bg-amber-50 text-amber-700',
-  'Participating Organisation': 'bg-violet-50 text-violet-700',
-  Sector: 'bg-rose-50 text-rose-700',
-};
 
 export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps) {
   const router = useRouter();
@@ -356,7 +348,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
       </div>
 
       {/* Consolidated issues table */}
-      <div className="border border-border rounded-lg overflow-hidden shadow-sm bg-white">
+      <div className="border border-border overflow-hidden shadow-sm bg-white">
         <Table>
           <TableHeader>
             <TableRow>
@@ -372,22 +364,18 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
             {issues.map((issue, idx) => (
               <TableRow key={`${issue.activityId}-${issue.category}-${issue.rule}-${idx}`} className="hover:bg-muted">
                 <TableCell>
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground leading-snug">{issue.title}</p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-medium text-foreground leading-snug">{issue.title}</span>
                     {issue.iatiIdentifier && (
-                      <CopyableIdBadge value={issue.iatiIdentifier} label="Activity ID" className="mt-0.5" />
+                      <CopyableIdBadge value={issue.iatiIdentifier} label="Activity ID" />
                     )}
                   </div>
                 </TableCell>
-                <TableCell>
-                  <Badge className={`whitespace-nowrap border-0 ${CATEGORY_BADGE[issue.category] || 'bg-muted text-muted-foreground'}`}>
-                    {issue.category}
-                  </Badge>
-                </TableCell>
+                <TableCell className="text-body text-foreground">{issue.category}</TableCell>
                 <TableCell className="text-body text-foreground">{issue.rule}</TableCell>
-                <TableCell className="text-body text-muted-foreground">{issue.details || '—'}</TableCell>
+                <TableCell className="text-body text-foreground">{issue.details || '—'}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="whitespace-nowrap">{issue.status}</Badge>
+                  <Badge variant="outline" className="whitespace-nowrap font-normal">{issue.status}</Badge>
                 </TableCell>
                 <TableCell>
                   <Button

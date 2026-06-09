@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/select';
 import {
   Bookmark,
-  BookOpen,
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
@@ -138,7 +137,11 @@ export function BookmarkedDocumentsView({
           {isPersonal ? (
             <Bookmark className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           ) : (
-            <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <img
+              src="/images/reading-room-chair.png"
+              alt=""
+              className="h-32 w-auto mx-auto mb-4 opacity-90"
+            />
           )}
           <h3 className="text-lg font-medium">
             {isPersonal ? 'My Library is empty' : 'Reading Room is empty'}

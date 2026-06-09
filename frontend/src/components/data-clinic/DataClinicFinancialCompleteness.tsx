@@ -3,12 +3,54 @@
 import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Table, TableBody, TableRow, TableCell } from "@/components/ui/table"
 import { CheckCircle2, AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FinancialCompletenessFilters, SortOption } from "@/components/data-clinic/FinancialCompletenessFilters"
 import { FinancialCompletenessChart } from "@/components/data-clinic/FinancialCompletenessChart"
 import { ExpandableChartCard } from "@/components/analytics/ExpandableChartCard"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, ResponsiveContainer } from "recharts"
+
+const fmtUsd = (v: number) =>
+  `USD ${Number(v || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+
+// Shaded-header table hover card, consistent with the Overspend by Activity chart.
+function OrgOverspendTooltip({ active, payload }: any) {
+  if (!active || !payload || payload.length === 0) return null
+  const d = payload[0].payload as {
+    name: string; label: string; overspend: number
+    budgeted: number; disbursed: number; activities: number
+  }
+  return (
+    <div className="bg-white border border-border rounded-lg shadow-lg overflow-hidden max-w-sm">
+      <div className="bg-muted px-3 py-2 border-b border-border">
+        <p className="font-semibold text-foreground text-body">{d.label}</p>
+      </div>
+      <div className="p-2">
+        <Table className="w-full text-body">
+          <TableBody>
+            <TableRow>
+              <TableCell className="pr-4 text-foreground font-medium">Budgeted</TableCell>
+              <TableCell className="text-right font-semibold text-foreground">{fmtUsd(d.budgeted)}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="pr-4 text-foreground font-medium">Disbursed</TableCell>
+              <TableCell className="text-right font-semibold text-foreground">{fmtUsd(d.disbursed)}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="pr-4 text-foreground font-medium">Overspend</TableCell>
+              <TableCell className="text-right font-semibold text-destructive">{fmtUsd(d.overspend)}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="pr-4 text-foreground font-medium">Activities</TableCell>
+              <TableCell className="text-right font-semibold text-foreground">{d.activities}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  )
+}
 
 interface FinancialCompletenessActivity {
   id: string;
@@ -114,11 +156,14 @@ export function DataClinicFinancialCompleteness() {
 
   // Total overspend grouped by reporting organisation (top 10)
   const overspendByOrg = useMemo(() => {
-    const map = new Map<string, { overspend: number; acronym: string | null }>()
+    const map = new Map<string, { overspend: number; budgeted: number; disbursed: number; activities: number; acronym: string | null }>()
     for (const a of data) {
       const name = a.reporting_org_name || 'Unattributed'
-      const entry = map.get(name) || { overspend: 0, acronym: a.reporting_org_acronym || null }
+      const entry = map.get(name) || { overspend: 0, budgeted: 0, disbursed: 0, activities: 0, acronym: a.reporting_org_acronym || null }
       entry.overspend += a.overspend_usd || 0
+      entry.budgeted += a.total_budgeted_usd || 0
+      entry.disbursed += a.total_disbursed_usd || 0
+      entry.activities += 1
       if (!entry.acronym && a.reporting_org_acronym) entry.acronym = a.reporting_org_acronym
       map.set(name, entry)
     }
@@ -127,6 +172,9 @@ export function DataClinicFinancialCompleteness() {
         name,
         label: e.acronym ? `${name} (${e.acronym})` : name,
         overspend: e.overspend,
+        budgeted: e.budgeted,
+        disbursed: e.disbursed,
+        activities: e.activities,
       }))
       .sort((a, b) => b.overspend - a.overspend)
       .slice(0, 10)
@@ -243,8 +291,10 @@ export function DataClinicFinancialCompleteness() {
               <XAxis type="number" tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
               <YAxis type="category" dataKey="label" width={160} tick={{ fontSize: 11, fill: '#334155' }} />
               <RTooltip
-                formatter={(v: any) => [`USD ${Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 })}`, 'Overspend']}
-                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}
+                content={<OrgOverspendTooltip />}
+                allowEscapeViewBox={{ x: true, y: true }}
+                wrapperStyle={{ zIndex: 50 }}
+                cursor={{ fill: 'rgba(0,0,0,0.04)' }}
               />
               <Bar dataKey="overspend" fill="#ef4444" radius={[0, 4, 4, 0]} />
             </BarChart>
