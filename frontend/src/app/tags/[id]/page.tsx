@@ -27,6 +27,7 @@ import { getTagColor, getIconForTag, getTagVocabularyLabel, isCustomTag } from '
 import { SDGDonorRankings } from '@/components/sdgs/SDGDonorRankings'
 import { SDGMetricCards } from '@/components/sdgs/SDGMetricCards'
 import { ProfileBannerUpload } from '@/components/profiles/ProfileBannerUpload'
+import { HERO_HEIGHT_WITH_IMAGE, HERO_HEIGHT_WITHOUT_IMAGE } from '@/components/profile/ProfileHero'
 import { useUserRole } from '@/hooks/useUserRole'
 import Flag from 'react-world-flags'
 
@@ -195,19 +196,10 @@ export default function TagProfilePage() {
               { label: "Tags", href: "/tags" },
               { label: tag.name },
             ]} />
-            {isSuperUser() && (
-              <Link
-                href={`/tags/${tag.id}/edit`}
-                className="inline-flex items-center h-8 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors flex-shrink-0"
-              >
-                <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                Edit
-              </Link>
-            )}
           </div>
 
           {/* Hero Banner */}
-          <Card className="mb-6 border-0 overflow-hidden relative group">
+          <Card className="mb-6 border-0 overflow-hidden relative group flex flex-col justify-end" style={{ height: banner ? HERO_HEIGHT_WITH_IMAGE : HERO_HEIGHT_WITHOUT_IMAGE }}>
             {banner && (
               <div className="absolute inset-0">
                 <img
@@ -219,12 +211,24 @@ export default function TagProfilePage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-background/30" />
               </div>
             )}
-            <ProfileBannerUpload
-              profileType="tag"
-              profileId={String(tag.id)}
-              canEdit={isSuperUser()}
-              onBannerChange={(b, pos) => { setBanner(b); setBannerPosition(pos) }}
-            />
+            <div className="absolute top-4 right-4 z-[3] flex items-center gap-2">
+              <ProfileBannerUpload
+                profileType="tag"
+                profileId={String(tag.id)}
+                canEdit={isSuperUser()}
+                buttonClassName="opacity-0 group-hover:opacity-100"
+                onBannerChange={(b, pos) => { setBanner(b); setBannerPosition(pos) }}
+              />
+              {isSuperUser() && (
+                <Link
+                  href={`/tags/${tag.id}/edit`}
+                  className="inline-flex items-center h-9 rounded-md bg-white/90 shadow-sm px-3 text-[13px] font-medium text-foreground hover:bg-white transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                  Edit
+                </Link>
+              )}
+            </div>
             <CardContent className="p-6 relative z-[1]">
               <div className="flex items-start gap-4">
                 <div

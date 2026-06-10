@@ -5,15 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { GitBranch } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-} from 'recharts';
+import { ResponsiveSankey } from '@nivo/sankey';
 import type { OrgSankeyData, SankeyTransactionFilter, SankeyTypeTotal } from '@/types/dashboard';
 import { apiFetch } from '@/lib/api-fetch';
 
@@ -22,9 +14,10 @@ interface OrgSankeyFlowProps {
   monthsRange?: number;
 }
 
-// Incoming = money received (green); Outgoing = money sent (red/destructive).
+// Incoming = money received (green); Outgoing = money sent (red); self = slate.
 const INCOMING_COLOR = '#22c55e'; // green-500
 const OUTGOING_COLOR = '#dc2626'; // red-600 (destructive)
+const SELF_COLOR = '#64748b'; // slate-500
 
 // Format currency (compact, e.g. $1.2M)
 function formatCurrency(value: number): string {
@@ -40,16 +33,7 @@ function formatCurrency(value: number): string {
 const formatUsdFull = (n: number): string =>
   `US$${(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
-interface FlowDatum {
-  key: string;        // partner org id (stable category key for the Y axis)
-  name: string;       // short label (acronym when known)
-  fullName: string;   // full organisation name
-  acronym?: string;
-  incoming: number;   // stored negative → diverges left of the 0 axis
-  outgoing: number;   // stored positive → diverges right
-  incomingAbs: number;
-  outgoingAbs: number;
-}
+const truncate = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 /** Monochrome summary card: a total plus a small per-transaction-type table.
  *  Mirrors the Activity Editor hero-card styling (border / p-6 / text-2xl). */
@@ -93,50 +77,13 @@ function FlowSummaryCard({
   );
 }
 
-/** Two-line Y-axis tick: full organisation name + acronym (always visible). */
-function FlowYAxisTick(props: any) {
-  const { x, y, payload, rows } = props;
-  const row: FlowDatum | undefined = rows?.find((d: FlowDatum) => d.key === payload.value);
-  const name = row?.fullName || String(payload.value);
-  const acronym = row?.acronym;
-  const MAX = 30;
-  const line1 = name.length > MAX ? `${name.slice(0, MAX - 1)}…` : name;
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <title>{acronym ? `${name} (${acronym})` : name}</title>
-      <text x={-4} y={acronym ? -2 : 4} textAnchor="end" fontSize={11} fill="#334155">{line1}</text>
-      {acronym && (
-        <text x={-4} y={11} textAnchor="end" fontSize={10} fill="#64748b">{`(${acronym})`}</text>
-      )}
-    </g>
-  );
-}
-
-/** Tooltip for the diverging flow bar chart. */
-function FlowTooltip({ active, payload }: any) {
-  if (!active || !payload || payload.length === 0) return null;
-  const row = payload[0].payload as FlowDatum;
-  return (
-    <div className="bg-white border border-border shadow-lg text-helper overflow-hidden">
-      <div className="bg-surface-muted px-3 py-1.5 font-semibold text-foreground border-b border-border">
-        {row.fullName}{row.acronym ? ` (${row.acronym})` : ''}
-      </div>
-      <div className="px-3 py-1 flex items-center justify-between gap-6">
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: INCOMING_COLOR }} />
-          Incoming
-        </span>
-        <span className="font-medium text-foreground">{formatCurrency(row.incomingAbs)}</span>
-      </div>
-      <div className="px-3 py-1 pb-1.5 flex items-center justify-between gap-6">
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: OUTGOING_COLOR }} />
-          Outgoing
-        </span>
-        <span className="font-medium text-foreground">{formatCurrency(row.outgoingAbs)}</span>
-      </div>
-    </div>
-  );
+// Node datum carried through Nivo (extra fields are preserved on the tooltip node).
+interface FlowNode {
+  id: string;
+  label: string;
+  fullName: string;
+  acronym?: string;
+  nodeColor: string;
 }
 
 export function OrgSankeyFlow({
@@ -187,45 +134,69 @@ export function OrgSankeyFlow({
   const selfNode = data?.nodes.find(n => n.type === 'self');
   const selfName = selfNode?.name || 'Your Organisation';
 
-  // One diverging row per partner org: outgoing to the right (red),
-  // incoming to the left (green). Sorted by total throughput, top 10.
-  const chartData = useMemo<FlowDatum[]>(() => {
-    if (!data || !selfNode) return [];
-    const nodeById = new Map(data.nodes.map(n => [n.id, n]));
-    const byPartner = new Map<string, { incoming: number; outgoing: number }>();
+  // Build a 3-column Sankey: incoming partners (left) → self (centre) →
+  // outgoing partners (right). Node ids are prefixed in:/out: so a partner that
+  // both sends and receives appears as two distinct nodes (keeps it acyclic).
+  const { nodes, links, sankeyHeight } = useMemo(() => {
+    if (!data || !selfNode) return { nodes: [] as FlowNode[], links: [], sankeyHeight: 300 };
 
-    data.links.forEach(link => {
-      if (link.target === selfNode.id) {
-        const e = byPartner.get(link.source) || { incoming: 0, outgoing: 0 };
-        e.incoming += link.value;
-        byPartner.set(link.source, e);
-      } else if (link.source === selfNode.id) {
-        const e = byPartner.get(link.target) || { incoming: 0, outgoing: 0 };
-        e.outgoing += link.value;
-        byPartner.set(link.target, e);
-      }
+    const nodeById = new Map(data.nodes.map(n => [n.id, n]));
+    const labelFor = (n?: { fullName?: string; name?: string; acronym?: string }) => {
+      const full = n?.fullName || n?.name || 'Unknown';
+      return n?.acronym ? `${full} (${n.acronym})` : full;
+    };
+
+    const incoming = new Map<string, number>();
+    const outgoing = new Map<string, number>();
+    data.links.forEach(l => {
+      if (l.target === selfNode.id) incoming.set(l.source, (incoming.get(l.source) || 0) + l.value);
+      else if (l.source === selfNode.id) outgoing.set(l.target, (outgoing.get(l.target) || 0) + l.value);
     });
 
-    return Array.from(byPartner.entries())
-      .map(([id, e]) => {
-        const node = nodeById.get(id);
-        return {
-          key: id,
-          name: node?.name || 'Unknown',
-          fullName: node?.fullName || node?.name || 'Unknown',
-          acronym: node?.acronym,
-          incoming: -e.incoming, // negative → diverges left
-          outgoing: e.outgoing, //  positive → diverges right
-          incomingAbs: e.incoming,
-          outgoingAbs: e.outgoing,
-        };
-      })
-      .sort((a, b) => (b.incomingAbs + b.outgoingAbs) - (a.incomingAbs + a.outgoingAbs))
-      .slice(0, 10);
+    const builtNodes: FlowNode[] = [{
+      id: 'self',
+      label: truncate(labelFor(selfNode), 34),
+      fullName: selfNode.fullName || selfNode.name,
+      acronym: selfNode.acronym,
+      nodeColor: SELF_COLOR,
+    }];
+    const builtLinks: { source: string; target: string; value: number }[] = [];
+
+    const topEntries = (m: Map<string, number>) =>
+      Array.from(m.entries()).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+    const incomingTop = topEntries(incoming);
+    const outgoingTop = topEntries(outgoing);
+
+    incomingTop.forEach(([pid, value]) => {
+      const n = nodeById.get(pid);
+      builtNodes.push({
+        id: `in:${pid}`,
+        label: truncate(labelFor(n), 30),
+        fullName: n?.fullName || n?.name || 'Unknown',
+        acronym: n?.acronym,
+        nodeColor: INCOMING_COLOR,
+      });
+      builtLinks.push({ source: `in:${pid}`, target: 'self', value });
+    });
+
+    outgoingTop.forEach(([pid, value]) => {
+      const n = nodeById.get(pid);
+      builtNodes.push({
+        id: `out:${pid}`,
+        label: truncate(labelFor(n), 30),
+        fullName: n?.fullName || n?.name || 'Unknown',
+        acronym: n?.acronym,
+        nodeColor: OUTGOING_COLOR,
+      });
+      builtLinks.push({ source: 'self', target: `out:${pid}`, value });
+    });
+
+    const rows = Math.max(incomingTop.length, outgoingTop.length, 1);
+    return { nodes: builtNodes, links: builtLinks, sankeyHeight: Math.max(300, rows * 56) };
   }, [data, selfNode]);
 
-  const hasFlows = chartData.length > 0;
-  const chartHeight = Math.max(220, chartData.length * 52);
+  const hasFlows = links.length > 0;
 
   if (loading) {
     return (
@@ -247,7 +218,7 @@ export function OrgSankeyFlow({
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-24 w-full" />
           </div>
-          <Skeleton className="h-[250px] w-full" />
+          <Skeleton className="h-[300px] w-full" />
         </CardContent>
       </Card>
     );
@@ -315,7 +286,7 @@ export function OrgSankeyFlow({
         </div>
 
         {!hasFlows ? (
-          <div className="h-[250px] mt-6 flex items-center justify-center bg-muted">
+          <div className="h-[300px] mt-6 flex items-center justify-center bg-muted">
             <div className="text-center">
               <GitBranch className="h-12 w-12 text-slate-300 mx-auto mb-3" />
               <p className="text-body text-muted-foreground">No transaction flows found</p>
@@ -340,32 +311,54 @@ export function OrgSankeyFlow({
                 </span>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <BarChart
-                data={chartData}
-                layout="vertical"
-                stackOffset="sign"
-                margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
-                barCategoryGap="20%"
-              >
-                <XAxis
-                  type="number"
-                  tickFormatter={(v) => formatCurrency(Math.abs(Number(v)))}
-                  tick={{ fontSize: 11 }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="key"
-                  width={220}
-                  interval={0}
-                  tick={<FlowYAxisTick rows={chartData} />}
-                />
-                <RechartsTooltip content={<FlowTooltip />} cursor={{ fill: 'rgba(15,23,42,0.04)' }} />
-                <ReferenceLine x={0} stroke="#94a3b8" />
-                <Bar dataKey="incoming" stackId="flow" fill={INCOMING_COLOR} radius={[3, 0, 0, 3]} />
-                <Bar dataKey="outgoing" stackId="flow" fill={OUTGOING_COLOR} radius={[0, 3, 3, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {/* [&_svg]:max-w-none unsets the global svg max-width in globals.css */}
+            <div className="w-full [&_svg]:max-w-none" style={{ height: sankeyHeight, width: '100%' }}>
+              <ResponsiveSankey
+                data={{ nodes: nodes as any, links: links as any }}
+                margin={{ top: 10, right: 200, bottom: 10, left: 200 }}
+                align="justify"
+                label={(node: any) => node.label ?? node.id}
+                colors={(node: any) => node.nodeColor || '#94a3b8'}
+                nodeOpacity={1}
+                nodeHoverOthersOpacity={0.35}
+                nodeThickness={16}
+                nodeSpacing={14}
+                nodeBorderWidth={0}
+                linkOpacity={0.45}
+                linkHoverOthersOpacity={0.1}
+                linkContract={2}
+                enableLinkGradient
+                labelPosition="outside"
+                labelOrientation="horizontal"
+                labelPadding={8}
+                labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
+                animate={false}
+                nodeTooltip={({ node }: any) => (
+                  <div className="bg-white border border-border shadow-lg text-helper overflow-hidden">
+                    <div className="bg-surface-muted px-3 py-1.5 font-semibold text-foreground border-b border-border">
+                      {node.fullName}{node.acronym ? ` (${node.acronym})` : ''}
+                    </div>
+                    <div className="px-3 py-1.5 flex items-center justify-between gap-6">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="font-medium text-foreground">{formatCurrency(node.value)}</span>
+                    </div>
+                  </div>
+                )}
+                linkTooltip={({ link }: any) => (
+                  <div className="bg-white border border-border shadow-lg text-helper overflow-hidden">
+                    <div className="bg-surface-muted px-3 py-1.5 font-semibold text-foreground border-b border-border flex items-center gap-1.5">
+                      <span>{link.source.fullName}{link.source.acronym ? ` (${link.source.acronym})` : ''}</span>
+                      <span className="text-muted-foreground">→</span>
+                      <span>{link.target.fullName}{link.target.acronym ? ` (${link.target.acronym})` : ''}</span>
+                    </div>
+                    <div className="px-3 py-1.5 flex items-center justify-between gap-6">
+                      <span className="text-muted-foreground">Value</span>
+                      <span className="font-medium text-foreground">{formatCurrency(link.value)}</span>
+                    </div>
+                  </div>
+                )}
+              />
+            </div>
           </div>
         )}
       </CardContent>

@@ -8,7 +8,10 @@ import type { ProgramLogicGraph } from "@/lib/program-logic/types";
 import {
   toMermaid,
   getCeilingTierName,
+  getNodeIdLabels,
   drawAccountabilityCeiling,
+  boldNodeIdLabels,
+  serializeStandaloneSvg,
 } from "@/lib/program-logic/mermaid";
 
 interface ProgramLogicReadOnlyViewProps {
@@ -31,6 +34,7 @@ export function ProgramLogicReadOnlyView({ graph }: ProgramLogicReadOnlyViewProp
 
   const definition = useMemo(() => toMermaid(graph), [graph]);
   const ceilingName = useMemo(() => getCeilingTierName(graph), [graph]);
+  const nodeIdLabels = useMemo(() => getNodeIdLabels(graph), [graph]);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,6 +50,9 @@ export function ProgramLogicReadOnlyView({ graph }: ProgramLogicReadOnlyViewProp
           startOnLoad: false,
           theme: "base",
           securityLevel: "strict",
+          // Pure SVG <text> labels (no HTML <foreignObject>) so downloaded SVGs
+          // render in Preview / Illustrator / all viewers, not just browsers.
+          htmlLabels: false,
           // Tier band titles: larger + bold. Injected into the SVG's <style>;
           // survives securityLevel 'strict' (verified).
           themeCSS:
@@ -72,13 +79,13 @@ export function ProgramLogicReadOnlyView({ graph }: ProgramLogicReadOnlyViewProp
         const { svg } = await mermaid.render(id, definition);
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
-          // Draw the horizontal accountability-ceiling divider after layout.
-          if (ceilingName) {
-            const el = containerRef.current;
-            requestAnimationFrame(() => {
-              if (!cancelled && el) drawAccountabilityCeiling(el, ceilingName);
-            });
-          }
+          // After layout: bold node identifiers + draw the ceiling divider.
+          const el = containerRef.current;
+          requestAnimationFrame(() => {
+            if (cancelled || !el) return;
+            boldNodeIdLabels(el, nodeIdLabels);
+            if (ceilingName) drawAccountabilityCeiling(el, ceilingName);
+          });
         }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "Failed to render diagram");
@@ -89,7 +96,7 @@ export function ProgramLogicReadOnlyView({ graph }: ProgramLogicReadOnlyViewProp
     return () => {
       cancelled = true;
     };
-  }, [definition, ceilingName]);
+  }, [definition, ceilingName, nodeIdLabels]);
 
   const copyDefinition = async () => {
     try {
@@ -103,7 +110,9 @@ export function ProgramLogicReadOnlyView({ graph }: ProgramLogicReadOnlyViewProp
   const downloadSvg = () => {
     const svg = containerRef.current?.querySelector("svg");
     if (!svg) return;
-    const blob = new Blob([svg.outerHTML], { type: "image/svg+xml" });
+    const blob = new Blob([serializeStandaloneSvg(svg as SVGSVGElement)], {
+      type: "image/svg+xml",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -137,8 +146,8 @@ export function ProgramLogicReadOnlyView({ graph }: ProgramLogicReadOnlyViewProp
 
       <p className="mt-3 text-xs text-muted-foreground">
         Bottom-up: activities at the base, goal at the top. Solid arrow =
-        attribution · dotted arrow = contribution · dotted amber line =
-        accountability ceiling.
+        attribution · dotted arrow = contribution · black dotted line =
+        Accountability Ceiling.
       </p>
 
       <div className="mt-3 overflow-auto rounded-lg border border-border bg-white p-4">

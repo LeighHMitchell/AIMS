@@ -24,7 +24,7 @@ const PartnerCardModern: React.FC<PartnerCardModernProps> = ({
   partner,
   className = '',
 }) => {
-  const partnerUrl = `/partners/${partner.id}`;
+  const partnerUrl = `/organizations/${partner.id}`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);

@@ -185,7 +185,7 @@ export function ActivityFeed({ limit = 20, showHeader = true }: ActivityFeedProp
     if (log.activityId) {
       router.push(`/activities/${log.activityId}`);
     } else if (log.entityType === 'partner') {
-      router.push(`/partners/${log.entityId}`);
+      router.push(`/organizations/${log.entityId}`);
     }
   };
 

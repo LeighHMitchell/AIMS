@@ -30,6 +30,7 @@ import { SDGMetricCards } from '@/components/sdgs/SDGMetricCards'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 // Map thumbnail used as banner instead of uploaded images
 import { MiniChartCard } from '@/components/profiles/MiniChartCard'
+import { HERO_HEIGHT_WITH_IMAGE, HERO_HEIGHT_WITHOUT_IMAGE } from '@/components/profile/ProfileHero'
 import type { EmbeddedLocation } from '@/components/maps-v2/EmbeddedAtlasMap'
 
 const EmbeddedAtlasMap = dynamic(
@@ -357,15 +358,6 @@ export default function LocationProfileDetailPage() {
               { label: "Location Profiles", href: "/location-profiles" },
               { label: region.name },
             ]} />
-            {isSuperUser() && (
-              <Link
-                href={`/location-profiles/${region.st_pcode}/edit`}
-                className="inline-flex items-center h-8 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors flex-shrink-0"
-              >
-                <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                Edit
-              </Link>
-            )}
           </div>
 
           {/* Hero Banner with Map Tiles */}
@@ -408,7 +400,7 @@ export default function LocationProfileDetailPage() {
             }
 
             return (
-              <div className="rounded-xl mb-6 border border-border relative overflow-hidden" style={{ height: 180 }}>
+              <div className="rounded-xl mb-6 border border-border relative overflow-hidden" style={{ height: (region as any).banner ? HERO_HEIGHT_WITH_IMAGE : HERO_HEIGHT_WITHOUT_IMAGE }}>
                 {(region as any).banner ? (
                   <img src={(region as any).banner} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: `center ${(region as any).banner_position ?? 50}%` }} />
                 ) : (
@@ -425,6 +417,15 @@ export default function LocationProfileDetailPage() {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/50 to-transparent z-10" />
+                {isSuperUser() && (
+                  <Link
+                    href={`/location-profiles/${region.st_pcode}/edit`}
+                    className="absolute top-4 right-4 z-30 inline-flex items-center h-9 rounded-md bg-white/90 shadow-sm px-3 text-[13px] font-medium text-foreground hover:bg-white transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                    Edit
+                  </Link>
+                )}
                 <div className="absolute inset-0 flex items-center px-6 z-20">
                   <div className="flex items-center gap-4">
                     <div className="flex-shrink-0 w-16 h-16 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: (region as any).color || '#3C6255' }}>

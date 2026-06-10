@@ -29,6 +29,7 @@ import { getTransactionTypeColor } from '@/lib/chart-colors'
 import { SubSectorBreakdown } from '@/components/sectors/SubSectorBreakdown'
 import { SDGDonorRankings } from '@/components/sdgs/SDGDonorRankings'
 import { ProfileBannerUpload } from '@/components/profiles/ProfileBannerUpload'
+import { HERO_HEIGHT_WITH_IMAGE, HERO_HEIGHT_WITHOUT_IMAGE } from '@/components/profile/ProfileHero'
 import { MiniChartCard } from '@/components/profiles/MiniChartCard'
 import { SDGMetricCards } from '@/components/sdgs/SDGMetricCards'
 import Flag from 'react-world-flags'
@@ -195,31 +196,34 @@ export default function SectorProfilePage() {
               ...(hierarchy.category ? [{ label: `${hierarchy.category.name} (${hierarchy.category.code})`, href: !hierarchy.sector ? undefined : `/sectors/${hierarchy.category.code}` }] : []),
               ...(hierarchy.sector ? [{ label: `${hierarchy.sector.name} (${hierarchy.sector.code})` }] : []),
             ]} />
-            {isSuperUser() && (
-              <Link
-                href={`/sectors/${sector.code}/edit`}
-                className="inline-flex items-center h-8 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors flex-shrink-0"
-              >
-                <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                Edit
-              </Link>
-            )}
           </div>
 
           {/* Hero Banner */}
-          <div className="rounded-xl p-6 mb-6 border border-border relative overflow-hidden group min-h-[320px] flex flex-col justify-end" style={{ background: `linear-gradient(to right, ${themeColor}15, ${themeColor}08)` }}>
+          <div className="rounded-xl p-6 mb-6 border border-border relative overflow-hidden group flex flex-col justify-end" style={{ background: `linear-gradient(to right, ${themeColor}15, ${themeColor}08)`, height: sectorBanner ? HERO_HEIGHT_WITH_IMAGE : HERO_HEIGHT_WITHOUT_IMAGE }}>
             {sectorBanner && (
               <div className="absolute inset-0">
                 <img src={sectorBanner} alt="" className="w-full h-full object-cover" style={{ objectPosition: `center ${sectorBannerPosition}%` }} />
                 <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-background/30" />
               </div>
             )}
-            <ProfileBannerUpload
-              profileType="sector"
-              profileId={sector.code}
-              canEdit={isSuperUser()}
-              onBannerChange={(b, pos) => { setSectorBanner(b); setSectorBannerPosition(pos) }}
-            />
+            <div className="absolute top-4 right-4 z-[3] flex items-center gap-2">
+              <ProfileBannerUpload
+                profileType="sector"
+                profileId={sector.code}
+                canEdit={isSuperUser()}
+                buttonClassName="opacity-0 group-hover:opacity-100"
+                onBannerChange={(b, pos) => { setSectorBanner(b); setSectorBannerPosition(pos) }}
+              />
+              {isSuperUser() && (
+                <Link
+                  href={`/sectors/${sector.code}/edit`}
+                  className="inline-flex items-center h-9 rounded-md bg-white/90 shadow-sm px-3 text-[13px] font-medium text-foreground hover:bg-white transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                  Edit
+                </Link>
+              )}
+            </div>
             <div className="flex items-center gap-4 relative z-[1]">
               <div className="flex-shrink-0 w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: '#4c5568' }}>
                 {sector.code}

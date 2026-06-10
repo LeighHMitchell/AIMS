@@ -1,7 +1,20 @@
 {
-  "currentVersion": "4.0.8",
-  "narrativeSummary": "This update refines the organisation dashboard's funding-flow (Sankey) diagram and the activity Program Logic diagrams so they read more clearly. A focused round of polish across how flows and results frameworks are drawn.",
+  "currentVersion": "4.0.9",
+  "narrativeSummary": "This update deepens organisation funding-envelope records with IATI-aligned period dates and a recipient country, and enriches organisation profiles with a funding-flows diagram and an activity-dates timeline. Plus a round of polish across charts, maps, profile banners and the SDG, partner and policy-marker views.",
   "releases": [
+    {
+      "version": "4.0.9",
+      "date": "2026-06-11",
+      "narrativeSummary": "This update deepens organisation funding-envelope records with IATI-aligned period dates and a recipient country, and enriches organisation profiles with a funding-flows diagram and an activity-dates timeline. Plus a round of polish across charts, maps, profile banners and the SDG, partner and policy-marker views.",
+      "changes": [
+        "<b>Richer funding envelopes</b>",
+        "&nbsp;&nbsp;Funding envelopes now carry IATI-aligned period start/end dates and a recipient country. Why it helps: funding records line up with the IATI standard and say clearly when and where the money is for.",
+        "<b>Fuller organisation profiles</b>",
+        "&nbsp;&nbsp;Organisation profiles gain a funding-flows diagram and an activity-dates timeline. Why it helps: you can see at a glance how an organisation's funding moves and when its activities run.",
+        "<b>Polish across the app</b>",
+        "&nbsp;&nbsp;Refinements to charts, maps, profile banners and the SDG, partner and policy-marker views. Why it helps: a cleaner, more consistent read wherever you look."
+      ]
+    },
     {
       "version": "4.0.8",
       "date": "2026-06-09",

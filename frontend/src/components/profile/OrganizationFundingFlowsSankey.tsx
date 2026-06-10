@@ -54,6 +54,8 @@ function compactUsd(v: number): string {
 interface Props {
   organizationId: string
   organizationName: string
+  /** Acronym for the centre (self) node so it reads "Full Name (ACRONYM)" like the counterparties. */
+  organizationAcronym?: string
   transactions: any[] | null
   selectedTypes: string[]
   /** Larger labels + more nodes per side when the chart is expanded. */
@@ -63,6 +65,7 @@ interface Props {
 export function OrganizationFundingFlowsSankey({
   organizationId,
   organizationName,
+  organizationAcronym,
   transactions,
   selectedTypes,
   expanded = false,
@@ -94,8 +97,8 @@ export function OrganizationFundingFlowsSankey({
     // Aggregate by (counterparty, transaction_type) so the chart shows one
     // band per partner+type pair. Same partner with two types becomes two
     // separate bands; colouring works per-band.
-    const incoming = new Map<string, { name: string; total: number; type: string }>()
-    const outgoing = new Map<string, { name: string; total: number; type: string }>()
+    const incoming = new Map<string, { name: string; acronym: string; total: number; type: string }>()
+    const outgoing = new Map<string, { name: string; acronym: string; total: number; type: string }>()
 
     transactions.forEach((t: any) => {
       const type = String(t.transaction_type ?? "")
@@ -111,20 +114,26 @@ export function OrganizationFundingFlowsSankey({
 
       if (incomingFlow) {
         const id = t.provider_org_id || t.provider_org_name || "unknown-source"
-        const name = t.provider_org_acronym || t.provider_org_name || "Unknown source"
+        // Prefer the joined organisation's full name; the transaction's own
+        // provider_org_name free-text field often just holds the acronym.
+        const name = t.provider_organization?.name || t.provider_org_name || t.provider_org_acronym || "Unknown source"
+        const rawAcronym = t.provider_organization?.acronym || t.provider_org_acronym || ""
+        const acronym = rawAcronym && rawAcronym !== name ? rawAcronym : ""
         const key = `${id}::${type}`
         const prev = incoming.get(key)
         incoming.set(key, prev
           ? { ...prev, total: prev.total + val }
-          : { name, total: val, type })
+          : { name, acronym, total: val, type })
       } else if (outgoingFlow) {
         const id = t.receiver_org_id || t.receiver_org_name || "unknown-recipient"
-        const name = t.receiver_org_acronym || t.receiver_org_name || "Unknown recipient"
+        const name = t.receiver_organization?.name || t.receiver_org_name || t.receiver_org_acronym || "Unknown recipient"
+        const rawAcronym = t.receiver_organization?.acronym || t.receiver_org_acronym || ""
+        const acronym = rawAcronym && rawAcronym !== name ? rawAcronym : ""
         const key = `${id}::${type}`
         const prev = outgoing.get(key)
         outgoing.set(key, prev
           ? { ...prev, total: prev.total + val }
-          : { name, total: val, type })
+          : { name, acronym, total: val, type })
       }
     })
 
@@ -142,7 +151,7 @@ export function OrganizationFundingFlowsSankey({
     const inBands = aggregated.incoming.slice(0, maxPerSide)
     const outBands = aggregated.outgoing.slice(0, maxPerSide)
 
-    type N = { id: string; name: string; kind: "incoming" | "self" | "outgoing"; type?: string }
+    type N = { id: string; name: string; acronym: string; kind: "incoming" | "self" | "outgoing"; type?: string }
     type L = { source: number; target: number; value: number; type: string }
     const nodes: N[] = []
     const links: L[] = []
@@ -150,14 +159,15 @@ export function OrganizationFundingFlowsSankey({
     let idx = 0
     const inIdx: number[] = []
     inBands.forEach((b, i) => {
-      nodes.push({ id: `in-${i}`, name: b.name, kind: "incoming", type: b.type })
+      nodes.push({ id: `in-${i}`, name: b.name, acronym: b.acronym, kind: "incoming", type: b.type })
       inIdx.push(idx++)
     })
     const selfIdx = idx++
-    nodes.push({ id: "self", name: organizationName, kind: "self" })
+    const selfAcronym = organizationAcronym && organizationAcronym !== organizationName ? organizationAcronym : ""
+    nodes.push({ id: "self", name: organizationName, acronym: selfAcronym, kind: "self" })
     const outIdx: number[] = []
     outBands.forEach((b, i) => {
-      nodes.push({ id: `out-${i}`, name: b.name, kind: "outgoing", type: b.type })
+      nodes.push({ id: `out-${i}`, name: b.name, acronym: b.acronym, kind: "outgoing", type: b.type })
       outIdx.push(idx++)
     })
 
@@ -199,7 +209,7 @@ export function OrganizationFundingFlowsSankey({
     } catch {
       return null
     }
-  }, [aggregated, size, expanded, organizationName])
+  }, [aggregated, size, expanded, organizationName, organizationAcronym])
 
   useEffect(() => {
     if (!svgRef.current || !layout) return
@@ -258,28 +268,29 @@ export function OrganizationFundingFlowsSankey({
       div.style.color = "currentColor"
       div.style.overflow = "hidden"
       div.style.display = "-webkit-box"
-      div.style.setProperty("-webkit-line-clamp", "2")
+      div.style.setProperty("-webkit-line-clamp", "3")
       div.style.setProperty("-webkit-box-orient", "vertical")
       div.className = "text-foreground"
-      div.textContent = node.name
+      // Show the full organisation name plus its acronym in the node label.
+      div.textContent = node.acronym ? `${node.name} (${node.acronym})` : node.name
 
       if (isSelf) {
         div.style.fontWeight = "600"
         fo.setAttribute("width", String(labelW))
-        fo.setAttribute("height", String(Math.max(nodeHeight, 36)))
+        fo.setAttribute("height", String(Math.max(nodeHeight, 48)))
         fo.setAttribute("x", String(node.x1 + 6))
-        fo.setAttribute("y", String((node.y0 + node.y1) / 2 - 14))
+        fo.setAttribute("y", String((node.y0 + node.y1) / 2 - 24))
       } else if (isLeft) {
         // Label sits to the LEFT of the incoming node so the band's right
         // edge meets the next column without overlapping any text.
         fo.setAttribute("width", String(labelW))
-        fo.setAttribute("height", String(Math.max(nodeHeight + 18, 30)))
+        fo.setAttribute("height", String(Math.max(nodeHeight + 18, 46)))
         fo.setAttribute("x", String(Math.max(0, node.x0 - labelW - 6)))
         fo.setAttribute("y", String(node.y0 - 6))
         div.style.textAlign = "right"
       } else {
         fo.setAttribute("width", String(labelW))
-        fo.setAttribute("height", String(Math.max(nodeHeight + 18, 30)))
+        fo.setAttribute("height", String(Math.max(nodeHeight + 18, 46)))
         fo.setAttribute("x", String(node.x1 + 6))
         fo.setAttribute("y", String(node.y0 - 6))
         div.style.textAlign = "left"
@@ -305,9 +316,13 @@ export function OrganizationFundingFlowsSankey({
     )
   }
 
+  const formatNodeLabel = (n: any): string => {
+    if (!n) return ""
+    return n.acronym ? `${n.name} (${n.acronym})` : n.name
+  }
   const tooltipLink = hovered && hovered.kind === "link" ? layout.links[hovered.idx] : null
-  const tooltipSource = tooltipLink ? (typeof tooltipLink.source === "object" ? tooltipLink.source.name : layout.nodes[tooltipLink.source]?.name) : ""
-  const tooltipTarget = tooltipLink ? (typeof tooltipLink.target === "object" ? tooltipLink.target.name : layout.nodes[tooltipLink.target]?.name) : ""
+  const tooltipSource = tooltipLink ? formatNodeLabel(typeof tooltipLink.source === "object" ? tooltipLink.source : layout.nodes[tooltipLink.source]) : ""
+  const tooltipTarget = tooltipLink ? formatNodeLabel(typeof tooltipLink.target === "object" ? tooltipLink.target : layout.nodes[tooltipLink.target]) : ""
 
   return (
     <div ref={containerRef} className="relative h-full w-full">
@@ -319,15 +334,37 @@ export function OrganizationFundingFlowsSankey({
       />
       {tooltipLink && hovered && (
         <div
-          className="pointer-events-none fixed z-[10005] max-w-[260px] rounded-md border border-border bg-popover px-3 py-2 text-popover-foreground shadow-md"
+          className="pointer-events-none fixed z-[10005] max-w-[340px] rounded-lg border border-border bg-card text-card-foreground shadow-lg overflow-hidden"
           style={{ left: hovered.x + 12, top: hovered.y + 12 }}
         >
-          <p className="text-helper font-medium text-foreground">
-            {tooltipSource} → {tooltipTarget}
-          </p>
-          <p className="text-helper text-muted-foreground mt-0.5">
-            {TRANSACTION_TYPE_LABELS[tooltipLink.type as keyof typeof TRANSACTION_TYPE_LABELS] || "Transaction"}: {compactUsd(tooltipLink.value)}
-          </p>
+          {/* Shaded header — matches the analytics-dashboard tooltips. */}
+          <div className="bg-surface-muted px-3 py-2 border-b border-border">
+            <p className="font-semibold text-foreground text-helper leading-snug">
+              {tooltipSource} → {tooltipTarget}
+            </p>
+          </div>
+          <table className="text-helper">
+            <tbody>
+              <tr className="border-b border-border/60">
+                <th className="text-left font-medium text-muted-foreground align-top px-3 py-1.5 whitespace-nowrap">Type</th>
+                <td className="text-foreground px-3 py-1.5">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-sm flex-shrink-0"
+                      style={{ backgroundColor: FUNDING_FLOW_TYPE_COLOR[tooltipLink.type as string] || "#94a3b8" }}
+                    />
+                    {TRANSACTION_TYPE_LABELS[tooltipLink.type as keyof typeof TRANSACTION_TYPE_LABELS] || "Transaction"}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <th className="text-left font-medium text-muted-foreground align-top px-3 py-1.5 whitespace-nowrap">Amount (USD)</th>
+                <td className="text-foreground font-medium tabular-nums px-3 py-1.5 whitespace-nowrap">
+                  ${Math.round(tooltipLink.value).toLocaleString("en-US")}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       )}
     </div>

@@ -125,22 +125,21 @@ export default function HeatmapLayer({ points, options = {} }: HeatmapLayerProps
             ['heatmap-density'],
             ...colorStops.flatMap(([stop, color]) => [stop, color])
           ],
-          // Adjust the heatmap radius by zoom level
+          // Adjust the heatmap radius by zoom level; keep growing past
+          // maxZoom so a single location stays clearly visible close up.
           'heatmap-radius': [
             'interpolate',
             ['linear'],
             ['zoom'],
             0, radius / 3,
-            maxZoom, radius
+            maxZoom, radius,
+            22, radius * 2
           ],
-          // Transition from heatmap to circle layer by zoom level
-          'heatmap-opacity': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            maxZoom - 1, opacity,
-            maxZoom, 0
-          ]
+          // Constant opacity at every zoom. The usual Mapbox recipe fades the
+          // heatmap to 0 past maxZoom so a circle layer can take over — we
+          // have no circle layer, so fading out just made the heatmap vanish
+          // when zoomed into a single location.
+          'heatmap-opacity': opacity
         }
       });
     }

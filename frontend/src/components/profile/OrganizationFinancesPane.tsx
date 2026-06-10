@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { SegmentedControl } from "@/components/ui/segmented-control"
-import { BarChart3, Maximize2, Table2 } from "lucide-react"
+import { BarChart3, Maximize2, Table2, X } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -64,10 +64,35 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { TRANSACTION_TYPE_COLORS, getTransactionTypeColor } from "@/lib/chart-colors"
+import FINANCE_TYPES_DATA from "@/data/finance-types.json"
 
 // Transaction-type colours delegate to the single source of truth so this
 // pane matches every other transaction-type chart in the app.
 const TYPE_COLORS: Record<string, string> = { ...TRANSACTION_TYPE_COLORS }
+
+// IATI Finance Type codelist lookups (code → name / modality group), used by
+// the Aid Modality Mix chart so each slice reads e.g. "110 Standard grant".
+const FINANCE_TYPE_NAME: Record<string, string> = Object.fromEntries(
+  (FINANCE_TYPES_DATA as Array<{ code: string; name: string }>).map((d) => [String(d.code), d.name]),
+)
+const FINANCE_TYPE_GROUP: Record<string, string> = Object.fromEntries(
+  (FINANCE_TYPES_DATA as Array<{ code: string; group?: string }>).map((d) => [String(d.code), d.group ?? ""]),
+)
+function financeTypeLabel(code: string): string {
+  if (!code) return "Unspecified"
+  const name = FINANCE_TYPE_NAME[code]
+  return name ? `${code} ${name}` : code
+}
+// Colour each finance type by its modality group so grants share a hue, loans
+// another, etc. — preserving the at-a-glance modality read.
+function financeTypeColor(code: string): string {
+  const g = FINANCE_TYPE_GROUP[code] || ""
+  if (/grant/i.test(g)) return "#dc2625"
+  if (/loan|debt/i.test(g)) return "#4c5568"
+  if (/equity|investment|securit/i.test(g)) return "#7b95a7"
+  if (/guarantee|insurance/i.test(g)) return "#cfd0d5"
+  return "#94a3b8"
+}
 
 // IATI Finance Type buckets (rolled up to grant / loan / equity / guarantee /
 // other for the "Grants vs Loans" chart). Codes are taken from the IATI
@@ -241,7 +266,14 @@ function ChartCard({
           it would crowd the grid. It only renders in the expanded dialog
           footer below the chart. */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent chart className="max-w-[1400px] w-[95vw] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogContent
+          chart
+          className="max-w-[1400px] w-[95vw] h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
+          // Don't auto-focus the first focusable element on open — that lands
+          // on the ƒ (formula) button in the header, and Radix tooltips open
+          // on focus, so the calculation box would pop open by default.
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           {/* Override DialogHeader's default `-mx-6 -mt-6` (which assumes
               the parent uses p-6). Our DialogContent uses p-0, so the
               negative margins would shove the header outside the dialog
@@ -254,7 +286,19 @@ function ChartCard({
                   {description}
                 </DialogDescription>
               </div>
-              {mathTooltip && <FormulaTooltip content={mathTooltip} size="md" />}
+              <div className="flex items-center gap-1 shrink-0">
+                {mathTooltip && <FormulaTooltip content={mathTooltip} size="md" />}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => setOpen(false)}
+                  title="Close"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </DialogHeader>
           {/* Children fill the rest of the dialog — flex-1 + min-h-0 + relative
@@ -290,11 +334,14 @@ function txYear(t: any): number | null {
 export function OrganizationFinancesPane({
   organizationId,
   organizationName = "This organisation",
+  organizationAcronym = "",
 }: {
   organizationId: string
   /** Display name used as the centre node of the Funding Flows sankey. Falls
    *  back to a generic label when the caller doesn't provide it. */
   organizationName?: string
+  /** Acronym for the centre node so it matches the counterparty labels. */
+  organizationAcronym?: string
 }) {
   // Default to Charts so the user lands on the visual summary; they can
   // toggle to Tables to see the underlying transactions / disbursements.
@@ -412,8 +459,8 @@ export function OrganizationFinancesPane({
           value={view}
           onValueChange={setView}
           options={[
-            { value: "tables", label: "Tables", icon: Table2 },
             { value: "charts", label: "Charts", icon: BarChart3 },
+            { value: "tables", label: "Tables", icon: Table2 },
           ]}
         />
       </div>
@@ -476,7 +523,7 @@ export function OrganizationFinancesPane({
           {/* Financial Totals — analytics-dashboard chart scoped to this org
               (provider, receiver, or reporting org). Inline view is bare
               chart + expand button; controls only show in the modal. */}
-          <ChartFullscreen className="lg:col-span-2">
+          <ChartFullscreen>
             {({ isFullscreen, toggle }) => (
               <Card className={cn("bg-card", isFullscreen && "border-0 shadow-none rounded-none h-full flex flex-col")}>
                 <CardHeader className={cn(isFullscreen && "bg-surface-muted border-b rounded-t-lg")}>
@@ -494,9 +541,7 @@ export function OrganizationFinancesPane({
                         content="Sums all actual transactions (Commitments, Disbursements, Expenditures, etc.) by reporting year, alongside published activity budgets and planned disbursements. Multi-year budgets and planned disbursements that span the boundary are split proportionally by overlap days. All values use USD-converted amounts where available."
                         size={isFullscreen ? 'md' : 'sm'}
                       />
-                      {!isFullscreen && (
-                        <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-                      )}
+                      <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
                     </div>
                   </div>
                 </CardHeader>
@@ -522,8 +567,8 @@ export function OrganizationFinancesPane({
           <FundingFlowsSankeyChart
             organizationId={organizationId}
             organizationName={organizationName}
+            organizationAcronym={organizationAcronym}
             transactions={filteredTransactions}
-            className="lg:col-span-2"
           />
 
           <ChartCard
@@ -548,7 +593,6 @@ export function OrganizationFinancesPane({
           <FundingOverTimeChart envelopes={filteredEnvelopes} />
           <CommitmentsVsPlannedChart transactions={filteredTransactions} />
           <AllTransactionTypesChart transactions={filteredTransactions} />
-          <TransactionTypeByYearChart transactions={filteredTransactions} />
           <GrantsVsLoansChart transactions={filteredTransactions} />
           <LargestActivitiesChart activities={activities} transactions={filteredTransactions} />
         </div>
@@ -655,11 +699,13 @@ const FUNDING_FLOWS_DEFAULT_TYPES = ["1", "3"]
 function FundingFlowsSankeyChart({
   organizationId,
   organizationName,
+  organizationAcronym,
   transactions,
   className,
 }: {
   organizationId: string
   organizationName: string
+  organizationAcronym?: string
   transactions: any[] | null
   className?: string
 }) {
@@ -679,6 +725,7 @@ function FundingFlowsSankeyChart({
       <FundingFlowsFrame
         organizationId={organizationId}
         organizationName={organizationName}
+        organizationAcronym={organizationAcronym}
         transactions={transactions}
         selectedTypes={selectedTypes}
         onSelectedTypesChange={setSelectedTypes}
@@ -690,12 +737,14 @@ function FundingFlowsSankeyChart({
 function FundingFlowsFrame({
   organizationId,
   organizationName,
+  organizationAcronym,
   transactions,
   selectedTypes,
   onSelectedTypesChange,
 }: {
   organizationId: string
   organizationName: string
+  organizationAcronym?: string
   transactions: any[] | null
   selectedTypes: string[]
   onSelectedTypesChange: (next: string[]) => void
@@ -708,6 +757,7 @@ function FundingFlowsFrame({
         <OrganizationFundingFlowsSankey
           organizationId={organizationId}
           organizationName={organizationName}
+          organizationAcronym={organizationAcronym}
           transactions={transactions}
           selectedTypes={selectedTypes}
           expanded={false}
@@ -732,6 +782,7 @@ function FundingFlowsFrame({
           <OrganizationFundingFlowsSankey
             organizationId={organizationId}
             organizationName={organizationName}
+            organizationAcronym={organizationAcronym}
             transactions={transactions}
             selectedTypes={selectedTypes}
             expanded
@@ -751,31 +802,63 @@ function FundingFlowsTypeFilter({
 }) {
   const toggle = (code: string) => {
     if (selectedTypes.includes(code)) {
-      // Keep at least one selection — otherwise the chart goes blank with
-      // no way back from the dropdown UI.
-      if (selectedTypes.length <= 1) return
+      // Unchecking the last type is allowed — the empty state is recoverable
+      // via the "Select all" action in the dropdown header.
       onChange(selectedTypes.filter((c) => c !== code))
     } else {
       onChange([...selectedTypes, code])
     }
   }
 
-  const label = selectedTypes.length === FUNDING_FLOW_ALL_TYPES.length
-    ? "All transaction types"
+  const total = FUNDING_FLOW_ALL_TYPES.length
+  const allSelected = selectedTypes.length === total
+  // Trigger label mirrors the app's metric multi-selects ("Finance Types (2/2)").
+  const label = allSelected
+    ? "All Transaction Types"
     : selectedTypes.length === 1
       ? TRANSACTION_TYPE_LABELS_PLURAL[selectedTypes[0] as keyof typeof TRANSACTION_TYPE_LABELS_PLURAL] || "1 type"
-      : `${selectedTypes.length} types`
+      : "Transaction Types"
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 text-helper gap-2">
-          {label}
-          <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+        <Button variant="outline" size="sm" className="h-9 min-w-[220px] justify-between gap-2">
+          <span className="truncate text-body">
+            {label} ({selectedTypes.length}/{total})
+          </span>
+          <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        <div className="px-2 py-1.5 text-helper text-muted-foreground font-medium">Incoming</div>
+      <DropdownMenuContent
+        align="end"
+        className="w-[300px] max-h-[400px] overflow-y-auto p-1"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className="sticky top-0 z-10 bg-card border-b border-border mb-1">
+          <div className="flex items-center justify-between gap-2 px-2 py-2">
+            <span className="text-helper font-semibold text-foreground">Transaction Types</span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => onChange([...FUNDING_FLOW_ALL_TYPES])}
+                disabled={allSelected}
+                className="text-xs font-medium text-primary hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+              >
+                Select all
+              </button>
+              <span className="text-muted-foreground/40">·</span>
+              <button
+                type="button"
+                onClick={() => onChange([])}
+                disabled={selectedTypes.length === 0}
+                className="text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed px-1.5 py-0.5 rounded hover:bg-muted"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="px-2 py-1 text-helper text-muted-foreground font-medium">Incoming</div>
         {FUNDING_FLOW_ALL_TYPES.filter(isIncomingType).map((code) => (
           <FundingFlowsTypeCheckbox
             key={code}
@@ -785,7 +868,7 @@ function FundingFlowsTypeFilter({
           />
         ))}
         <div className="my-1 h-px bg-border" />
-        <div className="px-2 py-1.5 text-helper text-muted-foreground font-medium">Outgoing</div>
+        <div className="px-2 py-1 text-helper text-muted-foreground font-medium">Outgoing</div>
         {FUNDING_FLOW_ALL_TYPES.filter(isOutgoingType).map((code) => (
           <FundingFlowsTypeCheckbox
             key={code}
@@ -814,12 +897,13 @@ function FundingFlowsTypeCheckbox({
       onClick={onToggle}
       className="flex w-full items-center gap-2 px-2 py-1.5 text-body text-foreground hover:bg-muted rounded-sm"
     >
-      <Checkbox checked={checked} onCheckedChange={onToggle} aria-label={TRANSACTION_TYPE_LABELS[code as keyof typeof TRANSACTION_TYPE_LABELS]} />
+      <Checkbox checked={checked} onCheckedChange={onToggle} className="pointer-events-none flex-shrink-0" aria-label={TRANSACTION_TYPE_LABELS[code as keyof typeof TRANSACTION_TYPE_LABELS]} />
       <span
         className="inline-block h-2.5 w-2.5 rounded-sm flex-shrink-0"
         style={{ backgroundColor: FUNDING_FLOW_TYPE_COLOR[code] || "#94a3b8" }}
       />
-      <span className="flex-1 text-left">{TRANSACTION_TYPE_LABELS[code as keyof typeof TRANSACTION_TYPE_LABELS]}</span>
+      <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs flex-shrink-0">{code}</code>
+      <span className="flex-1 text-left truncate">{TRANSACTION_TYPE_LABELS[code as keyof typeof TRANSACTION_TYPE_LABELS]}</span>
     </button>
   )
 }
@@ -897,9 +981,24 @@ function FundingOverTimeBody({ data }: { data: any[] | null }) {
           <thead className="sticky top-0 bg-surface-muted z-10">
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Year</th>
-              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Actual</th>
-              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Current</th>
-              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Indicative</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
+                <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: "#dc2625" }} />
+                  Actual
+                </div>
+              </th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
+                <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: "#7b95a7" }} />
+                  Current
+                </div>
+              </th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
+                <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: "#cbd5e1" }} />
+                  Indicative
+                </div>
+              </th>
               <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Total</th>
             </tr>
           </thead>
@@ -1008,8 +1107,18 @@ function CommitmentsVsPlannedBody({ data }: { data: any[] | null }) {
           <thead className="sticky top-0 bg-surface-muted z-10">
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Year</th>
-              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Outgoing Commitments</th>
-              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Incoming Commitments / Pipeline</th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
+                <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: getTransactionTypeColor('2') }} />
+                  Outgoing Commitments
+                </div>
+              </th>
+              <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
+                <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: getTransactionTypeColor('11') }} />
+                  Incoming Commitments / Pipeline
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -1140,13 +1249,45 @@ function AllTransactionTypesBody({ data }: { data: any[] | null }) {
       </ChartFrame>
     )
   }
+  // Y-axis tick: IATI code in a grey monospace badge, then the type name —
+  // matching the code-badge style used elsewhere in the app.
+  const renderTypeTick = (props: any) => {
+    const { x, y, payload } = props
+    const row = data[payload?.index ?? -1]
+    const code = String(row?.type ?? "")
+    const name = row?.name ?? payload?.value ?? ""
+    const padX = 5
+    const gap = 6
+    const rightPad = 4
+    const codeW = Math.max(code.length * 7 + padX * 2, 18)
+    // Right-align the label against the axis: the name ends at the axis, the
+    // code badge sits just to its left.
+    const nameRight = x - rightPad
+    const nameW = name.length * 6.5
+    const badgeRight = nameRight - nameW - gap
+    const badgeLeft = badgeRight - codeW
+    return (
+      <g>
+        <rect x={badgeLeft} y={y - 9} width={codeW} height={18} rx={3} fill="#e2e8f0" />
+        <text x={badgeLeft + padX} y={y + 4} fontSize={11} fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#64748b">{code}</text>
+        <text x={nameRight} y={y + 4} fontSize={12} fill="#334155" textAnchor="end">{name}</text>
+      </g>
+    )
+  }
+
+  // Full, unrounded USD for the hover (expanded view); compact for the small card.
+  const fmtHoverUsd = (v: number) =>
+    isExpanded
+      ? v.toLocaleString("en-US", { style: "currency", currency: "USD" })
+      : compactUsd(v)
+
   return (
     <ChartFrame controls={controls}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 8, right: 16, left: 16, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} />
           <XAxis type="number" tickFormatter={(v: number) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
-          <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 12 }} />
+          <YAxis type="category" dataKey="name" width={200} tick={renderTypeTick} />
           <Tooltip
             content={({ active, payload }: any) => {
               if (!active || !payload?.length) return null
@@ -1154,7 +1295,7 @@ function AllTransactionTypesBody({ data }: { data: any[] | null }) {
               return (
                 <ChartTooltipCard
                   title={row.name}
-                  rows={[{ label: 'Total', value: compactUsd(Number(row.value) || 0), color: TYPE_COLORS[row.type] ?? '#94a3b8' }]}
+                  rows={[{ label: 'Total', value: fmtHoverUsd(Number(row.value) || 0), color: TYPE_COLORS[row.type] ?? '#94a3b8' }]}
                 />
               )
             }}
@@ -1164,123 +1305,6 @@ function AllTransactionTypesBody({ data }: { data: any[] | null }) {
               <Cell key={d.type} fill={TYPE_COLORS[d.type] ?? "#94a3b8"} />
             ))}
           </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </ChartFrame>
-  )
-}
-
-function TransactionTypeByYearChart({ transactions }: { transactions: any[] | null }) {
-  const { data, types } = useMemo(() => {
-    if (!transactions) return { data: null as any[] | null, types: [] as string[] }
-    const focusTypes = ["1", "2", "3", "4"]
-    const byYear = new Map<number, Record<string, number>>()
-    for (const t of transactions) {
-      const date = t.transaction_date || t.value_date
-      if (!date) continue
-      const year = new Date(date).getUTCFullYear()
-      if (!Number.isFinite(year)) continue
-      const type = String(t.transaction_type ?? "")
-      if (!focusTypes.includes(type)) continue
-      const usd = t.value_usd != null ? Number(t.value_usd) : (t.currency === "USD" ? Number(t.value) : 0)
-      if (!Number.isFinite(usd)) continue
-      const row = byYear.get(year) ?? Object.fromEntries(focusTypes.map((tp) => [tp, 0]))
-      row[type] = (row[type] ?? 0) + usd
-      byYear.set(year, row)
-    }
-    const sorted = Array.from(byYear.entries())
-      .sort((a, b) => a[0] - b[0])
-      .map(([year, vals]) => ({ year: String(year), ...vals }))
-    return { data: sorted, types: focusTypes }
-  }, [transactions])
-
-  return (
-    <ChartCard
-      title="Transactions by Year"
-      description="Yearly breakdown by transaction type"
-      mathTooltip="For each year, sums USD-converted transaction value split by IATI transaction type (Incoming Funds, Outgoing Commitments, Disbursements, Expenditures). Each year's bar stacks the types; transactions are bucketed by their transaction or value date."
-      interpretation={
-        <>
-          Annual breakdown of incoming funds, outgoing commitments, disbursements and expenditures — the four IATI types that drive most financial reporting. The trends across years tell the story: rising disbursements indicate accelerating delivery, while a peak in commitments without matching disbursements signals an upcoming pipeline that hasn't yet flowed. Comparing the rhythm year-on-year highlights shifting portfolios — new programmes starting, old ones closing — or external shocks affecting absorption capacity.
-        </>
-      }
-    >
-      <TransactionTypeByYearBody data={data} types={types} />
-    </ChartCard>
-  )
-}
-
-function TransactionTypeByYearBody({ data, types }: { data: any[] | null; types: string[] }) {
-  const isExpanded = useChartExpansion()
-  const [view, setView] = useState<"chart" | "table">("chart")
-  const yearLabel = useOrgYearLabel()
-  if (data === null) return <ChartLoading />
-  if (data.length === 0) return <ChartEmpty message="No transactions recorded for this organisation." />
-  const controls = isExpanded ? <ChartTableToggle view={view} setView={setView} /> : null
-  if (isExpanded && view === "table") {
-    return (
-      <ChartFrame controls={controls} tableMode>
-        <table className="w-full text-body">
-          <thead className="sticky top-0 bg-surface-muted z-10">
-            <tr className="border-b border-border">
-              <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Year</th>
-              {types.map((tp) => (
-                <th key={tp} className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
-                  <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
-                    <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: TYPE_COLORS[tp] ?? "#94a3b8" }} />
-                    {TRANSACTION_TYPE_LABELS_PLURAL[tp as keyof typeof TRANSACTION_TYPE_LABELS_PLURAL] ?? tp}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row) => (
-              <tr key={row.year} className="border-b border-border hover:bg-muted/50">
-                <td className="py-2.5 px-4 font-medium text-foreground">{yearLabel(Number(row.year))}</td>
-                {types.map((tp) => (
-                  <td key={tp} className="text-right py-2.5 px-4 text-foreground tabular-nums">
-                    {compactUsd(Number(row[tp]) || 0)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </ChartFrame>
-    )
-  }
-  return (
-    <ChartFrame controls={controls}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="year" tick={{ fontSize: 12 }} tickFormatter={(v: string) => yearLabel(Number(v))} />
-          <YAxis tickFormatter={(v: number) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
-          <Tooltip
-            content={({ active, payload, label }: any) => {
-              if (!active || !payload?.length) return null
-              return (
-                <ChartTooltipCard
-                  title={yearLabel(Number(label))}
-                  rows={payload.map((p: any) => ({
-                    label: p.name,
-                    value: compactUsd(Number(p.value) || 0),
-                    color: p.color,
-                  }))}
-                />
-              )
-            }}
-          />
-          {isExpanded && <Legend />}
-          {types.map((tp) => (
-            <Bar
-              key={tp}
-              dataKey={tp}
-              name={TRANSACTION_TYPE_LABELS_PLURAL[tp as keyof typeof TRANSACTION_TYPE_LABELS_PLURAL] ?? tp}
-              fill={TYPE_COLORS[tp] ?? "#94a3b8"}
-            />
-          ))}
         </BarChart>
       </ResponsiveContainer>
     </ChartFrame>
@@ -1304,30 +1328,33 @@ function GrantsVsLoansChart({ transactions }: { transactions: any[] | null }) {
 
   const data = useMemo(() => {
     if (!transactions) return null
-    const buckets: Record<string, { value: number; byType: Record<string, number> }> = {}
+    // Group by the actual IATI finance-type CODE so each slice reads
+    // "110 Standard grant" rather than a broad Grants/Loans bucket.
+    const byCode: Record<string, { value: number; byType: Record<string, number>; code: string }> = {}
     for (const t of transactions) {
       const type = String(t.transaction_type ?? "")
       if (!txTypes.has(type)) continue
       const usd = t.value_usd != null ? Number(t.value_usd) : (t.currency === "USD" ? Number(t.value) : 0)
       if (!Number.isFinite(usd) || usd === 0) continue
-      const bucket = bucketFinanceType(t.finance_type)
-      if (!buckets[bucket]) buckets[bucket] = { value: 0, byType: {} }
-      buckets[bucket].value += usd
-      buckets[bucket].byType[type] = (buckets[bucket].byType[type] || 0) + usd
+      const code = String(t.finance_type || "")
+      const key = code || "__unspecified__"
+      if (!byCode[key]) byCode[key] = { value: 0, byType: {}, code }
+      byCode[key].value += usd
+      byCode[key].byType[type] = (byCode[key].byType[type] || 0) + usd
     }
-    return Object.entries(buckets)
-      .map(([name, { value, byType }]) => ({ name, value, byType }))
+    return Object.values(byCode)
+      .map(({ value, byType, code }) => ({ name: financeTypeLabel(code), code, value, byType }))
       .sort((a, b) => b.value - a.value)
   }, [transactions, txTypes])
 
   return (
     <ChartCard
       title="Aid Modality Mix"
-      description="Outgoing finance by instrument"
-      mathTooltip="Groups the organisation's outgoing finance by IATI finance type — bucketed into Grants, Loans, Equity, Guarantees, or Other — and sums USD-converted value. Each slice is that instrument's share of total outgoing USD. The transaction-type filter re-scopes which transactions are counted."
+      description="Outgoing finance by IATI finance type"
+      mathTooltip="Groups the organisation's outgoing finance by IATI finance-type code (e.g. 110 Standard grant, 421 Standard loan) and sums USD-converted value. Each slice is that finance type's share of total outgoing USD, coloured by its modality group (grant / loan / equity / guarantee). The transaction-type filter re-scopes which transactions are counted."
       interpretation={
         <>
-          Outgoing finance grouped by IATI finance-type bucket — grants, loans, equity, guarantees / insurance, and other — with each slice sized by dollar share. A grant-heavy mix indicates concessional support, while a loan-heavy mix signals market or near-market financing terms. Understanding the mix matters because recipients of grants face no repayment burden, while loan recipients carry future debt-service obligations that change project economics.
+          Outgoing finance grouped by IATI finance type — shown with its code and name (e.g. 110 Standard grant) and coloured by modality group (grants, loans, equity, guarantees) — with each slice sized by dollar share. A grant-heavy mix indicates concessional support, while a loan-heavy mix signals market or near-market financing terms. Understanding the mix matters because recipients of grants face no repayment burden, while loan recipients carry future debt-service obligations that change project economics.
         </>
       }
     >
@@ -1338,6 +1365,7 @@ function GrantsVsLoansChart({ transactions }: { transactions: any[] | null }) {
 
 interface GrantsVsLoansSlice {
   name: string
+  code: string
   value: number
   byType: Record<string, number>
 }
@@ -1353,15 +1381,6 @@ function GrantsVsLoansBody({
 }) {
   const isExpanded = useChartExpansion()
   const [view, setView] = useState<"chart" | "table">("chart")
-  // Brand palette — matches the activity profile's Aid Modality Mix.
-  const colors: Record<string, string> = {
-    Grants: "#dc2625",
-    Loans: "#4c5568",
-    Equity: "#7b95a7",
-    "Guarantees / Insurance": "#cfd0d5",
-    Other: "#94a3b8",
-    Unspecified: "#e2e8f0",
-  }
   const total = (data ?? []).reduce((sum, d) => sum + d.value, 0)
   if (data === null) return <ChartLoading />
   if (data.length === 0) return <ChartEmpty message="No outgoing transactions with finance types recorded." />
@@ -1370,12 +1389,15 @@ function GrantsVsLoansBody({
     <table className="w-full text-body">
       <thead className="sticky top-0 bg-surface-muted z-10">
         <tr className="border-b border-border">
-          <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Instrument</th>
+          <th className="text-left py-3 px-4 font-medium text-foreground whitespace-nowrap">Finance Type</th>
           <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">Total (USD)</th>
           <th className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">% Share</th>
           {GVL_OUTGOING_TYPES.map((code) => (
             <th key={code} className="text-right py-3 px-4 font-medium text-foreground whitespace-nowrap">
-              {GVL_TYPE_LABELS[code]}
+              <div className="inline-flex items-center justify-end gap-2 whitespace-nowrap">
+                <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: TYPE_COLORS[code] ?? "#94a3b8" }} />
+                {GVL_TYPE_LABELS[code]}
+              </div>
             </th>
           ))}
         </tr>
@@ -1387,8 +1409,15 @@ function GrantsVsLoansBody({
             <tr key={row.name} className="border-b border-border hover:bg-muted/50">
               <td className="py-2.5 px-4 font-medium text-foreground">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: colors[row.name] ?? "#94a3b8" }} />
-                  {row.name}
+                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: financeTypeColor(row.code) }} />
+                  {row.code ? (
+                    <>
+                      <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono flex-shrink-0">{row.code}</code>
+                      <span>{FINANCE_TYPE_NAME[row.code] || row.name}</span>
+                    </>
+                  ) : (
+                    <span>Unspecified</span>
+                  )}
                 </div>
               </td>
               <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{compactUsd(row.value)}</td>
@@ -1432,7 +1461,7 @@ function GrantsVsLoansBody({
           paddingAngle={2}
         >
           {data.map((d, i) => (
-            <Cell key={i} fill={colors[d.name] ?? "#94a3b8"} />
+            <Cell key={i} fill={financeTypeColor(d.code)} />
           ))}
         </Pie>
         <Tooltip
@@ -1442,7 +1471,7 @@ function GrantsVsLoansBody({
             const slice = (entry.payload || {}) as Partial<GrantsVsLoansSlice>
             const value = Number(entry.value) || 0
             const pct = total > 0 ? (value / total) * 100 : 0
-            const sliceColor = entry.payload?.fill || colors[entry.name]
+            const sliceColor = entry.payload?.fill || financeTypeColor(slice.code || "")
             // Disaggregate by transaction type — same hover pattern as
             // the activity profile's Aid Modality Mix.
             const byType: Record<string, number> = slice.byType || {}
@@ -1454,7 +1483,14 @@ function GrantsVsLoansBody({
               }))
             return (
               <ChartTooltipCard
-                title={entry.name}
+                title={
+                  slice.code ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono">{slice.code}</code>
+                      {FINANCE_TYPE_NAME[slice.code] || entry.name}
+                    </span>
+                  ) : entry.name
+                }
                 rows={[
                   {
                     label: 'Total',
@@ -1485,7 +1521,6 @@ function GrantsVsLoansBody({
       <div className="flex items-center gap-2 mb-3 shrink-0">
         <ExpandedYearChip />
         <div className="ml-auto flex items-center gap-2">
-          <ChartTableToggle view={view} setView={setView} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8">
@@ -1520,6 +1555,7 @@ function GrantsVsLoansBody({
                         onCheckedChange={toggle}
                         onClick={(e) => e.stopPropagation()}
                       />
+                      <span className="inline-block h-2.5 w-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: TYPE_COLORS[code] ?? "#94a3b8" }} />
                       <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-mono min-w-[24px] text-center">
                         {code}
                       </code>
@@ -1530,6 +1566,7 @@ function GrantsVsLoansBody({
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
+          <ChartTableToggle view={view} setView={setView} />
         </div>
       </div>
       {view === "table" ? (
@@ -1581,22 +1618,6 @@ function LargestActivitiesChart({
   const data = useMemo(() => {
     if (!activities) return null
 
-    // Build an activity-id → display label map. Prefer an acronym when
-    // available (shorter / easier to read on horizontal bars); fall back to
-    // the full title or IATI identifier when no acronym is set.
-    const labelByActivityId = new Map<string, { label: string; full: string }>()
-    activities.forEach((a) => {
-      const id = a.id || a.activity_id
-      const acronym = a.acronym || a.acronym_name || a.short_name
-      const full = a.title_narrative || a.title || a.iati_identifier || 'Untitled'
-      if (id) {
-        labelByActivityId.set(String(id), {
-          label: (acronym && String(acronym).trim()) ? String(acronym).trim() : full,
-          full,
-        })
-      }
-    })
-
     // Pick which transaction types contribute, based on the mode. The
     // "budget" and "plannedDisbursement" modes bypass transactions
     // entirely and read from the activity row's pre-computed totals
@@ -1622,7 +1643,7 @@ function LargestActivitiesChart({
       })
     }
 
-    const rows = activities
+    const allRows = activities
       .map((a) => {
         const id = String(a.id || a.activity_id || '')
         // No silent fallback: each mode reads from exactly one source. The
@@ -1648,15 +1669,28 @@ function LargestActivitiesChart({
         } else {
           value = totalByActivityId.get(id) || 0
         }
-        const stored = labelByActivityId.get(id)
-        const label = stored?.label
-          || (a.acronym && String(a.acronym).trim()) || a.title_narrative || a.title || 'Untitled'
-        const full = stored?.full || a.title_narrative || a.title || a.iati_identifier || 'Untitled'
-        return { label, full, value }
+        const full = a.title_narrative || a.title || a.iati_identifier || 'Untitled'
+        const acronym = (a.acronym && String(a.acronym).trim()) ? String(a.acronym).trim() : ''
+        return { full, acronym, value, isOther: false }
       })
       .filter((r) => Number.isFinite(r.value) && r.value > 0)
       .sort((a, b) => b.value - a.value)
-      .slice(0, 10)
+
+    // Top 10 activities, then roll everything else up into a single "Other" bar.
+    const top = allRows.slice(0, 10)
+    const rest = allRows.slice(10)
+    const otherTotal = rest.reduce((s, r) => s + r.value, 0)
+    const rows: { full: string; acronym: string; value: number; isOther: boolean; name: string }[] =
+      top.map((r, i) => ({ ...r, name: `${i}|${r.full}` }))
+    if (otherTotal > 0) {
+      rows.push({
+        full: `Other (${rest.length} ${rest.length === 1 ? 'activity' : 'activities'})`,
+        acronym: '',
+        value: otherTotal,
+        isOther: true,
+        name: '__other__',
+      })
+    }
     return rows
   }, [activities, transactions, mode])
 
@@ -1690,6 +1724,43 @@ function LargestActivitiesBody({
   const isExpanded = useChartExpansion()
   const [view, setView] = useState<"chart" | "table">("chart")
   const currentMode = LARGEST_ACTIVITIES_MODES.find((m) => m.value === mode)
+
+  // Y-axis tick: full activity name + acronym, right-aligned, wrapped to two
+  // lines so the whole label is visible rather than truncated.
+  const renderActivityTick = (props: any) => {
+    const { x, y, payload } = props
+    const row = data?.[payload?.index ?? -1]
+    const full = row?.full ?? payload?.value ?? ""
+    const acronym = row?.acronym ? ` (${row.acronym})` : ""
+    const display = `${full}${acronym}`
+    const maxChars = 30
+    const words = String(display).split(" ")
+    const lines: string[] = []
+    let cur = ""
+    for (const w of words) {
+      if (cur && (cur + " " + w).length > maxChars) {
+        lines.push(cur)
+        cur = w
+      } else {
+        cur = cur ? `${cur} ${w}` : w
+      }
+    }
+    if (cur) lines.push(cur)
+    const shown = lines.slice(0, 2)
+    if (lines.length > 2) shown[1] = `${shown[1].slice(0, maxChars - 1)}…`
+    const lineH = 12
+    const startY = y - ((shown.length - 1) * lineH) / 2
+    return (
+      <g>
+        {shown.map((ln, i) => (
+          <text key={i} x={x} y={startY + i * lineH + 4} textAnchor="end" fontSize={11} fill="#334155">
+            {ln}
+          </text>
+        ))}
+      </g>
+    )
+  }
+
   return (
     <div className={cn(isExpanded ? "h-full flex flex-col gap-3 min-h-0" : "space-y-3")}>
       {/* Year-range chip on the left, chart/table toggle + mode picker on the
@@ -1699,7 +1770,6 @@ function LargestActivitiesBody({
         <div className="flex items-center gap-2 shrink-0">
           <ExpandedYearChip />
           <div className="ml-auto flex items-center gap-2">
-          <ChartTableToggle view={view} setView={setView} />
           <Select value={mode} onValueChange={(v) => setMode(v as LargestActivitiesMode)}>
             <SelectTrigger className="h-8 w-auto min-w-[260px] text-body">
               <SelectValue>
@@ -1726,6 +1796,7 @@ function LargestActivitiesBody({
               ))}
             </SelectContent>
           </Select>
+          <ChartTableToggle view={view} setView={setView} />
           </div>
         </div>
       )}
@@ -1747,10 +1818,10 @@ function LargestActivitiesBody({
             </thead>
             <tbody>
               {data.map((row, i) => (
-                <tr key={`${row.full}-${i}`} className="border-b border-border hover:bg-muted/50">
-                  <td className="py-2.5 px-4 text-muted-foreground tabular-nums">{i + 1}</td>
-                  <td className="py-2.5 px-4 font-medium text-foreground" title={row.full}>
-                    {row.label}
+                <tr key={row.name ?? `${row.full}-${i}`} className="border-b border-border hover:bg-muted/50">
+                  <td className="py-2.5 px-4 text-muted-foreground tabular-nums">{row.isOther ? "—" : i + 1}</td>
+                  <td className="py-2.5 px-4 font-medium text-foreground" title={row.acronym ? `${row.full} (${row.acronym})` : row.full}>
+                    {row.full}{row.acronym ? ` (${row.acronym})` : ""}
                   </td>
                   <td className="text-right py-2.5 px-4 text-foreground tabular-nums">
                     {compactUsd(Number(row.value) || 0)}
@@ -1769,10 +1840,9 @@ function LargestActivitiesBody({
               <XAxis type="number" tickFormatter={(v: number) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />
               <YAxis
                 type="category"
-                dataKey="label"
-                width={180}
-                tick={{ fontSize: 11 }}
-                tickFormatter={(v: string) => (v && v.length > 28 ? `${v.slice(0, 28)}…` : v)}
+                dataKey="name"
+                width={230}
+                tick={renderActivityTick}
               />
               <Tooltip
                 content={({ active, payload }: any) => {
@@ -1781,13 +1851,17 @@ function LargestActivitiesBody({
                   const label = LARGEST_ACTIVITIES_MODES.find((m) => m.value === mode)?.label ?? "Total"
                   return (
                     <ChartTooltipCard
-                      title={row.full || row.label}
-                      rows={[{ label, value: compactUsd(Number(row.value) || 0), color: '#dc2625' }]}
+                      title={row.acronym ? `${row.full} (${row.acronym})` : row.full}
+                      rows={[{ label, value: compactUsd(Number(row.value) || 0), color: row.isOther ? '#94a3b8' : '#dc2625' }]}
                     />
                   )
                 }}
               />
-              <Bar dataKey="value" fill="#dc2625" />
+              <Bar dataKey="value">
+                {data.map((d: any, i: number) => (
+                  <Cell key={i} fill={d.isOther ? '#94a3b8' : '#dc2625'} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
           </div>

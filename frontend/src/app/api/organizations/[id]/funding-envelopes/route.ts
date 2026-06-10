@@ -12,6 +12,37 @@ function isRlsViolation(error: { code?: string } | null | undefined): boolean {
 }
 
 /**
+ * Validate an IATI budget period (period-start / period-end) and derive the
+ * legacy year fields kept in sync for analytics. The period must be valid,
+ * ordered, and not exceed one year (IATI rule).
+ */
+function derivePeriod(
+  periodStart: string,
+  periodEnd: string
+): { period_start: string; period_end: string; year_start: number; year_end: number | null } | { error: string } {
+  const start = new Date(periodStart);
+  const end = new Date(periodEnd);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return { error: 'period_start and period_end must be valid dates' };
+  }
+  if (end < start) {
+    return { error: 'period_end must be on or after period_start' };
+  }
+  const oneYearMs = 366 * 24 * 60 * 60 * 1000; // allow a full leap year
+  if (end.getTime() - start.getTime() > oneYearMs) {
+    return { error: 'Budget period must not exceed one year (IATI rule)' };
+  }
+  const yearStart = start.getUTCFullYear();
+  const yearEnd = end.getUTCFullYear();
+  return {
+    period_start: periodStart,
+    period_end: periodEnd,
+    year_start: yearStart,
+    year_end: yearEnd !== yearStart ? yearEnd : null,
+  };
+}
+
+/**
  * Helper function to convert funding envelope amount to USD
  * Uses the same pattern as transactions for consistency
  */
@@ -166,10 +197,10 @@ export async function POST(
       return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
     }
 
-    // Validation — IATI recipient-country-budget: amount, currency, year, status.
-    if (!body.amount || !body.currency || !body.year_start || !body.status) {
+    // Validation — IATI recipient-country-budget: amount, currency, period, status.
+    if (!body.amount || !body.currency || !body.period_start || !body.period_end || !body.status) {
       return NextResponse.json({
-        error: 'Missing required fields: amount, currency, year_start, and status are required'
+        error: 'Missing required fields: amount, currency, period_start, period_end, and status are required'
       }, { status: 400 });
     }
 
@@ -179,20 +210,23 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Annual budgets only — single year, no multi-year range.
-    body.year_end = null;
+    const period = derivePeriod(body.period_start, body.period_end);
+    if ('error' in period) {
+      return NextResponse.json({ error: period.error }, { status: 400 });
+    }
 
     // Normalize value_date (empty string to null)
     const normalizedValueDate = body.value_date && body.value_date.trim() !== ''
       ? body.value_date
       : null;
 
-    // Convert to USD (honours a client-supplied rate when provided)
+    // Convert to USD (honours a client-supplied rate when provided). Falls back
+    // to the period start date when no explicit value date is given.
     const usdConversion = await resolveEnvelopeUsd(
       body.amount,
       body.currency,
-      normalizedValueDate,
-      body.year_start,
+      normalizedValueDate || period.period_start,
+      period.year_start,
       body.exchange_rate_used
     );
 
@@ -205,10 +239,12 @@ export async function POST(
       .insert({
         organization_id: organizationId,
         period_type: 'single_year',
-        year_type: body.year_type || 'calendar',
-        year_start: body.year_start,
-        year_end: null,
-        fiscal_year_start_month: body.fiscal_year_start_month || null,
+        year_type: 'calendar',
+        recipient_country: body.recipient_country || null,
+        period_start: period.period_start,
+        period_end: period.period_end,
+        year_start: period.year_start,
+        year_end: period.year_end,
         amount: body.amount,
         currency: body.currency,
         value_date: normalizedValueDate,
@@ -261,8 +297,16 @@ export async function PUT(
       }, { status: 400 });
     }
 
-    // Annual budgets only — single year, no multi-year range.
-    body.year_end = null;
+    if (!body.period_start || !body.period_end) {
+      return NextResponse.json({
+        error: 'Missing required fields: period_start and period_end are required'
+      }, { status: 400 });
+    }
+
+    const period = derivePeriod(body.period_start, body.period_end);
+    if ('error' in period) {
+      return NextResponse.json({ error: period.error }, { status: 400 });
+    }
 
     // Normalize value_date (empty string to null)
     const normalizedValueDate = body.value_date && body.value_date.trim() !== ''
@@ -274,8 +318,8 @@ export async function PUT(
     const usdConversion = await resolveEnvelopeUsd(
       body.amount,
       body.currency,
-      normalizedValueDate,
-      body.year_start,
+      normalizedValueDate || period.period_start,
+      period.year_start,
       body.exchange_rate_used
     );
 
@@ -287,10 +331,12 @@ export async function PUT(
       .from('organization_funding_envelopes')
       .update({
         period_type: 'single_year',
-        year_type: body.year_type || 'calendar',
-        year_start: body.year_start,
-        year_end: null,
-        fiscal_year_start_month: body.fiscal_year_start_month || null,
+        year_type: 'calendar',
+        recipient_country: body.recipient_country || null,
+        period_start: period.period_start,
+        period_end: period.period_end,
+        year_start: period.year_start,
+        year_end: period.year_end,
         amount: body.amount,
         currency: body.currency,
         value_date: normalizedValueDate,

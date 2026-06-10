@@ -2,7 +2,7 @@
 
 import React, { ReactNode, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Maximize2, Minimize2 } from "lucide-react"
+import { Maximize2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ChartExpansionProvider } from "@/lib/chart-expansion-context"
 
@@ -106,7 +106,9 @@ export function ChartFullscreen({ children, className }: ChartFullscreenProps) {
   )
 }
 
-/** Small icon button matching the analytics dashboard style. */
+/** Small icon button matching the analytics dashboard style. Renders a close
+ *  (X) affordance when already fullscreen, and an expand affordance otherwise —
+ *  so every expanded chart has a visible close control. */
 export function ChartExpandIconButton({
   isFullscreen,
   onClick,
@@ -118,12 +120,12 @@ export function ChartExpandIconButton({
     <Button
       variant="outline"
       size="icon"
-      className="h-8 w-8 flex-shrink-0"
+      className={cn("flex-shrink-0", isFullscreen ? "h-9 w-9" : "h-8 w-8")}
       onClick={onClick}
-      title={isFullscreen ? "Collapse chart" : "Expand chart"}
-      aria-label={isFullscreen ? "Collapse chart" : "Expand chart"}
+      title={isFullscreen ? "Close" : "Expand chart"}
+      aria-label={isFullscreen ? "Close" : "Expand chart"}
     >
-      {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+      {isFullscreen ? <X className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
     </Button>
   )
 }

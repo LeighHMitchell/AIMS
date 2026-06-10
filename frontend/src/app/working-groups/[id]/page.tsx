@@ -41,6 +41,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { apiFetch } from '@/lib/api-fetch'
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
+import { HERO_HEIGHT_WITH_IMAGE, HERO_HEIGHT_WITHOUT_IMAGE } from '@/components/profile/ProfileHero'
 
 interface WorkingGroupMember {
   id: string
@@ -271,7 +272,7 @@ export default function WorkingGroupProfilePage() {
 
         {/* Banner */}
         {workingGroup.banner ? (
-          <div className="relative h-48 w-full rounded-xl overflow-hidden mb-6">
+          <div className="relative w-full rounded-xl overflow-hidden mb-6" style={{ height: HERO_HEIGHT_WITH_IMAGE }}>
             <img src={workingGroup.banner} alt="" className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6">
@@ -292,14 +293,14 @@ export default function WorkingGroupProfilePage() {
             </div>
           </div>
         ) : (
-          <div className="mb-6">
-            <div className="flex items-start gap-4">
+          <div className="rounded-xl border border-border relative overflow-hidden mb-6 flex flex-col justify-end p-6 bg-gradient-to-r from-muted to-card" style={{ height: HERO_HEIGHT_WITHOUT_IMAGE }}>
+            <div className="flex items-end gap-4">
               {workingGroup.icon_url && (
-                <div className="w-14 h-14 rounded-full border-2 border-border shadow-sm overflow-hidden bg-card flex-shrink-0">
+                <div className="w-16 h-16 rounded-full border-2 border-border shadow-sm overflow-hidden bg-card flex-shrink-0">
                   <img src={workingGroup.icon_url} alt="" className="w-full h-full object-contain p-1" />
                 </div>
               )}
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3">
                   <h1 className="text-3xl font-bold text-foreground">{workingGroup.label}</h1>
                 </div>

@@ -19,9 +19,7 @@ import {
   Table as TableIcon,
   ExternalLink,
   MapPin,
-  Pencil,
 } from 'lucide-react'
-import { useUserRole } from '@/hooks/useUserRole'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
   Cell, PieChart as RechartsPieChart, Pie, AreaChart, Area,
@@ -180,7 +178,6 @@ import { CHART_COLOR_PALETTE, DATA_COLORS } from '@/lib/chart-colors'
 export default function SDGProfilePage() {
   const params = useParams()
   const router = useRouter()
-  const { isSuperUser } = useUserRole()
   const [sdgData, setSdgData] = useState<SDGData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -340,19 +337,10 @@ export default function SDGProfilePage() {
               { label: "SDGs", href: "/sdgs" },
               { label: `SDG ${params?.id}` },
             ]} />
-            {isSuperUser() && (
-              <Link
-                href={`/sdgs/${params?.id}/edit`}
-                className="inline-flex items-center h-8 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors flex-shrink-0"
-              >
-                <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                Edit
-              </Link>
-            )}
           </div>
 
           {/* Hero Banner */}
-          <SDGHeroBanner sdg={sdg} />
+          <SDGHeroBanner sdg={sdg} editHref={`/sdgs/${params?.id}/edit`} />
 
           {/* Metric Cards */}
           <SDGMetricCards

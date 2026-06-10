@@ -14,6 +14,7 @@ import {
   type Metric,
   METRIC_DEFS,
   METRIC_LABEL,
+  metricColor,
 } from '@/lib/financial-metrics'
 
 interface MetricsMultiSelectProps {
@@ -165,6 +166,10 @@ export function MetricsMultiSelect({
                 className="flex items-center gap-2 w-full px-2 py-1.5 text-left hover:bg-muted rounded text-body"
               >
                 <Checkbox checked={checked} className="pointer-events-none flex-shrink-0" />
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: metricColor(def.key) }}
+                />
                 {def.code && (
                   <code className="px-1 py-0.5 rounded bg-muted text-muted-foreground font-mono text-xs flex-shrink-0">{def.code}</code>
                 )}

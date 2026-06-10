@@ -47,10 +47,25 @@ function FocusOpener({ focused }: { focused: boolean }) {
   const { marker } = useMarkerContext();
   useEffect(() => {
     if (!focused) return;
-    const popup = marker.getPopup();
-    if (popup && !popup.isOpen()) {
-      marker.togglePopup();
-    }
+    let frame: number | null = null;
+    const openPopup = () => {
+      // On mount this child effect runs before MapMarker's own effect calls
+      // marker.addTo(map) (e.g. remounting via the pin/heatmap toggle while a
+      // location is focused). togglePopup() on a detached marker crashes
+      // inside MapLibre ("this._map.on"), so wait until it's attached.
+      if (!(marker as unknown as { _map?: unknown })._map) {
+        frame = requestAnimationFrame(openPopup);
+        return;
+      }
+      const popup = marker.getPopup();
+      if (popup && !popup.isOpen()) {
+        marker.togglePopup();
+      }
+    };
+    openPopup();
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
   }, [focused, marker]);
   return null;
 }

@@ -51,7 +51,12 @@ export function ProfileLayout({
         {compactStrip}
         <div style={{ height: TAB_ROW_HEIGHT }}>{tabs}</div>
       </div>
-      <div className="w-full px-6 py-8">
+      {/* min-h-screen guarantees there's always at least a viewport of
+          scrollable content below the hero, so the shrink-on-scroll collapse
+          can always run to completion — otherwise short pages (e.g. a 3-row
+          table) freeze the hero/strip transition halfway because the page
+          can't scroll the full hero height. */}
+      <div className="w-full px-6 py-8 min-h-screen">
         {hasRail ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <main className="lg:col-span-2 min-w-0">{main}</main>

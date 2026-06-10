@@ -31,24 +31,37 @@ export async function GET(request: NextRequest) {
     // Get activity counts per marker
     const { data: markerCounts, error: countsError } = await supabase
       .from('activity_policy_markers')
-      .select('policy_marker_id, activity_id');
+      .select('policy_marker_id, activity_id, significance');
 
     if (countsError) {
       console.error('[PM Summary] Error fetching counts:', countsError);
     }
 
-    // Count activities per marker — policy_marker_id may store uuid or integer id
+    // Count activities per marker — policy_marker_id may store uuid or integer id.
+    // Also break the count down by IATI significance: 1 = Significant, 2 = Principal.
     const countMap = new Map<string, number>();
+    const significantMap = new Map<string, number>();
+    const principalMap = new Map<string, number>();
     (markerCounts || []).forEach((row: any) => {
       const key = String(row.policy_marker_id);
       countMap.set(key, (countMap.get(key) || 0) + 1);
+      const sig = Number(row.significance);
+      if (sig === 1) significantMap.set(key, (significantMap.get(key) || 0) + 1);
+      else if (sig === 2) principalMap.set(key, (principalMap.get(key) || 0) + 1);
     });
 
     // Enrich markers with counts (try uuid first, then string id)
-    const enrichedMarkers = markers.map(m => ({
-      ...m,
-      activityCount: countMap.get(m.uuid) || countMap.get(String(m.id)) || 0,
-    }));
+    const enrichedMarkers = markers.map(m => {
+      const uuidKey = m.uuid;
+      const idKey = String(m.id);
+      const pick = (map: Map<string, number>) => map.get(uuidKey) ?? map.get(idKey) ?? 0;
+      return {
+        ...m,
+        activityCount: pick(countMap),
+        significantCount: pick(significantMap),
+        principalCount: pick(principalMap),
+      };
+    });
 
     // Group by vocabulary: official OECD-DAC / IATI markers vs everything else
     const groups: Record<string, any[]> = {

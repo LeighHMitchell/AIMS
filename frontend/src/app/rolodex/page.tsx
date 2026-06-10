@@ -114,7 +114,7 @@ export default function RolodexPage() {
   });
 
   const handleOrganizationClick = (organizationId: string) => {
-    router.push(`/partners/${organizationId}`);
+    router.push(`/organizations/${organizationId}`);
   };
 
   const handleActivityClick = (activityId: string) => {

@@ -25,6 +25,8 @@ interface PolicyMarker {
   iati_code?: string
   is_iati_standard: boolean
   activityCount: number
+  significantCount: number
+  principalCount: number
   icon?: string | null
   color?: string | null
 }
@@ -62,7 +64,7 @@ export default function PolicyMarkersListingPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await apiFetch('/api/policy-markers/summary')
+        const response = await apiFetch('/api/policy-markers/summary', { cache: 'no-store' })
         if (!response.ok) throw new Error('Failed to fetch policy markers')
         const result = await response.json()
         setData(result)
@@ -326,10 +328,18 @@ export default function PolicyMarkersListingPage() {
                           <p className="text-helper text-muted-foreground line-clamp-3 mb-3">
                             {marker.description}
                           </p>
-                          <div className="flex items-center gap-2 mt-auto pt-3 border-t border-border">
+                          <div className="mt-auto pt-3 border-t border-border">
                             <span className="text-body font-medium">
                               {marker.activityCount} {marker.activityCount === 1 ? 'activity' : 'activities'}
                             </span>
+                            <div className="flex items-center gap-3 mt-1 text-helper text-muted-foreground">
+                              <span title="Activities where this is a significant objective">
+                                <span className="font-medium text-foreground">{marker.significantCount}</span> significant
+                              </span>
+                              <span title="Activities where this is a principal objective">
+                                <span className="font-medium text-foreground">{marker.principalCount}</span> principal
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </CardShell>

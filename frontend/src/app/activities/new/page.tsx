@@ -40,7 +40,7 @@ import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2, Calendar as CalendarIcon, Keyboard, Download, Paperclip } from "lucide-react";
+import { MessageSquare, AlertCircle, CheckCircle, XCircle, Send, Users, X, UserPlus, ChevronLeft, ChevronRight, ChevronDown, HelpCircle, Save, ArrowRight, ArrowLeft, Globe, RefreshCw, ShieldCheck, Lock, Copy, ExternalLink, Info, Share, CircleDashed, Loader2, Plus, Megaphone, FileText, Pencil, Wand2, StickyNote, Trash2, Calendar as CalendarIcon, Keyboard, Download, Paperclip, Clock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -53,6 +53,7 @@ import ActivityEditorNavigation from "@/components/ActivityEditorNavigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { findSimilarActivities, ActivityMatch } from "@/lib/activity-matching";
+import { toValidationStatus } from "@/lib/validation-status";
 import { getActivityPermissions, ActivityContributor } from "@/lib/activity-permissions";
 import { Partner } from "@/hooks/usePartners";
 import { AidEffectivenessForm } from "@/components/AidEffectivenessForm";
@@ -175,7 +176,7 @@ function getSignificantWordCount(title: string): number {
 }
 
 // Separate component for General section to properly use hooks
-function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, clearSavedFormData, isNewActivity }: any) {
+function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, clearSavedFormData, isNewActivity, sectionRefs }: any) {
   const [isCreatingActivity, setIsCreatingActivity] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingReportingOrg, setIsSavingReportingOrg] = useState(false);
@@ -890,6 +891,10 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   }
 
   return (
+    <>
+    {/* Overview — identity/identifiers/reporting org. First of four sibling sections
+        (Overview · Narrative · Classification · Timeline) that used to be one card. */}
+    <section id="general" ref={sectionRefs?.general as React.RefObject<HTMLElement>} className="scroll-mt-20 pb-16">
     <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
       {/* Section Heading */}
       <div className="flex items-center gap-3">
@@ -1707,10 +1712,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       </div>
 
       </SubSection>
+    </div>
+    </section>
 
+    {/* Narrative */}
+    <section id="narrative" ref={sectionRefs?.narrative as React.RefObject<HTMLElement>} className="scroll-mt-20 mt-16 pb-16">
+    <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
       <SubSection
+        prominentTitle
         title="Narrative"
-        intro="What this activity is about — a plain-language summary anyone can read."
+        help="What this activity is about — a plain-language summary anyone can read."
       >
 
       {/* Description with field-level autosave */}
@@ -2047,10 +2058,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       </div>
 
       </SubSection>
+    </div>
+    </section>
 
+    {/* Classification */}
+    <section id="classification" ref={sectionRefs?.classification as React.RefObject<HTMLElement>} className="scroll-mt-20 mt-16 pb-16">
+    <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
       <SubSection
+        prominentTitle
         title="Classification"
-        intro="How this activity is categorized for reporting and aggregation."
+        help="How this activity is categorized for reporting and aggregation."
       >
 
       {/* Classification controls: Activity Type + Collaboration/Status/Scope/Hierarchy */}
@@ -2274,10 +2291,16 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       </div>
 
       </SubSection>
+    </div>
+    </section>
 
+    {/* Timeline */}
+    <section id="timeline" ref={sectionRefs?.timeline as React.RefObject<HTMLElement>} className="scroll-mt-20 mt-16 pb-16">
+    <div className="bg-card rounded-xl shadow-sm border border-border p-8 space-y-12">
       <SubSection
+        prominentTitle
         title="Timeline"
-        intro="When the activity starts, ends, and hits its key milestones."
+        help="When the activity starts, ends, and hits its key milestones."
       >
 
       {/* Date Fields */}
@@ -2746,6 +2769,8 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       </div>
 
       </SubSection>
+    </div>
+    </section>
 
       {/* Activity Date Modal */}
       <Dialog open={showActivityDateModal} onOpenChange={(open) => {
@@ -2907,7 +2932,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
         confirmText="Delete"
         isDestructive
       />
-    </div>
+    </>
   );
 }
 
@@ -2935,7 +2960,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
   // The parent component handles skeleton display via tabLoading state
 
   // Memoize the renderGeneralSection callback to prevent unnecessary re-renders of ActivityOverviewGroup
-  const renderGeneralSection = useCallback(() => (
+  const renderGeneralSection = useCallback((sectionRefs?: any) => (
     <GeneralSection
       general={general}
       setGeneral={setGeneral}
@@ -2947,6 +2972,7 @@ function SectionContent({ section, general, setGeneral, sectors, setSectors, tra
       onTitleAutosaveState={onTitleAutosaveState}
       clearSavedFormData={clearSavedFormData}
       isNewActivity={isNewActivity}
+      sectionRefs={sectionRefs}
     />
   ), [general, setGeneral, user, getDateFieldStatus, setHasUnsavedChanges, updateActivityNestedField, setShowActivityCreatedAlert, onTitleAutosaveState, clearSavedFormData, isNewActivity]);
 
@@ -4850,6 +4876,9 @@ function NewActivityPageContent() {
     const sectionLabels: Record<string, string> = {
       metadata: "Metadata",
       general: "Overview",
+      narrative: "Narrative",
+      classification: "Classification",
+      timeline: "Timeline",
       iati: "IATI Link",
       sectors: "Sectors",
       humanitarian: "Humanitarian Marker",
@@ -5038,6 +5067,9 @@ function NewActivityPageContent() {
       const tabToGroup: Record<string, string> = {
         // activity-overview group
         'general': 'activity-overview',
+        'narrative': 'activity-overview',
+        'classification': 'activity-overview',
+        'timeline': 'activity-overview',
         'sectors': 'activity-overview',
         'humanitarian': 'activity-overview',
         // locations group
@@ -5355,7 +5387,7 @@ function NewActivityPageContent() {
   const getNextSection = useCallback((currentId: string) => {
     const sections = [
       "iati", "xml-import", "excel-import",
-      "general", "sectors", "humanitarian",
+      "general", "narrative", "classification", "timeline", "sectors", "humanitarian",
       "country-region", "locations", "subnational-allocation",
       "organisations", "contacts", "focal_points",
       "finances", "planned-disbursements", "budgets",
@@ -5373,7 +5405,7 @@ function NewActivityPageContent() {
   const getPreviousSection = useCallback((currentId: string) => {
     const sections = [
       "iati", "xml-import", "excel-import",
-      "general", "sectors", "humanitarian",
+      "general", "narrative", "classification", "timeline", "sectors", "humanitarian",
       "country-region", "locations", "subnational-allocation",
       "organisations", "contacts", "focal_points",
       "finances", "planned-disbursements", "budgets",
@@ -5704,6 +5736,9 @@ function NewActivityPageContent() {
       title: "Activity Overview",
       sections: [
         { id: "general", label: "Overview" },
+        { id: "narrative", label: "Narrative" },
+        { id: "classification", label: "Classification" },
+        { id: "timeline", label: "Timeline" },
         { id: "sectors", label: "Sectors" },
         { id: "humanitarian", label: "Humanitarian Marker" },
       ]
@@ -5904,30 +5939,32 @@ function NewActivityPageContent() {
                       }
                     </span>
                   </div>
-                  {/* Validation Status Badge */}
-                  {general.submissionStatus && general.submissionStatus !== 'draft' && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 ${
-                        general.submissionStatus === 'submitted' ? 'text-blue-600 bg-blue-100' :
-                        general.submissionStatus === 'validated' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' :
-                        general.submissionStatus === 'rejected' ? 'text-destructive bg-destructive/10' :
-                        general.submissionStatus === 'published' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' : 'text-muted-foreground bg-muted'
-                      }`}>
-                        {(() => {
-                          switch (general.submissionStatus) {
-                            case 'validated': return <><CheckCircle className="w-3 h-3" /> Validated</>
-                            case 'published': return <><Megaphone className="w-3 h-3" /> Published</>
-                            case 'submitted': return <><FileText className="w-3 h-3" /> Submitted</>
-                            case 'rejected': return <><XCircle className="w-3 h-3" /> Rejected</>
-                            default: return 'Unpublished'
-                          }
-                        })()}
-                      </span>
-                      {general.validatedByName && general.submissionStatus === 'validated' && (
-                        <span className="text-helper text-muted-foreground">by {general.validatedByName}</span>
-                      )}
-                    </div>
-                  )}
+                  {/* Validation Status Badge — a SEPARATE axis from publication (above).
+                      Always one of the canonical validation states (Pending Validation /
+                      Validated / Rejected). It must never say "Published" or "Unpublished":
+                      doing so contradicted the publication badge (e.g. a published activity
+                      awaiting validation showed "Published" + "Unpublished" at once). */}
+                  {general.submissionStatus && general.submissionStatus !== 'draft' && (() => {
+                    const validation = toValidationStatus(general.submissionStatus);
+                    const badgeClass =
+                      validation.key === 'validated' ? 'text-[hsl(var(--success-text))] bg-[hsl(var(--success-bg))]' :
+                      validation.key === 'rejected' ? 'text-destructive bg-destructive/10' :
+                      'text-amber-700 bg-amber-100';
+                    const Icon =
+                      validation.key === 'validated' ? CheckCircle :
+                      validation.key === 'rejected' ? XCircle :
+                      Clock;
+                    return (
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded inline-flex items-center gap-1 ${badgeClass}`}>
+                          <Icon className="w-3 h-3" /> {validation.label}
+                        </span>
+                        {general.validatedByName && validation.key === 'validated' && (
+                          <span className="text-helper text-muted-foreground">by {general.validatedByName}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {/* Documents quick-link (F2.3.c) — surfaces buried Library section */}
                   {documents && documents.length > 0 && (
                     <div className="mt-2 flex items-center gap-2">

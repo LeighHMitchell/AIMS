@@ -362,14 +362,17 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
           </TableHeader>
           <TableBody>
             {issues.map((issue, idx) => (
-              <TableRow key={`${issue.activityId}-${issue.category}-${issue.rule}-${idx}`} className="hover:bg-muted">
+              <TableRow key={`${issue.activityId}-${issue.category}-${issue.rule}-${idx}`} className="group hover:bg-muted">
                 <TableCell>
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-medium text-foreground leading-snug">{issue.title}</span>
+                  {/* Title + IATI id flow inline; the title wraps and the id
+                      badge follows the last line rather than sitting in a
+                      separate flex column. */}
+                  <p className="font-medium text-foreground leading-snug">
+                    {issue.title}
                     {issue.iatiIdentifier && (
-                      <CopyableIdBadge value={issue.iatiIdentifier} label="Activity ID" />
+                      <CopyableIdBadge value={issue.iatiIdentifier} label="Activity ID" className="ml-1.5 align-middle" />
                     )}
-                  </div>
+                  </p>
                 </TableCell>
                 <TableCell className="text-body text-foreground">{issue.category}</TableCell>
                 <TableCell className="text-body text-foreground">{issue.rule}</TableCell>
@@ -381,7 +384,7 @@ export function ValidationRulesCard({ organizationId }: ValidationRulesCardProps
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                     onClick={() => router.push(issue.editHref)}
                     title="Edit activity"
                     aria-label="Edit activity"

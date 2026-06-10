@@ -707,7 +707,7 @@ export default function PartnerSummaryPage() {
                                 <TableRow key={partner.id} className="h-[40px]">
                                   <TableCell className="py-0.5">
                                     <Link 
-                                      href={`/partners/${partner.id}`}
+                                      href={`/organizations/${partner.id}`}
                                       className="font-medium text-primary hover:text-primary hover:underline"
                                     >
                                       {partner.fullName && partner.acronym 

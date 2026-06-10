@@ -54,11 +54,12 @@ import {
 } from "@/components/ui/table"
 import { RailBlock } from "@/components/profile/RailBlock"
 import { OrganizationSocialLinks } from "@/components/organizations/OrganizationSocialLinks"
+import { OrganizationActivityDatesTimeline } from "@/components/profile/OrganizationActivityDatesTimeline"
 import { countries as COUNTRY_LIST } from "@/data/countries"
 import { isInstitutionalGroup } from "@/data/location-groups"
 import { Mail, Phone, MapPin, Building2, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react"
 import Flag from "react-world-flags"
-import { getActivityStatusLabel } from "@/lib/activity-status-utils"
+import { getActivityStatusLabel, normalizeActivityStatusCode } from "@/lib/activity-status-utils"
 
 // Resolve an ISO-2 country code from a free-text country name. Used by the
 // hero pill and the Identity rail to render a flag next to values like
@@ -460,7 +461,8 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
       <OrgPane tab="finances" activeTab={activeTab} visitedTabs={visitedTabs}>
         <OrganizationFinancesPane
           organizationId={organization.id}
-          organizationName={organization.acronym || organization.name || "This organisation"}
+          organizationName={organization.name || organization.acronym || "This organisation"}
+          organizationAcronym={organization.acronym || ""}
         />
       </OrgPane>
 
@@ -863,6 +865,8 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
   }
 
   return (
+    <div className="space-y-6">
+    <OrganizationActivityDatesTimeline activities={activities} />
     <Card className="bg-card p-6">
       <div className="mb-4 flex flex-col space-y-1.5">
         <h2 className="text-2xl font-semibold leading-none tracking-tight text-foreground">Activities</h2>
@@ -951,49 +955,59 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
                   className="align-top hover:bg-muted/30"
                 >
                   <TableCell className="py-3">
-                    <Link
-                      href={`/activities/${a.id}`}
-                      className="font-medium text-foreground no-underline hover:no-underline block leading-snug"
-                    >
-                      {title}
-                      {a.acronym && (
-                        // No colour/weight overrides — inherit `font-medium
-                        // text-foreground` from the parent Link so the
-                        // acronym matches the activity title visually.
-                        <span className="ml-1.5">({a.acronym})</span>
+                    {/* ID first, then title — inline on one wrapping line. */}
+                    <div className="leading-snug">
+                      {iati && (
+                        // IATI identifier rendered as a click-to-copy chip —
+                        // same monospace gray treatment used elsewhere, but
+                        // a button so the value can be lifted to the
+                        // clipboard without selecting the text manually.
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            try {
+                              await navigator.clipboard.writeText(iati)
+                              toast.success("IATI identifier copied", { description: iati })
+                            } catch {
+                              toast.error("Could not copy to clipboard")
+                            }
+                          }}
+                          title="Click to copy"
+                          className="font-mono text-xs text-muted-foreground bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer align-middle mr-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                        >
+                          {iati}
+                        </button>
                       )}
-                    </Link>
-                    {iati && (
-                      // IATI identifier rendered as a click-to-copy chip —
-                      // same monospace gray treatment used elsewhere, but
-                      // a button so the value can be lifted to the
-                      // clipboard without selecting the text manually.
-                      <button
-                        type="button"
-                        onClick={async (e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          try {
-                            await navigator.clipboard.writeText(iati)
-                            toast.success("IATI identifier copied", { description: iati })
-                          } catch {
-                            toast.error("Could not copy to clipboard")
-                          }
-                        }}
-                        title="Click to copy"
-                        className="inline-block mt-1 font-mono text-xs text-muted-foreground bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                      <Link
+                        href={`/activities/${a.id}`}
+                        className="font-medium text-foreground no-underline hover:no-underline align-middle"
                       >
-                        {iati}
-                      </button>
-                    )}
+                        {title}
+                        {a.acronym && (
+                          // No colour/weight overrides — inherit `font-medium
+                          // text-foreground` from the parent Link so the
+                          // acronym matches the activity title visually.
+                          <span className="ml-1.5">({a.acronym})</span>
+                        )}
+                      </Link>
+                    </div>
                     {description && (
                       <p className="text-helper text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
                         {description}
                       </p>
                     )}
                   </TableCell>
-                  <TableCell className="py-3 text-helper text-muted-foreground whitespace-nowrap">
-                    {getActivityStatusLabel(a.activity_status) || "—"}
+                  <TableCell className="py-3 text-helper text-foreground whitespace-nowrap">
+                    {a.activity_status ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                          {normalizeActivityStatusCode(a.activity_status)}
+                        </span>
+                        {getActivityStatusLabel(a.activity_status)}
+                      </span>
+                    ) : "—"}
                   </TableCell>
                   <TableCell className="py-3 text-right text-body text-foreground whitespace-nowrap tabular-nums">
                     <CompactUsd value={Number(a.total_budgeted) || 0} />
@@ -1007,7 +1021,7 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
                   <TableCell className="py-3 text-right text-body text-foreground whitespace-nowrap tabular-nums">
                     <CompactUsd value={Number(a.total_disbursed) || 0} />
                   </TableCell>
-                  <TableCell className="py-3 text-right text-helper text-muted-foreground whitespace-nowrap">
+                  <TableCell className="py-3 text-right text-helper text-foreground whitespace-nowrap">
                     {updated
                       ? new Date(updated).toLocaleDateString(undefined, {
                           year: "numeric",
@@ -1056,6 +1070,7 @@ function OrganizationActivitiesTab({ organizationId }: { organizationId: string 
         </div>
       )}
     </Card>
+    </div>
   )
 }
 

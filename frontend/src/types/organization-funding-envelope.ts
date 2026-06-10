@@ -8,9 +8,16 @@ export interface OrganizationFundingEnvelope {
   id?: string;
   organization_id: string;
 
-  // Time period
-  period_type: 'single_year' | 'multi_year';
-  year_type: YearType;
+  // Recipient — IATI recipient-country/@code (ISO 3166-1 alpha-2)
+  recipient_country?: string | null;
+
+  // Time period — IATI period-start / period-end (mandatory, <= 1 year apart)
+  period_start?: string | null; // ISO date string
+  period_end?: string | null;   // ISO date string
+  // Legacy/derived year fields — kept in sync server-side from the dates so
+  // analytics and temporal-category logic keep working.
+  period_type?: 'single_year' | 'multi_year';
+  year_type?: YearType;
   year_start: number;
   year_end?: number | null;
   fiscal_year_start_month?: number | null; // 1-12, month when fiscal year starts
@@ -152,7 +159,13 @@ export const FIELD_HELP_TEXTS = {
 
   funding_type_flags: `Additional classifications that describe the nature of the funding. "Core Resources" are unrestricted funds. "Earmarked/Pooled" are funds designated for specific purposes or pooled mechanisms. "On-Budget" means funds that flow through recipient government systems. "Off-Budget" means funds managed outside government systems. Multiple flags can apply to a single entry.`,
 
-  notes: `Free-text field for any additional context, assumptions, caveats, or explanations about this funding entry. Use this to document the source of figures, any conditions attached to the funding, methodology used for estimates, or any other information that would help users understand and correctly interpret this data. Clear documentation improves data quality and usability.`
+  notes: `Free-text field for any additional context, assumptions, caveats, or explanations about this funding entry. Use this to document the source of figures, any conditions attached to the funding, methodology used for estimates, or any other information that would help users understand and correctly interpret this data. Clear documentation improves data quality and usability.`,
+
+  recipient_country: `The country this annual budget is earmarked for (IATI recipient-country/@code). Defaults to the AIMS host country, but you can select another country if the budget is for a different recipient.`,
+
+  period_start: `The first day of the budget period (IATI period-start). For a calendar-year budget this is 1 January; for a financial year, the first day of that year (e.g. 1 April). The period must not exceed one year.`,
+
+  period_end: `The last day of the budget period (IATI period-end). For a calendar-year budget this is 31 December; for a financial year, the last day of that year (e.g. 31 March). Must be on or after the start date and within one year of it.`
 } as const;
 
 // Helper function to categorize envelope by temporal status

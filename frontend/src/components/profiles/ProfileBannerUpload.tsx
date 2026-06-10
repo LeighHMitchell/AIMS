@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EnhancedImageUpload } from '@/components/ui/enhanced-image-upload'
 import { apiFetch } from '@/lib/api-fetch'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 interface ProfileBannerUploadProps {
@@ -14,6 +15,10 @@ interface ProfileBannerUploadProps {
   onBannerChange?: (banner: string | null, position: number) => void
   /** When false, the banner still loads/displays but the edit button is hidden. Defaults to true. */
   canEdit?: boolean
+  /** Overrides the trigger button's positioning classes. Defaults to its own
+   *  absolute top-right placement; pass non-absolute classes to flow it inside
+   *  a shared actions cluster (e.g. alongside an Edit pill). */
+  buttonClassName?: string
 }
 
 interface BannerData {
@@ -21,7 +26,7 @@ interface BannerData {
   banner_position: number
 }
 
-export function ProfileBannerUpload({ profileType, profileId, onBannerChange, canEdit = true }: ProfileBannerUploadProps) {
+export function ProfileBannerUpload({ profileType, profileId, onBannerChange, canEdit = true, buttonClassName }: ProfileBannerUploadProps) {
   const [bannerData, setBannerData] = useState<BannerData>({ banner: null, banner_position: 50 })
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -111,7 +116,10 @@ export function ProfileBannerUpload({ profileType, profileId, onBannerChange, ca
       <Button
         variant="ghost"
         size="sm"
-        className="absolute top-2 right-2 z-10 bg-white/90 shadow-sm text-foreground hover:bg-white h-7 px-2 text-helper opacity-0 group-hover:opacity-100 transition-opacity"
+        className={cn(
+          "bg-white/90 shadow-sm text-foreground hover:bg-white h-7 px-2 text-helper transition-opacity",
+          buttonClassName ?? "absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100",
+        )}
         onClick={() => setIsEditing(true)}
       >
         <Camera className="h-3 w-3 mr-1" />

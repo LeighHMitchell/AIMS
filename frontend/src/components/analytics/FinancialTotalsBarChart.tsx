@@ -1267,7 +1267,7 @@ export function FinancialTotalsBarChart({
         // shrink the chart's internal margins. ~32px below leaves the X-axis
         // labels lifted slightly off the chart's bottom edge.
         ? { top: 4, right: 30, left: 20, bottom: 32 }
-        : { top: 20, right: 30, left: 20, bottom: 60 }
+        : { top: 20, right: 30, left: 20, bottom: 32 }
 
     const commonProps = {
       data: chartData,
@@ -1321,7 +1321,6 @@ export function FinancialTotalsBarChart({
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} />
             <Tooltip content={<CustomTooltip />} />
-            {!isCompact && !isExpanded && <Legend content={renderLegend} />}
             {activeDataKeys.map(key => (
               <Line
                 key={key}
@@ -1357,7 +1356,6 @@ export function FinancialTotalsBarChart({
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} />
             <Tooltip content={<CustomTooltip />} />
-            {!isCompact && !isExpanded && <Legend content={renderLegend} />}
             {activeDataKeys.map(key => (
               <Area
                 key={key}
@@ -1406,7 +1404,6 @@ export function FinancialTotalsBarChart({
             <XAxis {...xAxisProps} />
             <YAxis {...yAxisProps} />
             <Tooltip content={<CustomTooltip />} />
-            {!isCompact && !isExpanded && <Legend content={renderLegend} />}
             {areaKeys.map((key) => (
               <Area
                 key={key}
@@ -1962,12 +1959,12 @@ export function FinancialTotalsBarChart({
         )}
       </div>
 
-      {/* External legend (expanded mode only). Rendered outside the chart so
-          the SVG's bars + X-axis fill the chart container all the way to the
+      {/* External legend (card + expanded). Rendered outside the chart so the
+          SVG's bars + X-axis fill the chart container all the way to the
           bottom — Recharts' built-in <Legend> reserves space inside the SVG
-          which leaves dead-space below the X-axis. */}
-      {isExpanded && chartData.length > 0 && (
-        <ul className="flex flex-wrap justify-center gap-4 mt-2 shrink-0">
+          inconsistently, which let the legend overlap the X-axis labels. */}
+      {!compact && chartData.length > 0 && (
+        <ul className="flex flex-wrap justify-center gap-4 mt-3 shrink-0">
           {activeDataKeys.map((key) => {
             const isHidden = hiddenSeries.has(key)
             return (

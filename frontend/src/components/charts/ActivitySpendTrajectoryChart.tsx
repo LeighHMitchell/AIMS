@@ -464,9 +464,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
               content="Builds an even-spend baseline by spreading the activity's total budget evenly across its planned duration, then plots it against the actual cumulative disbursement curve over the same horizon. The gap between the two lines is the pace of execution against plan. All amounts are USD-converted."
               size={isFullscreen ? 'md' : 'sm'}
             />
-            {!isFullscreen && (
-              <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-            )}
+            <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
           </div>
         </div>
       </CardHeader>

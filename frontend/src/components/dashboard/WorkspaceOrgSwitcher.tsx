@@ -60,7 +60,7 @@ export function ViewingAsIndicator({ orgId }: { orgId: string }) {
   const label = org.acronym || org.name;
   return (
     <span className="ml-2 inline-flex items-center gap-1 text-body font-normal text-muted-foreground align-middle">
-      {`(Viewing ${label}’s workspace)`}
+      {`Viewing ${label}’s workspace`}
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>

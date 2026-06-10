@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DatePicker } from '@/components/ui/date-picker'
+import { CountryCombobox } from '@/components/ui/country-combobox'
+import { IATI_COUNTRIES } from '@/data/iati-countries'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -32,6 +35,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog'
 import { useSystemSettings } from '@/contexts/SystemSettingsContext'
+import { DropdownProvider } from '@/contexts/DropdownContext'
 import { Plus, Pencil, Trash2, AlertCircle, Info, Loader2, BarChart3, Table as TableIcon, HelpCircle, ChevronDown, X, RefreshCw, MapPin } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -76,6 +80,7 @@ export default function OrganizationFundingEnvelopeTab({
   // The AIMS deployment country — every funding envelope is an annual budget
   // for this country (IATI recipient-country-budget).
   const deploymentCountryName = settings?.homeCountryData?.name || settings?.homeCountry || 'this country'
+  const hostCountryCode = settings?.homeCountry || settings?.homeCountryData?.code || ''
   const [envelopes, setEnvelopes] = useState<OrganizationFundingEnvelope[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -154,16 +159,21 @@ export default function OrganizationFundingEnvelopeTab({
   // Open modal for add/edit
   const openModal = (envelope?: OrganizationFundingEnvelope) => {
     if (envelope) {
-      setEditingEnvelope({ ...envelope })
+      // Default the recipient country to the host country for legacy rows that
+      // predate the field.
+      setEditingEnvelope({ ...envelope, recipient_country: envelope.recipient_country || hostCountryCode })
       setAmountInput(envelope.amount ? formatNumberWithCommas(envelope.amount) : '')
     } else {
       setAmountInput('')
       setEditingEnvelope({
         organization_id: organizationId,
+        recipient_country: hostCountryCode,
         period_type: 'single_year',
         year_type: 'calendar',
         year_start: currentYear,
         year_end: null,
+        period_start: `${currentYear}-01-01`,
+        period_end: `${currentYear}-12-31`,
         fiscal_year_start_month: null,
         amount: 0,
         currency: 'USD',
@@ -189,8 +199,20 @@ export default function OrganizationFundingEnvelopeTab({
 
     if (!editingEnvelope) return false
 
-    if (!editingEnvelope.year_start || editingEnvelope.year_start < 1990 || editingEnvelope.year_start > 2100) {
-      errors.year_start = 'Valid year (1990-2100) is required'
+    if (!editingEnvelope.period_start) {
+      errors.period_start = 'Start date is required'
+    }
+    if (!editingEnvelope.period_end) {
+      errors.period_end = 'End date is required'
+    }
+    if (editingEnvelope.period_start && editingEnvelope.period_end) {
+      const start = new Date(editingEnvelope.period_start)
+      const end = new Date(editingEnvelope.period_end)
+      if (end < start) {
+        errors.period_end = 'End date must be on or after the start date'
+      } else if (end.getTime() - start.getTime() > 366 * 24 * 60 * 60 * 1000) {
+        errors.period_end = 'Budget period must not exceed one year'
+      }
     }
 
     if (!editingEnvelope.amount || editingEnvelope.amount <= 0) {
@@ -349,11 +371,13 @@ export default function OrganizationFundingEnvelopeTab({
       return
     }
 
-    // Mirror the server's conversion-date logic: value_date when set, else
-    // Jan 1 of year_start. This keeps the modal preview equal to the stored value.
+    // Mirror the server's conversion-date logic: value_date when set, else the
+    // period start date. This keeps the modal preview equal to the stored value.
     const conversionDate = editingEnvelope.value_date
       ? new Date(editingEnvelope.value_date)
-      : new Date(editingEnvelope.year_start, 0, 1)
+      : editingEnvelope.period_start
+        ? new Date(editingEnvelope.period_start)
+        : new Date(editingEnvelope.year_start, 0, 1)
 
     setIsLoadingModalRate(true)
     setModalRateError(null)
@@ -373,7 +397,7 @@ export default function OrganizationFundingEnvelopeTab({
     } finally {
       setIsLoadingModalRate(false)
     }
-  }, [editingEnvelope?.currency, editingEnvelope?.value_date, editingEnvelope?.year_start])
+  }, [editingEnvelope?.currency, editingEnvelope?.value_date, editingEnvelope?.period_start, editingEnvelope?.year_start])
 
   // Calculated USD value
   const modalCalculatedUsdValue = editingEnvelope?.amount && modalExchangeRate
@@ -391,7 +415,7 @@ export default function OrganizationFundingEnvelopeTab({
         fetchModalExchangeRate()
       }
     }
-  }, [editingEnvelope?.currency, editingEnvelope?.value_date, editingEnvelope?.year_start, modalExchangeRateManual, fetchModalExchangeRate])
+  }, [editingEnvelope?.currency, editingEnvelope?.value_date, editingEnvelope?.period_start, editingEnvelope?.year_start, modalExchangeRateManual, fetchModalExchangeRate])
 
   // Reset exchange rate state when modal opens
   useEffect(() => {
@@ -407,12 +431,17 @@ export default function OrganizationFundingEnvelopeTab({
     return formatCurrencyPrecise(amount, currency)
   }
 
-  // Format year range
-  const formatYearRange = (envelope: OrganizationFundingEnvelope) => {
-    if (envelope.period_type === 'single_year') {
-      return envelope.year_start.toString()
+  // Format the budget period. Prefer the explicit IATI period dates; fall back
+  // to the year(s) for legacy rows that predate the date columns.
+  const formatPeriod = (envelope: OrganizationFundingEnvelope) => {
+    const fmt = (d: string) =>
+      new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    if (envelope.period_start && envelope.period_end) {
+      return `${fmt(envelope.period_start)} – ${fmt(envelope.period_end)}`
     }
-    return `${envelope.year_start} - ${envelope.year_end}`
+    return envelope.year_end && envelope.year_end !== envelope.year_start
+      ? `${envelope.year_start} – ${envelope.year_end}`
+      : envelope.year_start?.toString() || '—'
   }
 
   // Get temporal category label for an envelope
@@ -446,7 +475,9 @@ export default function OrganizationFundingEnvelopeTab({
         return order[getTemporalCategory(envelope, currentYear)]
       }
       case 'period':
-        return envelope.year_end || envelope.year_start
+        return envelope.period_start
+          ? new Date(envelope.period_start).getTime()
+          : (envelope.year_end || envelope.year_start)
       case 'amount':
         return envelope.amount_usd ?? envelope.amount ?? 0
       case 'usd':
@@ -577,7 +608,7 @@ export default function OrganizationFundingEnvelopeTab({
                                 {category}
                               </TableCell>
                               <TableCell>
-                                {formatYearRange(envelope)}
+                                {formatPeriod(envelope)}
                               </TableCell>
                               <TableCell>
                                 <div className="font-medium">
@@ -659,6 +690,7 @@ export default function OrganizationFundingEnvelopeTab({
       <Dialog open={showModal} onOpenChange={closeModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <TooltipProvider delayDuration={300}>
+          <DropdownProvider>
           <DialogHeader>
             <DialogTitle>
               {editingEnvelope?.id ? 'Edit Funding Envelope' : 'Add Funding Envelope'}
@@ -691,91 +723,53 @@ export default function OrganizationFundingEnvelopeTab({
 
             return (
               <div className="space-y-4 py-4">
-                {/* Country context — every envelope is an annual budget for the
-                    AIMS deployment country (IATI recipient-country-budget). */}
-                <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-body text-muted-foreground">
-                  <MapPin className="h-4 w-4 shrink-0" />
-                  <span>Annual budget for <span className="font-medium text-foreground">{deploymentCountryName}</span></span>
-                </div>
-
-                {/* Year Type */}
+                {/* Recipient country — IATI recipient-country/@code. Defaults to
+                    the AIMS host country but is selectable per budget. */}
                 <div className="space-y-2">
                   <div className="flex items-center">
-                    <Label>Year Type <RequiredDot /></Label>
-                    <HelpIcon helpKey="year_type" />
+                    <Label>Country <RequiredDot /></Label>
+                    <HelpIcon helpKey="recipient_country" />
                   </div>
-                  <Select
-                    value={editingEnvelope.year_type || 'calendar'}
-                    onValueChange={(value: YearType) => {
-                      updateField('year_type', value)
-                      if (value === 'calendar') {
-                        updateField('fiscal_year_start_month', null)
-                      } else if (!editingEnvelope.fiscal_year_start_month) {
-                        updateField('fiscal_year_start_month', 4) // Default to April
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {YEAR_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CountryCombobox
+                    countries={IATI_COUNTRIES}
+                    value={editingEnvelope.recipient_country || hostCountryCode}
+                    onValueChange={(value) => updateField('recipient_country', value)}
+                    placeholder="Select country"
+                    allowClear={false}
+                  />
                 </div>
 
-                {/* Fiscal Year Start Month (only when fiscal year is selected) */}
-                {editingEnvelope.year_type === 'fiscal' && (
-                  <div className="space-y-2">
-                    <Label>Fiscal Year Starts In</Label>
-                    <Select
-                      value={editingEnvelope.fiscal_year_start_month?.toString() || '4'}
-                      onValueChange={(value) => updateField('fiscal_year_start_month', parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FISCAL_YEAR_START_MONTHS.map((month) => (
-                          <SelectItem key={month.value} value={month.value.toString()}>
-                            {month.label} ({month.period})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Budget Year — annual budgets only (single year/period) */}
+                {/* Budget period — IATI period-start / period-end. Free dates so
+                    any financial year (calendar or fiscal) can be expressed. */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center">
-                      <Label>Budget Year <RequiredDot /></Label>
-                      <HelpIcon helpKey="year_start" />
+                      <Label>Start Date <RequiredDot /></Label>
+                      <HelpIcon helpKey="period_start" />
                     </div>
-                    <Select
-                      value={editingEnvelope.year_start?.toString() || ''}
-                      onValueChange={(value) => updateField('year_start', parseInt(value) || 0)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select year" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[200px]">
-                        {yearOptions.map((year) => (
-                          <SelectItem key={year} value={year.toString()}>
-                            {editingEnvelope.year_type === 'fiscal'
-                              ? getFiscalYearLabel(year, editingEnvelope.fiscal_year_start_month)
-                              : year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {fieldErrors.year_start && (
-                      <p className="text-body text-destructive">{fieldErrors.year_start}</p>
+                    <DatePicker
+                      value={editingEnvelope.period_start || ''}
+                      onChange={(value) => updateField('period_start', value || null)}
+                      placeholder="Select start date"
+                      dropdownId="envelope-period-start"
+                    />
+                    {fieldErrors.period_start && (
+                      <p className="text-body text-destructive">{fieldErrors.period_start}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label>End Date <RequiredDot /></Label>
+                      <HelpIcon helpKey="period_end" />
+                    </div>
+                    <DatePicker
+                      value={editingEnvelope.period_end || ''}
+                      onChange={(value) => updateField('period_end', value || null)}
+                      placeholder="Select end date"
+                      dropdownId="envelope-period-end"
+                    />
+                    {fieldErrors.period_end && (
+                      <p className="text-body text-destructive">{fieldErrors.period_end}</p>
                     )}
                   </div>
                 </div>
@@ -854,17 +848,18 @@ export default function OrganizationFundingEnvelopeTab({
                       <Label>Value Date</Label>
                       <HelpIcon helpKey="value_date" />
                     </div>
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={editingEnvelope.value_date || ''}
-                      onChange={(e) => updateField('value_date', e.target.value || null)}
+                      onChange={(value) => updateField('value_date', value || null)}
+                      placeholder="Select value date"
+                      dropdownId="envelope-value-date"
                     />
                   </div>
                 </div>
 
-                {/* Exchange Rate & USD Value */}
+                {/* Exchange Rate, USD Value & Status */}
                 {editingEnvelope.currency && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between min-h-[24px]">
                         <Label className="flex items-center gap-1.5 text-body font-medium">
@@ -961,42 +956,39 @@ export default function OrganizationFundingEnvelopeTab({
                         )}
                       </div>
                     </div>
+
+                    {/* Status — IATI recipient-country-budget @status. The
+                        dropdown shows the explanatory text; the trigger shows
+                        just the chosen label. */}
+                    <div className="space-y-2">
+                      <div className="flex items-center min-h-[24px]">
+                        <Label className="text-body font-medium">Status <RequiredDot /></Label>
+                        <HelpIcon helpKey="status" />
+                      </div>
+                      <Select
+                        value={editingEnvelope.status}
+                        onValueChange={(value: 'indicative' | 'committed') => updateField('status', value)}
+                      >
+                        <SelectTrigger>
+                          <span className="truncate">{selectedStatus?.label || 'Select status'}</span>
+                        </SelectTrigger>
+                        <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                          {ENVELOPE_STATUSES.map((status) => (
+                            <SelectItem key={status.value} value={status.value} className="py-2">
+                              <div className="text-left">
+                                <div className="font-medium">{status.label}</div>
+                                <div className="text-helper text-muted-foreground">{status.description}</div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fieldErrors.status && (
+                        <p className="text-body text-destructive">{fieldErrors.status}</p>
+                      )}
+                    </div>
                   </div>
                 )}
-
-                {/* Status — IATI recipient-country-budget @status */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Label>Status <RequiredDot /></Label>
-                      <HelpIcon helpKey="status" />
-                    </div>
-                    <Select
-                      value={editingEnvelope.status}
-                      onValueChange={(value: 'indicative' | 'committed') => updateField('status', value)}
-                    >
-                      <SelectTrigger className="h-auto min-h-[40px]">
-                        <span className="text-left py-1">
-                          <span className="block">{selectedStatus?.label}</span>
-                          <span className="block text-helper text-muted-foreground">{selectedStatus?.description}</span>
-                        </span>
-                      </SelectTrigger>
-                      <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                        {ENVELOPE_STATUSES.map((status) => (
-                          <SelectItem key={status.value} value={status.value} className="py-2">
-                            <div className="text-left">
-                              <div className="font-medium">{status.label}</div>
-                              <div className="text-helper text-muted-foreground">{status.description}</div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {fieldErrors.status && (
-                      <p className="text-body text-destructive">{fieldErrors.status}</p>
-                    )}
-                  </div>
-                </div>
 
                 {/* Notes - Full Width */}
                 <div className="space-y-2">
@@ -1030,6 +1022,7 @@ export default function OrganizationFundingEnvelopeTab({
               )}
             </Button>
           </DialogFooter>
+          </DropdownProvider>
           </TooltipProvider>
         </DialogContent>
       </Dialog>

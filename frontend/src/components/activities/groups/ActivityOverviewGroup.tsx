@@ -10,8 +10,10 @@ import { SectionSkeleton, getSectionMinHeight } from "./SectionSkeleton"
 import ImprovedSectorAllocationForm from "@/components/activities/ImprovedSectorAllocationForm"
 import { HumanitarianTab } from "@/components/activities/HumanitarianTab"
 
-// Section IDs for the Activity Overview group
-export const ACTIVITY_OVERVIEW_SECTIONS = ['general', 'sectors', 'humanitarian'] as const
+// Section IDs for the Activity Overview group.
+// 'general', 'narrative', 'classification' and 'timeline' are all rendered by GeneralSection
+// (a single instance, to keep its autosave hooks unduplicated) as four sibling <section> blocks.
+export const ACTIVITY_OVERVIEW_SECTIONS = ['general', 'narrative', 'classification', 'timeline', 'sectors', 'humanitarian'] as const
 export type ActivityOverviewSectionId = typeof ACTIVITY_OVERVIEW_SECTIONS[number]
 
 /**
@@ -61,8 +63,14 @@ interface ActivityOverviewGroupProps {
   // When false, aggressive preloading is disabled - sections only load via IntersectionObserver
   enablePreloading?: boolean
 
-  // Render function for GeneralSection (since it's defined inline in page.tsx)
-  renderGeneralSection: () => React.ReactNode
+  // Render function for GeneralSection (since it's defined inline in page.tsx).
+  // Receives the scroll-spy refs for the four sibling sections it renders.
+  renderGeneralSection: (sectionRefs?: {
+    general: React.RefObject<HTMLElement>
+    narrative: React.RefObject<HTMLElement>
+    classification: React.RefObject<HTMLElement>
+    timeline: React.RefObject<HTMLElement>
+  }) => React.ReactNode
 }
 
 
@@ -111,8 +119,20 @@ export function ActivityOverviewGroup({
   
   // Create refs for each section
   const generalRef = useRef<HTMLElement>(null)
+  const narrativeRef = useRef<HTMLElement>(null)
+  const classificationRef = useRef<HTMLElement>(null)
+  const timelineRef = useRef<HTMLElement>(null)
   const sectorsRef = useRef<HTMLElement>(null)
   const humanitarianRef = useRef<HTMLElement>(null)
+
+  // Refs handed to GeneralSection so it can attach each of its four sibling sections
+  // ('general' · 'narrative' · 'classification' · 'timeline') to scroll-spy.
+  const generalSectionRefs = useMemo(() => ({
+    general: generalRef,
+    narrative: narrativeRef,
+    classification: classificationRef,
+    timeline: timelineRef,
+  }), [])
   
   // Track if initial scroll has happened (to prevent re-scrolling when scroll spy updates)
   const hasInitiallyScrolled = useRef(false)
@@ -120,6 +140,9 @@ export function ActivityOverviewGroup({
   // Build section refs array for scroll spy (memoized to prevent IntersectionObserver restarts)
   const sectionRefs: SectionRef[] = useMemo(() => [
     { id: 'general', ref: generalRef },
+    { id: 'narrative', ref: narrativeRef },
+    { id: 'classification', ref: classificationRef },
+    { id: 'timeline', ref: timelineRef },
     ...(activityCreated ? [
       { id: 'sectors', ref: sectorsRef },
       { id: 'humanitarian', ref: humanitarianRef },
@@ -257,15 +280,10 @@ export function ActivityOverviewGroup({
   
   return (
     <div className="activity-overview-group space-y-0">
-      {/* General Section - Always visible */}
-      <section 
-        id="general" 
-        ref={generalRef as React.RefObject<HTMLElement>}
-        className="scroll-mt-20 pb-16"
-      >
-        {renderGeneralSection()}
-      </section>
-      
+      {/* Overview / Narrative / Classification / Timeline — always visible. GeneralSection
+          renders these as four sibling <section> blocks and attaches the scroll-spy refs. */}
+      {renderGeneralSection(generalSectionRefs)}
+
       {/* Sections revealed after activity creation */}
       {activityCreated && (
         <div className={`transition-all duration-500 ${sectionsRevealed ? 'opacity-100' : 'opacity-0'}`}>

@@ -14,7 +14,10 @@ import type { ProgramLogicGraph } from "@/lib/program-logic/types";
 import {
   toMermaid,
   getCeilingTierName,
+  getNodeIdLabels,
   drawAccountabilityCeiling,
+  boldNodeIdLabels,
+  serializeStandaloneSvg,
 } from "@/lib/program-logic/mermaid";
 
 interface DiagramDialogProps {
@@ -40,6 +43,7 @@ export function DiagramDialog({
     [graph, includeNodeIds]
   );
   const ceilingName = useMemo(() => getCeilingTierName(graph), [graph]);
+  const nodeIdLabels = useMemo(() => getNodeIdLabels(graph), [graph]);
 
   useEffect(() => {
     if (!open) return;
@@ -56,6 +60,9 @@ export function DiagramDialog({
           startOnLoad: false,
           theme: "base",
           securityLevel: "strict",
+          // Pure SVG <text> labels (no HTML <foreignObject>) so downloaded SVGs
+          // render in Preview / Illustrator / all viewers, not just browsers.
+          htmlLabels: false,
           // Tier band titles: larger + bold. Injected into the SVG's <style>;
           // survives securityLevel 'strict' (verified).
           themeCSS:
@@ -82,12 +89,12 @@ export function DiagramDialog({
         const { svg } = await mermaid.render(id, definition);
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
-          if (ceilingName) {
-            const el = containerRef.current;
-            requestAnimationFrame(() => {
-              if (!cancelled && el) drawAccountabilityCeiling(el, ceilingName);
-            });
-          }
+          const el = containerRef.current;
+          requestAnimationFrame(() => {
+            if (cancelled || !el) return;
+            boldNodeIdLabels(el, nodeIdLabels);
+            if (ceilingName) drawAccountabilityCeiling(el, ceilingName);
+          });
         }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "Failed to render diagram");
@@ -98,7 +105,7 @@ export function DiagramDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, definition, ceilingName]);
+  }, [open, definition, ceilingName, nodeIdLabels]);
 
   const copyDefinition = async () => {
     try {
@@ -112,7 +119,9 @@ export function DiagramDialog({
   const downloadSvg = () => {
     const svg = containerRef.current?.querySelector("svg");
     if (!svg) return;
-    const blob = new Blob([svg.outerHTML], { type: "image/svg+xml" });
+    const blob = new Blob([serializeStandaloneSvg(svg as SVGSVGElement)], {
+      type: "image/svg+xml",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -134,8 +143,8 @@ export function DiagramDialog({
             <span className="inline-flex items-center gap-1">
               Solid arrow = attribution
             </span>{" "}
-            · dotted arrow = contribution · dotted amber line = accountability
-            ceiling.
+            · dotted arrow = contribution · black dotted line = Accountability
+            Ceiling.
           </p>
           <div className="flex items-center gap-2 shrink-0">
             <Button variant="outline" size="sm" onClick={copyDefinition}>

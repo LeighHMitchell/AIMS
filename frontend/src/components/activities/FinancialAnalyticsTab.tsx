@@ -2708,9 +2708,7 @@ export default function FinancialAnalyticsTab({
                     content="Sums all actual transactions (Commitments, Disbursements, Expenditures, etc.) by reporting year, alongside published activity budgets and planned disbursements. Multi-year budgets and planned disbursements that span the boundary are split proportionally by overlap days. All values use USD-converted amounts where available."
                     size={isFullscreen ? 'md' : 'sm'}
                   />
-                  {!isFullscreen && (
-                    <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-                  )}
+                  <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
                 </div>
               </div>
             </CardHeader>
@@ -2749,9 +2747,7 @@ export default function FinancialAnalyticsTab({
                 content="For each calendar year, compares the activity's published budget against actual spending (disbursements + expenditures), all USD-converted. Multi-year budget periods are split proportionally by day overlap so annual totals reconcile. The cumulative view replaces each year's value with a running total of that year plus all prior years."
                 size={isFullscreen ? 'md' : 'sm'}
               />
-              {!isFullscreen && (
-                <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-              )}
+              <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
             </div>
           </div>
         </CardHeader>
@@ -3001,9 +2997,7 @@ export default function FinancialAnalyticsTab({
                 content="Sums USD-converted transaction values for each provider→receiver organisation pair and renders them as Sankey ribbons whose width is proportional to the total dollars moved between that pair. The toggle switches the source set between actual transactions (incoming, commitment, disbursement, expenditure) and planned disbursements only."
                 size={isFullscreen ? 'md' : 'sm'}
               />
-              {!isFullscreen && (
-                <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-              )}
+              <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
             </div>
           </div>
         </CardHeader>
@@ -3176,9 +3170,7 @@ export default function FinancialAnalyticsTab({
                     content="Groups all outgoing transactions (commitments, disbursements, expenditures) by the IATI finance type of each transaction — bucketed into Grants, Loans, Equity, Guarantees / Insurance, Other, or Unspecified — and sums their USD-converted value. Each slice is that bucket's share of total outgoing USD."
                     size={isFullscreen ? 'md' : 'sm'}
                   />
-                  {!isFullscreen && (
-                    <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-                  )}
+                  <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
                 </div>
               </div>
             </CardHeader>
@@ -3393,9 +3385,7 @@ export default function FinancialAnalyticsTab({
                     content="Sums USD-converted outgoing transactions (commitments, disbursements, expenditures) per provider organisation, ranks them descending, and shows the top 5. Transactions without a stored USD value are excluded."
                     size={isFullscreen ? 'md' : 'sm'}
                   />
-                  {!isFullscreen && (
-                    <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-                  )}
+                  <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
                 </div>
               </div>
             </CardHeader>
@@ -3497,9 +3487,7 @@ export default function FinancialAnalyticsTab({
                     content="Sums USD-converted outgoing transactions (commitments, disbursements, expenditures) per receiver organisation, ranks them descending, and shows the top 5. Transactions without a stored USD value are excluded."
                     size={isFullscreen ? 'md' : 'sm'}
                   />
-                  {!isFullscreen && (
-                    <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
-                  )}
+                  <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
                 </div>
               </div>
             </CardHeader>
