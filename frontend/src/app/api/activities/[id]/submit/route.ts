@@ -9,31 +9,28 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { user, response: authResponse } = await requireAuth();
+  const { supabase, user, response: authResponse } = await requireAuth();
   if (authResponse) return authResponse;
+  if (!supabase || !user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
 
   try {
     const { id } = await params;
     const body = await request.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
 
-    // Note: residual authz gap — role check still reads from request body.
-    // The requireAuth above ensures caller is authenticated; role-based
-    // per-activity permission (canEditActivity) would be the full fix.
-    const { user: bodyUser } = body;
-    const effectiveUser = user ?? bodyUser;
-
-    if (!effectiveUser || !effectiveUser.id) {
-      return NextResponse.json(
-        { error: 'User information required' },
-        { status: 401 }
-      );
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('id, role, first_name, last_name')
+      .eq('id', user.id)
+      .single();
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'Failed to verify user permissions' }, { status: 500 });
     }
 
     // Load activities
     const data = await fs.readFile(DATA_FILE_PATH, 'utf-8');
     const activities = JSON.parse(data);
-    
+
     // Find the activity
     const activityIndex = activities.findIndex((a: any) => a.id === id);
     if (activityIndex === -1) {
@@ -46,7 +43,7 @@ export async function POST(
     const activity = activities[activityIndex];
 
     // Check if user can submit
-    const canSubmit = effectiveUser.role === 'gov_partner_tier_2' || effectiveUser.role === 'dev_partner_tier_2';
+    const canSubmit = profile.role === 'gov_partner_tier_2' || profile.role === 'dev_partner_tier_2';
     if (!canSubmit) {
       return NextResponse.json(
         { error: 'You do not have permission to submit activities' },
@@ -54,17 +51,18 @@ export async function POST(
       );
     }
 
+    const submitterName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || user.email;
+
     // Update submission status
     activity.submissionStatus = 'submitted';
-    activity.submittedBy = effectiveUser.id;
-    activity.submittedByName = effectiveUser.name;
+    activity.submittedBy = user.id;
+    activity.submittedByName = submitterName;
     activity.submittedAt = new Date().toISOString();
     activity.updatedAt = new Date().toISOString();
 
     // Save activities
     await fs.writeFile(DATA_FILE_PATH, JSON.stringify(activities, null, 2));
 
-    
     return NextResponse.json(activity);
   } catch (error) {
     console.error('[AIMS] Error submitting activity:', error);

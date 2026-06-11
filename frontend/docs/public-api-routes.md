@@ -25,8 +25,6 @@ Any mutating route not in this list must call `requireAuth`, `requireSuperUser`,
   via the `loadForRead` / `loadForWrite` helpers in
   `src/lib/program-logic/route-helpers.ts`, which call `requireAuth` internally.
   The CI script recognises these wrappers alongside the top-level auth helpers.
-- The `api/activities/[id]/submit` and `api/activities/[id]/validate` routes have a
-  **residual authz gap**: the role check still reads role from the request body (legacy
-  filesystem-backed data path). `requireAuth` ensures the caller is authenticated;
-  a future migration to Supabase-backed activity status should replace this with
-  `canEditActivity` from `@/lib/activity-permissions-server`.
+- The `api/activities/[id]/submit` and `api/activities/[id]/validate` routes enforce role
+  checks by fetching the caller's profile from the `users` table (spoofable body identity
+  removed).
