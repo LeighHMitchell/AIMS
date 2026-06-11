@@ -218,7 +218,6 @@ function AutoFitBounds({ locations }: { locations: Location[] }) {
   useEffect(() => {
     if (!map || !isLoaded || locations.length === 0) return;
     const timer = setTimeout(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       fitBoundsToLocations(map as any, locations);
     }, 100);
     return () => clearTimeout(timer);

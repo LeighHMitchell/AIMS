@@ -33,6 +33,7 @@ function addCommas(raw: string): string {
   const isNeg = intPart.startsWith('-');
   const digits = isNeg ? intPart.slice(1) : intPart;
   // Add commas to integer part
+  // eslint-disable-next-line security/detect-unsafe-regex -- TODO(audit-001): comma-insertion lookahead pattern, input is always a digit string
   const withCommas = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return (isNeg ? '-' : '') + withCommas + decPart;
 }

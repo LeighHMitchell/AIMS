@@ -42,6 +42,7 @@ function contrastText(color?: string): string {
     g = parseInt(hex.slice(2, 4), 16)
     b = parseInt(hex.slice(4, 6), 16)
   } else {
+    // eslint-disable-next-line security/detect-unsafe-regex -- TODO(audit-001): simple decimal number pattern, safe for color string parsing
     const m = color?.match(/\d+(\.\d+)?/g)
     if (m && m.length >= 3) { r = +m[0]; g = +m[1]; b = +m[2] }
   }
