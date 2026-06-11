@@ -160,6 +160,7 @@ export function looksLikeIATIIdentifier(str: string): boolean {
   
   // Basic pattern check for IATI org IDs
   // Examples: GB-GOV-1, US-EIN-123456789, XM-DAC-7
+  // eslint-disable-next-line security/detect-unsafe-regex -- TODO(audit-001): IATI org-ID pattern, matches bounded alphanumeric segments only
   const iatiPattern = /^[A-Z]{2}(-[A-Z0-9]+){1,3}$/i
   
   return iatiPattern.test(str.trim())

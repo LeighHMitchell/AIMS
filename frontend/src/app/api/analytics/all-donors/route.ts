@@ -211,6 +211,7 @@ export async function GET(request: Request) {
     // MoEE / MoTC / MoC / MoI / MoLF / MoLES / MoBA / MoFA / MoIP) so a
     // recipient-government org missing the country field still gets filtered.
     const RECIPIENT_COUNTRY_VALUES = new Set(['MM', 'mm', 'MMR', 'mmr', 'Myanmar', 'myanmar'])
+    // eslint-disable-next-line security/detect-unsafe-regex -- TODO(audit-001): known-safe alternation filter for Myanmar gov org names
     const MYANMAR_GOV_NAME_RX = /\b(MOALI|MOPF|MoNREC|MoSWRR|MoEE|MoTC|MoBA|MoLES|MoLF|MoFA|MoIP|MoEnv|Ministry of|Department of|Government of (the )?(Republic of (the )?)?Union of Myanmar|State Administration Council)\b/i
     const isExcluded = (orgId: string | null | undefined): boolean => {
       if (!orgId) return false

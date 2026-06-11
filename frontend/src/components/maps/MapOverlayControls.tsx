@@ -26,7 +26,6 @@ export function MapZoomRotateOverlay({ map }: { map: MapLibreMap | null }) {
       map.dragRotate?.enable();
       map.touchZoomRotate?.enable();
       map.touchZoomRotate?.enableRotation?.();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (map as any).touchPitch?.enable?.();
       map.keyboard?.enable();
     } catch {
