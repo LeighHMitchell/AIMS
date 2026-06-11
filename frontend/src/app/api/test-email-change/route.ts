@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiFetch } from '@/lib/api-fetch';
+import { requireSuperUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  
+  const { response: authResponse } = await requireSuperUser();
+  if (authResponse) return authResponse;
+
   try {
     // Test the email change API
     const testData = {
@@ -55,7 +58,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   // Reset test data
-  
+  const { response: authResponse } = await requireSuperUser();
+  if (authResponse) return authResponse;
+
   try {
     // This will trigger re-initialization of the local database
     const { initializeLocalDb } = await import('@/lib/db/local-db');

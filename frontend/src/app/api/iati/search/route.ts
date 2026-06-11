@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sanitizeIatiDescriptionServerSafe } from "@/lib/sanitize-server"
+import { requireAuth } from "@/lib/auth"
 
 // Force dynamic rendering - critical for production
 export const dynamic = 'force-dynamic';
@@ -105,6 +106,8 @@ const extractDateFromSolrArrays = (
  * Search the IATI Datastore using the correct API v3 format
  */
 export async function POST(request: NextRequest) {
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
 
   try {
     const body: SearchParams = await request.json().catch(() => null);
