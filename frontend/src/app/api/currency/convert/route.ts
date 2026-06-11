@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
 import { requireAuth } from '@/lib/auth';
+import { fixedCurrencyConverter } from '@/lib/currency-converter-fixed';
+
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -167,7 +168,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
-
-
 
