@@ -1,0 +1,4 @@
+{
+  "maxErrors": 1530,
+  "note": "Pre-existing TypeScript error count as of 2026-06-11 (plan 001). CI fails if the current count exceeds maxErrors. When you fix type errors, lower this number in the same PR. Burn-down tracked as audit follow-up."
+}
