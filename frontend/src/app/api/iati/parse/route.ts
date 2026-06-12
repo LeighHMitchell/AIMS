@@ -257,7 +257,7 @@ export async function POST(request: NextRequest) {
       ignoreAttributes: false,
       attributeNamePrefix: '@_',
       textNodeName: '#text',
-      parseAttributeValue: true,
+      parseAttributeValue: false, // keep strings to avoid precision issues (e.g. version="2.10" → 2.1)
       trimValues: true
     });
 
