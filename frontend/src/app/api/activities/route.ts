@@ -462,10 +462,14 @@ export async function POST(request: Request) {
       // Handle SDG mappings
       if (body.sdgMappings) {
         // Delete existing SDG mappings
-        await supabase
+        const { error: sdgDeleteError } = await supabase
           .from('activity_sdg_mappings')
           .delete()
           .eq('activity_id', body.id);
+        if (sdgDeleteError) {
+          console.error('[AIMS API] Error clearing SDG mappings:', sdgDeleteError);
+          transactionWarnings.push(`SDG mappings: failed to clear existing (${sdgDeleteError.message})`);
+        }
 
         // Insert new SDG mappings
         if (body.sdgMappings.length > 0) {
@@ -477,20 +481,28 @@ export async function POST(request: Request) {
             notes: mapping.notes || null
           }));
 
-          await supabase
+          const { error: sdgInsertError } = await supabase
             .from('activity_sdg_mappings')
             .insert(sdgMappingsData);
+          if (sdgInsertError) {
+            console.error('[AIMS API] Error inserting SDG mappings:', sdgInsertError);
+            transactionWarnings.push(`SDG mappings: failed to insert new (${sdgInsertError.message})`);
+          }
         }
       }
 
       // Handle tags
       if (body.tags !== undefined) {
-        
+
         // Delete existing activity tags
-        await supabase
+        const { error: tagsDeleteError } = await supabase
           .from('activity_tags')
           .delete()
           .eq('activity_id', body.id);
+        if (tagsDeleteError) {
+          console.error('[AIMS API] Error clearing tags:', tagsDeleteError);
+          transactionWarnings.push(`Tags: failed to clear existing (${tagsDeleteError.message})`);
+        }
 
         // Process and insert new tags
         if (body.tags.length > 0) {
@@ -545,7 +557,7 @@ export async function POST(request: Request) {
               
             if (tagsError) {
               console.error('[AIMS API] Error updating tags:', tagsError);
-            } else {
+              transactionWarnings.push(`Tags: failed to insert new (${tagsError.message})`);
             }
           }
         }
@@ -553,12 +565,16 @@ export async function POST(request: Request) {
 
       // Handle working groups
       if (body.workingGroups !== undefined) {
-        
+
         // Delete existing activity working groups
-        await supabase
+        const { error: wgDeleteError } = await supabase
           .from('activity_working_groups')
           .delete()
           .eq('activity_id', body.id);
+        if (wgDeleteError) {
+          console.error('[AIMS API] Error clearing working groups:', wgDeleteError);
+          transactionWarnings.push(`Working groups: failed to clear existing (${wgDeleteError.message})`);
+        }
 
         // Insert new working groups
         if (body.workingGroups.length > 0) {
@@ -584,7 +600,7 @@ export async function POST(request: Request) {
               
             if (wgError) {
               console.error('[AIMS API] Error updating working groups:', wgError);
-            } else {
+              transactionWarnings.push(`Working groups: failed to insert new (${wgError.message})`);
             }
           }
         }
@@ -593,10 +609,14 @@ export async function POST(request: Request) {
       // Handle policy markers
       if (body.policyMarkers !== undefined) {
         // Delete existing activity policy markers
-        await supabase
+        const { error: pmDeleteError } = await supabase
           .from('activity_policy_markers')
           .delete()
           .eq('activity_id', body.id);
+        if (pmDeleteError) {
+          console.error('[AIMS API] Error clearing policy markers:', pmDeleteError);
+          transactionWarnings.push(`Policy markers: failed to clear existing (${pmDeleteError.message})`);
+        }
 
         // Insert new policy markers
         if (body.policyMarkers.length > 0) {
@@ -613,7 +633,7 @@ export async function POST(request: Request) {
             
           if (policyMarkersError) {
             console.error('[AIMS API] Error updating policy markers:', policyMarkersError);
-          } else {
+            transactionWarnings.push(`Policy markers: failed to insert new (${policyMarkersError.message})`);
           }
         }
       }
@@ -621,10 +641,14 @@ export async function POST(request: Request) {
       // Handle locations
       if (body.locations !== undefined) {
         // Delete existing locations
-        await supabase
+        const { error: locDeleteError } = await supabase
           .from('activity_locations')
           .delete()
           .eq('activity_id', body.id);
+        if (locDeleteError) {
+          console.error('[AIMS API] Error clearing locations:', locDeleteError);
+          transactionWarnings.push(`Locations: failed to clear existing (${locDeleteError.message})`);
+        }
 
         // Process site locations
         const locationsToInsert: any[] = [];
@@ -664,7 +688,7 @@ export async function POST(request: Request) {
             
           if (locationsError) {
             console.error('[AIMS API] Error updating locations:', locationsError);
-          } else {
+            transactionWarnings.push(`Locations: failed to insert new (${locationsError.message})`);
           }
         }
       }
@@ -672,10 +696,14 @@ export async function POST(request: Request) {
       // Handle contacts
       if (body.contacts !== undefined) {
         // Delete existing contacts
-        await supabase
+        const { error: contactsDeleteError } = await supabase
           .from('activity_contacts')
           .delete()
           .eq('activity_id', body.id);
+        if (contactsDeleteError) {
+          console.error('[AIMS API] Error clearing contacts:', contactsDeleteError);
+          transactionWarnings.push(`Contacts: failed to clear existing (${contactsDeleteError.message})`);
+        }
 
         // Insert new contacts
         if (body.contacts.length > 0) {
@@ -741,7 +769,7 @@ export async function POST(request: Request) {
             if (contactsError.message.includes('does not exist')) {
               console.error('[AIMS API] activity_contacts table does not exist. Please create it first.');
             }
-          } else {
+            transactionWarnings.push(`Contacts: failed to insert new (${contactsError.message})`);
           }
         }
       }
@@ -974,7 +1002,7 @@ export async function POST(request: Request) {
       })()
       };
       
-      return NextResponse.json(responseData);
+      return NextResponse.json({ ...responseData, warnings: transactionWarnings });
     }
 
     // Otherwise, create new activity
