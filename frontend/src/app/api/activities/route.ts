@@ -8,38 +8,60 @@ import { convertTransactionToUSD, addUSDFieldsToTransaction } from '@/lib/transa
 import { cascadeSoftDelete, ACTIVITY_CHILD_TABLES } from '@/lib/soft-delete';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { canDeleteActivities, canEditActivity } from '@/lib/activity-permissions-server';
+import {
+  cleanDateValue,
+  cleanUUIDValue,
+  mapIncomingTransaction,
+  validateIncomingTransaction,
+} from '@/lib/activity-transactions-mapper';
 
 // Force dynamic rendering to ensure environment variables are always loaded
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// Helper function to clean date values (convert empty strings to null)
-function cleanDateValue(value: any): string | null {
-  if (!value || value === '' || value === 'null') {
-    return null;
-  }
-  return value;
-}
+// ---------------------------------------------------------------------------
+// Legacy (non-atomic) transaction save — used only when the RPC is absent.
+// Preserved exactly as it was before; will be deleted in a follow-up once the
+// save_activity_transactions function is deployed everywhere.
+// ---------------------------------------------------------------------------
+async function legacySaveTransactions(
+  supabase: any,
+  activityId: string,
+  validTransactions: any[]
+): Promise<{ message: string } | null> {
+  // Build the diff the old way
+  const { data: existingTransactions } = await supabase
+    .from('transactions')
+    .select('uuid')
+    .eq('activity_id', activityId);
 
-// Helper function to validate UUID format
-function isValidUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-}
+  const existingIds = new Set(existingTransactions?.map((t: any) => t.uuid) || []);
+  const incomingIds = new Set(validTransactions.filter((t: any) => t.uuid).map((t: any) => t.uuid));
+  const toDelete = Array.from(existingIds).filter((id) => !incomingIds.has(id));
 
-// Helper function to clean UUID values (validate and reject invalid UUIDs)
-function cleanUUIDValue(value: any): string | null {
-  if (!value || value === '' || value === 'null') {
-    return null;
+  if (toDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('transactions')
+      .delete()
+      .in('uuid', toDelete);
+    if (deleteError) {
+      console.error('[AIMS] Legacy: Error deleting transactions:', deleteError);
+      return deleteError;
+    }
   }
-  
-  // Check if it's a valid UUID
-  if (typeof value === 'string' && isValidUUID(value)) {
-    return value;
+
+  if (validTransactions.length > 0) {
+    const { error: upsertError } = await supabase
+      .from('transactions')
+      .upsert(validTransactions, { onConflict: 'uuid', ignoreDuplicates: false })
+      .select();
+    if (upsertError) {
+      console.error('[AIMS] Legacy: Error upserting transactions:', upsertError);
+      return upsertError;
+    }
   }
-  
-  // If it's a simple string ID like "1", "2", etc., throw an error
-  throw new Error(`Invalid UUID format: ${value}. Expected a valid UUID v4 or null.`);
+
+  return null;
 }
 
 // Handle OPTIONS requests for CORS
@@ -270,94 +292,38 @@ export async function POST(request: Request) {
       // Handle transactions - ONLY if explicitly provided
       // This prevents accidental deletion when transactions aren't loaded
       if (body.transactions !== undefined && Array.isArray(body.transactions)) {
-        
-        // Get existing transactions
-        const { data: existingTransactions } = await supabase
-          .from('transactions')
-          .select('uuid')
-          .eq('activity_id', body.id);
-        
-        const existingIds = new Set(existingTransactions?.map((t: any) => t.uuid) || []);
-        const incomingIds = new Set(body.transactions.filter((t: any) => t.uuid || t.id).map((t: any) => t.uuid || t.id));
-        
-        // Determine which transactions to delete (exist in DB but not in request)
-        const toDelete = Array.from(existingIds).filter(id => !incomingIds.has(id));
-        
-        // Delete removed transactions
-        if (toDelete.length > 0) {
-          await supabase
-            .from('transactions')
-            .delete()
-            .in('uuid', toDelete);
-        }
 
         // Upsert transactions (update existing, insert new)
         if (body.transactions.length > 0) {
           let transactionsData;
-          
+
           try {
             transactionsData = body.transactions.map((transaction: any, index: number) => {
               // Get organization_id with fallback
               const organizationId = cleanUUIDValue(body.createdByOrg) || cleanUUIDValue(body.user?.organizationId);
-              
+
               // Log warning if no organization_id
               if (!organizationId) {
                 console.warn(`[AIMS] Transaction ${index} has no organization_id. createdByOrg: ${body.createdByOrg}, user.organizationId: ${body.user?.organizationId}`);
                 transactionWarnings.push(`Transaction ${index + 1}: Missing organization ID`);
               }
-              
-              // Validate required fields
-              const validationErrors = [];
-              if (!transaction.transaction_type && !transaction.type) {
-                validationErrors.push('transaction type');
-              }
-              if (!transaction.value && transaction.value !== 0) {
-                validationErrors.push('value');
-              }
-              if (!transaction.transaction_date && !transaction.transactionDate) {
-                validationErrors.push('transaction date');
-              }
-              if (!transaction.currency) {
-                validationErrors.push('currency');
-              }
-              
+
+              // Validate required fields via mapper module
+              const validationErrors = validateIncomingTransaction(transaction);
+
               if (validationErrors.length > 0) {
                 const errorMsg = `Transaction ${index + 1}: Missing required fields: ${validationErrors.join(', ')}`;
                 console.error(`[AIMS] ${errorMsg}`);
                 transactionWarnings.push(errorMsg);
               }
-              
-              // Log the mapped transaction for debugging
-              const mappedTransaction = {
-                uuid: transaction.uuid || transaction.id || undefined, // Let DB generate if not provided
-                activity_id: body.id,
-                organization_id: organizationId,
-                transaction_type: transaction.transaction_type || transaction.type,
-                provider_org_name: transaction.provider_org_name || transaction.provider_org || transaction.providerOrg,
-                receiver_org_name: transaction.receiver_org_name || transaction.receiver_org || transaction.receiverOrg,
-                provider_org_id: cleanUUIDValue(transaction.provider_org_id),
-                receiver_org_id: cleanUUIDValue(transaction.receiver_org_id),
-                provider_org_type: transaction.provider_org_type,
-                receiver_org_type: transaction.receiver_org_type,
-                provider_org_ref: transaction.provider_org_ref,
-                receiver_org_ref: transaction.receiver_org_ref,
-                value: transaction.value || 0,
-                currency: transaction.currency || 'USD',
-                status: transaction.status || 'draft',
-                transaction_date: cleanDateValue(transaction.transaction_date || transaction.transactionDate),
-                value_date: cleanDateValue(transaction.value_date),
-                transaction_reference: transaction.transaction_reference,
-                description: transaction.description || transaction.narrative,
-                aid_type: transaction.aidType || transaction.aid_type,
-                tied_status: transaction.tiedStatus || transaction.tied_status,
-                flow_type: transaction.flowType || transaction.flow_type,
-                finance_type: transaction.finance_type,
-                disbursement_channel: transaction.disbursement_channel,
-                is_humanitarian: transaction.is_humanitarian ?? null,
-                financing_classification: transaction.financing_classification,
-                created_by: cleanUUIDValue(body.user?.id)
-              };
-              
+
+              // Map the transaction via the extracted mapper module
+              const mappedTransaction = mapIncomingTransaction(transaction, {
+                activityId: body.id,
+                organizationId,
+                createdBy: cleanUUIDValue(body.user?.id),
+              });
+
               console.log(`[AIMS] Mapped transaction ${index}:`, {
                 organization_id: mappedTransaction.organization_id,
                 transaction_type: mappedTransaction.transaction_type,
@@ -365,7 +331,7 @@ export async function POST(request: Request) {
                 currency: mappedTransaction.currency,
                 transaction_date: mappedTransaction.transaction_date
               });
-              
+
               return mappedTransaction;
             });
           } catch (error: any) {
@@ -378,7 +344,7 @@ export async function POST(request: Request) {
           // Only proceed with transactions that have organization_id
           const validTransactionsWithoutUSD = transactionsData.filter((t: any) => t.organization_id);
           const skippedCount = transactionsData.length - validTransactionsWithoutUSD.length;
-          
+
           if (skippedCount > 0) {
             console.warn(`[AIMS] Skipping ${skippedCount} transactions due to missing organization_id`);
             transactionWarnings.push(`${skippedCount} transactions skipped due to missing organization ID`);
@@ -392,52 +358,101 @@ export async function POST(request: Request) {
               transaction.currency,
               transaction.value_date || transaction.transaction_date || new Date().toISOString()
             );
-            
+
             if (usdResult.success) {
             } else {
               console.warn(`[AIMS] USD conversion failed: ${usdResult.error}`);
             }
-            
+
             const transactionWithUSD = addUSDFieldsToTransaction(transaction, usdResult);
             validTransactions.push(transactionWithUSD);
           }
 
           if (validTransactions.length > 0) {
-            const { data: upsertedData, error: upsertError } = await supabase
-              .from('transactions')
-              .upsert(validTransactions, {
-                onConflict: 'uuid',
-                ignoreDuplicates: false
-              })
-              .select();
-              
-            if (upsertError) {
-              console.error('[AIMS] Error upserting transactions:', upsertError);
-              
-              // Check if this is an unpublishing operation
-              const isUnpublishing = existingActivity.publication_status === 'published' && body.publicationStatus === 'draft';
-              console.log('[AIMS API] Transaction error - Unpublishing check:', {
-                existingStatus: existingActivity.publication_status,
-                newStatus: body.publicationStatus,
-                isUnpublishing: isUnpublishing
-              });
-              
-              if (isUnpublishing) {
-                console.warn('[AIMS] Transaction upsert failed during unpublishing - continuing with activity update');
-                transactionWarnings.push(`Some transactions could not be updated: ${upsertError.message}`);
+            // Ensure every row has a uuid before handing off to the RPC
+            for (const t of validTransactions) {
+              if (!t.uuid) t.uuid = uuidv4();
+            }
+
+            // Atomic save via Postgres function (SECURITY INVOKER — RLS still applies)
+            const { error: rpcError } = await supabase.rpc('save_activity_transactions', {
+              p_activity_id: body.id,
+              p_transactions: validTransactions,
+            });
+
+            if (rpcError) {
+              console.error('[AIMS] Error calling save_activity_transactions RPC:', rpcError);
+
+              const fnMissing =
+                rpcError.code === '42883' ||
+                rpcError.code === 'PGRST202' ||
+                /function .*save_activity_transactions.* does not exist|Could not find the function/i.test(rpcError.message);
+
+              if (fnMissing) {
+                // RPC not yet deployed — fall back to legacy non-atomic path
+                console.warn('[AIMS] save_activity_transactions RPC missing — using legacy non-atomic path');
+                const legacyError = await legacySaveTransactions(supabase, body.id, validTransactions);
+                if (legacyError) {
+                  const isUnpublishing =
+                    existingActivity.publication_status === 'published' &&
+                    body.publicationStatus === 'draft';
+                  if (isUnpublishing) {
+                    console.warn('[AIMS] Legacy transaction save failed during unpublishing - continuing with activity update');
+                    transactionWarnings.push(`Some transactions could not be updated: ${legacyError.message}`);
+                  } else {
+                    return NextResponse.json(
+                      {
+                        error: 'Failed to save some transactions',
+                        details: legacyError.message,
+                        warnings: transactionWarnings,
+                      },
+                      { status: 400 }
+                    );
+                  }
+                }
               } else {
-                return NextResponse.json(
-                  { 
-                    error: 'Failed to save some transactions', 
-                    details: upsertError.message,
-                    warnings: transactionWarnings 
-                  },
-                  { status: 400 }
-                );
+                // Check if this is an unpublishing operation
+                const isUnpublishing =
+                  existingActivity.publication_status === 'published' &&
+                  body.publicationStatus === 'draft';
+                console.log('[AIMS API] Transaction error - Unpublishing check:', {
+                  existingStatus: existingActivity.publication_status,
+                  newStatus: body.publicationStatus,
+                  isUnpublishing: isUnpublishing,
+                });
+
+                if (isUnpublishing) {
+                  console.warn('[AIMS] Transaction save failed during unpublishing - continuing with activity update');
+                  transactionWarnings.push(`Some transactions could not be updated: ${rpcError.message}`);
+                } else {
+                  return NextResponse.json(
+                    {
+                      error: 'Failed to save transactions',
+                      details: rpcError.message,
+                      warnings: transactionWarnings,
+                    },
+                    { status: 400 }
+                  );
+                }
               }
+            }
+          }
+        } else {
+          // body.transactions is an empty array — delete all existing transactions atomically
+          const { error: rpcError } = await supabase.rpc('save_activity_transactions', {
+            p_activity_id: body.id,
+            p_transactions: [],
+          });
+          if (rpcError) {
+            const fnMissing =
+              rpcError.code === '42883' ||
+              rpcError.code === 'PGRST202' ||
+              /function .*save_activity_transactions.* does not exist|Could not find the function/i.test(rpcError.message);
+            if (fnMissing) {
+              console.warn('[AIMS] save_activity_transactions RPC missing — using legacy non-atomic path for empty array');
+              await legacySaveTransactions(supabase, body.id, []);
             } else {
-              if (upsertedData) {
-              }
+              console.error('[AIMS] Error calling save_activity_transactions RPC (empty array):', rpcError);
             }
           }
         }
