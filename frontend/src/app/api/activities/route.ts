@@ -353,7 +353,7 @@ export async function POST(request: Request) {
                 flow_type: transaction.flowType || transaction.flow_type,
                 finance_type: transaction.finance_type,
                 disbursement_channel: transaction.disbursement_channel,
-                is_humanitarian: transaction.is_humanitarian || false,
+                is_humanitarian: transaction.is_humanitarian ?? null,
                 financing_classification: transaction.financing_classification,
                 created_by: cleanUUIDValue(body.user?.id)
               };
@@ -1294,7 +1294,7 @@ export async function POST(request: Request) {
             flow_type: transaction.flowType || transaction.flow_type,
             finance_type: transaction.finance_type,
             disbursement_channel: transaction.disbursement_channel,
-            is_humanitarian: transaction.is_humanitarian || false,
+            is_humanitarian: transaction.is_humanitarian ?? null,
             financing_classification: transaction.financing_classification,
             created_by: cleanUUIDValue(body.user?.id)
           };

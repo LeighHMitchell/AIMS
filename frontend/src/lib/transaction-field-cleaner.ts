@@ -10,16 +10,28 @@
 
 /**
  * Clean boolean fields - preserve false values
- * 
+ *
  * @param value - Any value that should be converted to boolean
  * @returns boolean - false for null/undefined, otherwise converts to boolean
- * 
+ *
  * IMPORTANT: This preserves false values. Using `value || false` would
  * incorrectly convert false to false, but `value || null` would convert
  * false to null, losing the user's intent.
  */
 export function cleanBooleanValue(value: any): boolean {
   if (value === undefined || value === null) return false;
+  return Boolean(value);
+}
+
+/**
+ * Nullable boolean for IATI tri-state attributes (e.g. @humanitarian):
+ * absent/null = "not reported" and MUST be preserved as null — it is not false.
+ *
+ * @param value - Any value that should be converted to boolean | null
+ * @returns boolean | null - null for absent/null, otherwise converts to boolean
+ */
+export function cleanNullableBooleanValue(value: any): boolean | null {
+  if (value === undefined || value === null) return null;
   return Boolean(value);
 }
 
@@ -186,8 +198,9 @@ export function cleanTransactionFields(data: any): any {
   }
 
   // Boolean fields - CRITICAL: preserve false values
+  // is_humanitarian is IATI tri-state: null = "not reported" (distinct from false = "explicitly not humanitarian")
   if (data.is_humanitarian !== undefined) {
-    cleaned.is_humanitarian = cleanBooleanValue(data.is_humanitarian);
+    cleaned.is_humanitarian = cleanNullableBooleanValue(data.is_humanitarian);
   }
   if (data.finance_type_inherited !== undefined) {
     cleaned.finance_type_inherited = cleanBooleanValue(data.finance_type_inherited);
@@ -243,8 +256,13 @@ export function cleanTransactionFields(data: any): any {
  * @returns Cleaned field value
  */
 export function cleanFieldValue(fieldName: string, value: any): any {
-  // Boolean fields
-  if (['is_humanitarian', 'finance_type_inherited', 'fx_differs', 'usd_convertible', 'exchange_rate_manual', 'use_activity_sectors'].includes(fieldName)) {
+  // IATI tri-state boolean: null = "not reported" (distinct from false = "explicitly not humanitarian")
+  if (fieldName === 'is_humanitarian') {
+    return value !== undefined ? cleanNullableBooleanValue(value) : null;
+  }
+
+  // Internal boolean fields — false-default is correct for these
+  if (['finance_type_inherited', 'fx_differs', 'usd_convertible', 'exchange_rate_manual', 'use_activity_sectors'].includes(fieldName)) {
     return value !== undefined ? cleanBooleanValue(value) : null;
   }
 

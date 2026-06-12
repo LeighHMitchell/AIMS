@@ -232,12 +232,16 @@ describe('Transaction Field Cleaner Utilities', () => {
   });
 
   describe('cleanFieldValue', () => {
-    // TODO(audit-001): quarantined — product bug: cleanFieldValue('is_humanitarian', null) returns false instead of null; cleanBooleanValue coerces null→false but boolean fields should preserve null
-    it.skip('should clean boolean field is_humanitarian correctly', () => {
+    it('should clean boolean field is_humanitarian correctly', () => {
       expect(cleanFieldValue('is_humanitarian', true)).toBe(true);
       expect(cleanFieldValue('is_humanitarian', false)).toBe(false);
       expect(cleanFieldValue('is_humanitarian', null)).toBeNull();
       expect(cleanFieldValue('is_humanitarian', undefined)).toBeNull();
+    });
+
+    it('should preserve false (not null) for finance_type_inherited when null passed', () => {
+      // Pins that the tri-state fix is scoped to is_humanitarian only
+      expect(cleanFieldValue('finance_type_inherited', null)).toBe(false);
     });
 
     it('should clean enum fields correctly', () => {
