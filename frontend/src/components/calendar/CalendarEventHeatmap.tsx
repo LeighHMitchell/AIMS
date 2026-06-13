@@ -325,7 +325,7 @@ export function CalendarEventHeatmap({ events, year, onDayClick, onYearChange }:
 
           if (d.data && d.hasData && tooltipRef.current) {
             const tooltip = tooltipRef.current
-            const dateStr = format(d.data.date, 'EEEE, MMMM dd, yyyy')
+            const dateStr = format(d.data.date, 'EEEE, d MMMM yyyy')
 
             const typeBreakdown = Object.entries(d.data.typeBreakdown)
               .filter(([, count]) => count > 0)

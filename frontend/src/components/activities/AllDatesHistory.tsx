@@ -216,7 +216,7 @@ export function AllDatesHistory({ activityId, dates, customDates = [] }: AllDate
     try {
       const date = new Date(timestamp)
       if (isNaN(date.getTime())) return timestamp
-      return format(date, 'MMM dd, yyyy \'at\' h:mm a')
+      return format(date, 'd MMM yyyy \'at\' h:mm a')
     } catch {
       return timestamp
     }

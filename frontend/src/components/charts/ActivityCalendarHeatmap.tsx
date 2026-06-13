@@ -350,7 +350,7 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
     event: MouseEvent
   ) => {
     if (!d.data) return
-    const dateStr = format(d.data.date, 'EEEE, MMMM dd, yyyy')
+    const dateStr = format(d.data.date, 'EEEE, d MMMM yyyy')
 
     const typeBreakdown = Object.entries(d.data.typeBreakdown)
       .filter(([, count]) => count > 0)
