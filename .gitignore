@@ -11,6 +11,9 @@ frontend/out/
 # Environment variables
 frontend/.env.local
 frontend/.env*.local
+.env.local
+.env.test
+.env*.local
 
 # Logs
 *.log
