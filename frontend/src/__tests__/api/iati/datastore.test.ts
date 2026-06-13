@@ -28,7 +28,8 @@ const KNOWN_ORGS = {
 // Test timeout for API calls
 const API_TIMEOUT = 30000; // 30 seconds
 
-describe('IATI Datastore API Integration', () => {
+// TODO(audit-001): quarantined — requires live IATI Datastore network access; un-skip when test env provides it
+describe.skip('IATI Datastore API Integration', () => {
   let datastoreAvailable = false;
   let registryAvailable = false;
 

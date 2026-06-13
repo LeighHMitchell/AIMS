@@ -45,14 +45,15 @@ describe('Transaction Field Persistence', () => {
       expect(cleaned).not.toHaveProperty('is_humanitarian');
     });
 
-    it('should convert null to false for is_humanitarian when explicitly provided', () => {
+    it('should preserve null for is_humanitarian when explicitly provided (IATI tri-state)', () => {
+      // IATI @humanitarian is tri-state: absent/null = "not reported", distinct from false = "explicitly not humanitarian"
       const data = {
         is_humanitarian: null,
       };
 
       const cleaned = cleanTransactionFields(data);
 
-      expect(cleaned.is_humanitarian).toBe(false);
+      expect(cleaned.is_humanitarian).toBeNull();
     });
 
     it('should handle finance_type_inherited boolean correctly', () => {

@@ -296,7 +296,6 @@ function formatNumber(value: number, abbreviated: boolean): string {
 // Create custom aggregators with configurable number formatting
 // react-pivottable expects: aggregator(attributeArray)() -> returns aggregator instance
 // Ordered with Sum and Count first (most commonly used), then a separator, then other aggregators
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createCustomAggregators(abbreviated: boolean): Record<string, any> {
   const fmt = (value: number) => formatNumber(value, abbreviated)
   

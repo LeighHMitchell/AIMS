@@ -49,9 +49,9 @@ export async function extractIatiMeta(file: File): Promise<IatiMeta> {
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: '',
-      // ignoreNamespace: false,
+      removeNSPrefix: true,
       allowBooleanAttributes: true,
-      parseAttributeValue: true,
+      parseAttributeValue: false, // keep strings to avoid precision issues
       parseTagValue: true,
       trimValues: true,
       parseTrueNumberOnly: false
@@ -128,8 +128,9 @@ export async function extractIatiMeta(file: File): Promise<IatiMeta> {
     if (reportingOrg.narrative) {
       if (Array.isArray(reportingOrg.narrative)) {
         // Take the first narrative, preferring English
-        const englishNarrative = reportingOrg.narrative.find((n: any) => 
-          !n['xml:lang'] || n['xml:lang'] === 'en'
+        // After removeNSPrefix:true, xml:lang becomes just 'lang'
+        const englishNarrative = reportingOrg.narrative.find((n: any) =>
+          !n['xml:lang'] && !n['lang'] || n['xml:lang'] === 'en' || n['lang'] === 'en'
         );
         reportingOrgName = englishNarrative?.['#text'] || reportingOrg.narrative[0]?.['#text'] || reportingOrg.narrative[0];
       } else if (typeof reportingOrg.narrative === 'string') {

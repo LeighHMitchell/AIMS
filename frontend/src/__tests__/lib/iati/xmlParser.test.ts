@@ -22,7 +22,7 @@ const parserConfig = {
   ignoreAttributes: false,
   attributeNamePrefix: '@_',
   textNodeName: '#text',
-  parseAttributeValue: true,
+  parseAttributeValue: false, // keep strings to avoid precision issues (e.g. version="2.10" → 2.1)
   trimValues: true
 };
 
@@ -70,7 +70,7 @@ describe('IATI XML Parser', () => {
       expect(parsed['iati-activities']).toBeDefined();
     });
 
-    it('should have version attribute', () => {
+    it('should have version attribute as string', () => {
       expect(parsed['iati-activities']['@_version']).toBe('2.03');
     });
 
@@ -90,7 +90,7 @@ describe('IATI XML Parser', () => {
 
     it('should extract reporting org type', () => {
       const activity = parsed['iati-activities']['iati-activity'];
-      expect(activity['reporting-org']['@_type']).toBe(10);
+      expect(activity['reporting-org']['@_type']).toBe('10');
     });
 
     it('should extract title narrative', () => {
@@ -100,7 +100,7 @@ describe('IATI XML Parser', () => {
 
     it('should extract activity status code', () => {
       const activity = parsed['iati-activities']['iati-activity'];
-      expect(activity['activity-status']['@_code']).toBe(2);
+      expect(activity['activity-status']['@_code']).toBe('2');
     });
   });
 
@@ -124,13 +124,13 @@ describe('IATI XML Parser', () => {
 
     it('should extract planned start date (type 1)', () => {
       const dates = ensureArray(activity['activity-date']);
-      const plannedStart = dates.find((d: any) => d['@_type'] === 1);
+      const plannedStart = dates.find((d: any) => d['@_type'] === '1');
       expect(plannedStart['@_iso-date']).toBe('2024-01-01');
     });
 
     it('should extract planned end date (type 3)', () => {
       const dates = ensureArray(activity['activity-date']);
-      const plannedEnd = dates.find((d: any) => d['@_type'] === 3);
+      const plannedEnd = dates.find((d: any) => d['@_type'] === '3');
       expect(plannedEnd['@_iso-date']).toBe('2025-12-31');
     });
 
@@ -142,7 +142,8 @@ describe('IATI XML Parser', () => {
     it('should extract sectors with percentages', () => {
       const sectors = ensureArray(activity.sector);
       expect(sectors.length).toBe(2);
-      const totalPercentage = sectors.reduce((sum: number, s: any) => sum + (s['@_percentage'] || 0), 0);
+      // parseAttributeValue:false means @_percentage is a string; convert for arithmetic
+      const totalPercentage = sectors.reduce((sum: number, s: any) => sum + (parseFloat(s['@_percentage']) || 0), 0);
       expect(totalPercentage).toBe(100);
     });
 
@@ -152,11 +153,11 @@ describe('IATI XML Parser', () => {
     });
 
     it('should extract default flow type', () => {
-      expect(activity['default-flow-type']['@_code']).toBe(10);
+      expect(activity['default-flow-type']['@_code']).toBe('10');
     });
 
     it('should extract default finance type', () => {
-      expect(activity['default-finance-type']['@_code']).toBe(110);
+      expect(activity['default-finance-type']['@_code']).toBe('110');
     });
   });
 
@@ -181,14 +182,14 @@ describe('IATI XML Parser', () => {
 
     it('should have different activity statuses', () => {
       const statuses = activities.map(a => a['activity-status']['@_code']);
-      expect(statuses).toContain(1); // Pipeline
-      expect(statuses).toContain(2); // Implementation
-      expect(statuses).toContain(3); // Finalisation
-      expect(statuses).toContain(4); // Closed
+      expect(statuses).toContain('1'); // Pipeline
+      expect(statuses).toContain('2'); // Implementation
+      expect(statuses).toContain('3'); // Finalisation
+      expect(statuses).toContain('4'); // Closed
     });
 
     it('should identify humanitarian activity', () => {
-      const humanitarianActivity = activities.find(a => a['@_humanitarian'] === 1 || a['@_humanitarian'] === '1');
+      const humanitarianActivity = activities.find(a => a['@_humanitarian'] === '1');
       expect(humanitarianActivity).toBeDefined();
       expect(extractIatiIdentifier(humanitarianActivity)).toBe('TEST-MULTI-005');
     });
@@ -258,25 +259,25 @@ describe('IATI XML Parser', () => {
     });
 
     it('should extract type 1 (planned start)', () => {
-      const date = dates.find(d => d['@_type'] === 1);
+      const date = dates.find(d => d['@_type'] === '1');
       expect(date).toBeDefined();
       expect(date['@_iso-date']).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
     it('should extract type 2 (actual start)', () => {
-      const date = dates.find(d => d['@_type'] === 2);
+      const date = dates.find(d => d['@_type'] === '2');
       expect(date).toBeDefined();
       expect(date['@_iso-date']).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
     it('should extract type 3 (planned end)', () => {
-      const date = dates.find(d => d['@_type'] === 3);
+      const date = dates.find(d => d['@_type'] === '3');
       expect(date).toBeDefined();
       expect(date['@_iso-date']).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
     it('should extract type 4 (actual end)', () => {
-      const date = dates.find(d => d['@_type'] === 4);
+      const date = dates.find(d => d['@_type'] === '4');
       expect(date).toBeDefined();
       expect(date['@_iso-date']).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
@@ -396,11 +397,12 @@ describe('CRS-add Parsing', () => {
     });
 
     it('should extract loan terms rate-1', () => {
-      expect(crsAdd['loan-terms']['@_rate-1']).toBe(2.5);
+      // parseAttributeValue:false keeps the raw string; callers use parseFloat()
+      expect(crsAdd['loan-terms']['@_rate-1']).toBe('2.5');
     });
 
     it('should extract loan terms rate-2', () => {
-      expect(crsAdd['loan-terms']['@_rate-2']).toBe(1.5);
+      expect(crsAdd['loan-terms']['@_rate-2']).toBe('1.5');
     });
 
     it('should extract repayment type code', () => {
@@ -435,8 +437,9 @@ describe('CRS-add Parsing', () => {
 
     it('should extract loan-status year', () => {
       const statuses = ensureArray(crsAdd['loan-status']);
-      expect(statuses[0]['@_year']).toBe(2024);
-      expect(statuses[1]['@_year']).toBe(2025);
+      // parseAttributeValue:false keeps the raw string; callers use parseInt()
+      expect(statuses[0]['@_year']).toBe('2024');
+      expect(statuses[1]['@_year']).toBe('2025');
     });
 
     it('should extract loan-status financial values', () => {

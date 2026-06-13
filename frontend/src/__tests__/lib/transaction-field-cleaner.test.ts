@@ -239,6 +239,11 @@ describe('Transaction Field Cleaner Utilities', () => {
       expect(cleanFieldValue('is_humanitarian', undefined)).toBeNull();
     });
 
+    it('should preserve false (not null) for finance_type_inherited when null passed', () => {
+      // Pins that the tri-state fix is scoped to is_humanitarian only
+      expect(cleanFieldValue('finance_type_inherited', null)).toBe(false);
+    });
+
     it('should clean enum fields correctly', () => {
       expect(cleanFieldValue('aid_type', '110')).toBe('110');
       expect(cleanFieldValue('aid_type', '')).toBeNull();

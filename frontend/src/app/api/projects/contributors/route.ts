@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { ProjectContributor, CONTRIBUTOR_STATUS } from '@/types/project';
+import { requireAuth } from '@/lib/auth';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const CONTRIBUTORS_FILE = path.join(DATA_DIR, 'project-contributors.json');
@@ -78,6 +79,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/projects/contributors - Nominate a contributor
 export async function POST(request: NextRequest) {
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const body = await request.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
@@ -139,6 +143,9 @@ export async function POST(request: NextRequest) {
 
 // PATCH /api/projects/contributors - Update contributor status
 export async function PATCH(request: NextRequest) {
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const body = await request.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
@@ -183,6 +190,9 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/projects/contributors
 export async function DELETE(request: NextRequest) {
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');

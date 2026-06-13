@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { 
-  loadOrganizationGroups, 
-  createOrganizationGroup, 
-  updateOrganizationGroup, 
+import {
+  loadOrganizationGroups,
+  createOrganizationGroup,
+  updateOrganizationGroup,
   deleteOrganizationGroup,
-  getOrganizationGroupById 
+  getOrganizationGroupById
 } from "@/lib/organizationGroups";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -21,6 +22,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const { user, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const data = await request.json().catch(() => null);
     if (!data) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
@@ -62,13 +66,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Create new group - expect createdByName from client
+    // Use authenticated user identity — never trust client-supplied identity
     const newGroup = createOrganizationGroup({
       name: data.name,
       description: data.description || "",
       organizationIds: data.organizationIds,
-      createdBy: data.createdBy || "1",
-      createdByName: data.createdByName || "Unknown User",
+      createdBy: user!.id,
+      createdByName: user!.email ?? "Unknown User",
       isPublic: data.isPublic || false
     });
     
@@ -83,6 +87,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const { user, response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -118,17 +125,17 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    // Update group - expect updatedByName from client
+    // Use authenticated user identity — never trust client-supplied identity
     const updatedGroup = updateOrganizationGroup(
-      id, 
+      id,
       {
         name: data.name,
         description: data.description,
         organizationIds: data.organizationIds,
         isPublic: data.isPublic
       },
-      data.updatedBy || "1",
-      data.updatedByName || "Unknown User"
+      user!.id,
+      user!.email ?? "Unknown User"
     );
     
     if (!updatedGroup) {
@@ -149,6 +156,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

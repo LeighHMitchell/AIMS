@@ -187,6 +187,7 @@ export async function validateUrlSafety(
   }
 
   // SECURITY: Block if hostname looks like an IP address and is in blocked range
+  // eslint-disable-next-line security/detect-unsafe-regex -- TODO(audit-001): IP-pattern regex reviewed, safe for hostname validation only
   const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
   const ipv6Regex = /^[\da-fA-F:]+$/;
 

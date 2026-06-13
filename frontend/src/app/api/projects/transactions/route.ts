@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { ProjectTransaction, CONTRIBUTION_STATUS } from '@/types/project';
+import { requireAuth } from '@/lib/auth';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const TRANSACTIONS_FILE = path.join(DATA_DIR, 'project-transactions.json');
@@ -83,6 +84,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/projects/transactions - Create a new transaction
 export async function POST(request: NextRequest) {
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const body = await request.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
@@ -145,6 +149,9 @@ export async function POST(request: NextRequest) {
 
 // PATCH /api/projects/transactions - Update a transaction
 export async function PATCH(request: NextRequest) {
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const body = await request.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
@@ -190,6 +197,9 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/projects/transactions
 export async function DELETE(request: NextRequest) {
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get('id');
@@ -225,6 +235,9 @@ export async function DELETE(request: NextRequest) {
 
 // PUT /api/projects/transactions/submit - Submit transactions for approval
 export async function PUT(request: NextRequest) {
+  const { response: authResponse } = await requireAuth();
+  if (authResponse) return authResponse;
+
   try {
     const body = await request.json().catch(() => null);
     if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
