@@ -13,3 +13,7 @@
       unchanged on reload (previously the deleted rows would be lost).
    c. Concurrency: two sessions saving the same activity no longer lose rows.
 3. Once verified, schedule deletion of legacySaveTransactions (follow-up).
+
+## Behavior note
+
+When a save request lacks an organization ID, transactions are now neither saved nor deleted. Previously, because the filtering step produced an empty `validTransactions` array, the code fell through to the `else` branch which called the RPC with an empty list — effectively deleting all existing transactions even though the client had sent rows. The fix keys the delete-all path on the client's explicit intent (`body.transactions.length === 0`) rather than on the filtered set size: if the client sends a non-empty list but every row is skipped due to a missing organization ID, existing transactions are left unchanged and a warning is surfaced via the `warnings` array. This is strictly safer — unsaved new rows no longer cause accidental deletion of existing rows via the uuid diff inside the RPC.

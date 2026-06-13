@@ -436,9 +436,14 @@ export async function POST(request: Request) {
                 }
               }
             }
+          } else {
+            // Client sent transactions but ALL were skipped (missing organization ID).
+            // Do NOT touch existing rows — saving nothing is safer than deleting everything.
+            console.warn('[AIMS] All incoming transactions skipped (missing organization ID) — existing transactions left unchanged');
+            transactionWarnings.push('Transactions not saved: missing organization ID — existing transactions were left unchanged');
           }
-        } else {
-          // body.transactions is an empty array — delete all existing transactions atomically
+        } else if (body.transactions.length === 0) {
+          // Client explicitly sent an empty list — delete all existing transactions atomically
           const { error: rpcError } = await supabase.rpc('save_activity_transactions', {
             p_activity_id: body.id,
             p_transactions: [],
