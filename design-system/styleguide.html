@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>æther / AIMS — Design System Styleguide</title>
+<style>
+  /* ============ Tokens (mirror of tokens.css) ============ */
+  :root {
+    --color-background:#ffffff; --color-foreground:#0a0a0a;
+    --color-primary:#1d1f21; --color-primary-foreground:#fafafa;
+    --color-muted:#f5f5f5; --color-muted-foreground:#737373;
+    --color-border:#e5e5e5; --color-ring:#0a0a0a;
+    --color-destructive:#ef4444; --color-destructive-foreground:#fafafa;
+    --color-surface-muted:#f6f5f3;
+    --color-brand-scarlet:#dc2625; --color-brand-blue-slate:#4c5568;
+    --color-brand-cool-steel:#7b95a7; --color-brand-pale-slate:#cfd0d5; --color-brand-platinum:#f1f4f8;
+    --color-success-bg:hsl(142 76% 93%); --color-success-text:hsl(143 64% 24%); --color-success-border:hsl(142 69% 84%);
+    --color-warning-bg:hsl(48 96% 89%); --color-warning-text:hsl(41 96% 25%); --color-warning-border:hsl(48 96% 77%);
+    --color-error-bg:hsl(0 93% 94%); --color-error-text:hsl(0 63% 31%); --color-error-border:hsl(0 93% 87%);
+    --color-info-bg:hsl(214 95% 93%); --color-info-text:hsl(224 71% 30%); --color-info-border:hsl(214 93% 85%);
+    --font-sans:'Geist','Geist Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    --font-mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,monospace;
+    --radius-sm:0.25rem; --radius-md:0.375rem; --radius-lg:0.75rem;
+    --shadow-card:0 1px 3px rgba(0,0,0,0.06),0 4px 12px rgba(0,0,0,0.04);
+    --shadow-card-hover:0 2px 4px rgba(0,0,0,0.06),0 4px 12px rgba(0,0,0,0.06);
+  }
+  * { box-sizing:border-box; margin:0; }
+  body { font-family:var(--font-sans); font-size:1rem; line-height:1.55; color:var(--color-foreground); background:var(--color-background); }
+  main { max-width:1080px; margin:0 auto; padding:3rem 2rem 6rem; }
+
+  /* ============ Styleguide chrome ============ */
+  .sg-header { border-bottom:1px solid var(--color-border); padding-bottom:1.5rem; margin-bottom:3rem; }
+  .sg-header h1 { font-size:1.875rem; line-height:1.15; font-weight:700; }
+  .sg-header p { color:var(--color-muted-foreground); margin-top:.5rem; }
+  section { margin-bottom:4rem; }
+  h2.sg { font-size:1.5rem; line-height:1.2; font-weight:600; margin-bottom:.25rem; padding-top:1rem; border-top:1px solid var(--color-border); padding-top:1.5rem;}
+  .sg-sub { color:var(--color-muted-foreground); font-size:.875rem; margin-bottom:1.5rem; }
+  h3.sg { font-size:1rem; font-weight:600; margin:1.75rem 0 .75rem; }
+  .eyebrow { font-size:.75rem; letter-spacing:.05em; text-transform:uppercase; color:var(--color-muted-foreground); margin-bottom:.5rem; }
+
+  /* swatches */
+  .swatch-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:.75rem; }
+  .swatch { border:1px solid var(--color-border); border-radius:var(--radius-md); overflow:hidden; font-size:.75rem; }
+  .swatch .chip { height:56px; }
+  .swatch .meta { padding:.5rem .625rem; background:#fff; }
+  .swatch .meta b { display:block; font-weight:600; font-size:.75rem; }
+  .swatch .meta code { font-family:var(--font-mono); color:var(--color-muted-foreground); font-size:.6875rem; }
+
+  /* type scale rows */
+  .type-row { display:flex; align-items:baseline; gap:1.5rem; padding:.75rem 0; border-bottom:1px dashed var(--color-border); }
+  .type-row .spec { width:300px; flex-shrink:0; font-family:var(--font-mono); font-size:.6875rem; color:var(--color-muted-foreground); }
+
+  /* do / don't */
+  .dd-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:.75rem; }
+  .dd { border:1px solid var(--color-border); border-radius:var(--radius-md); overflow:hidden; }
+  .dd .dd-head { font-size:.75rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:.375rem .75rem; }
+  .dd-do .dd-head { background:var(--color-success-bg); color:var(--color-success-text); }
+  .dd-dont .dd-head { background:var(--color-error-bg); color:var(--color-error-text); }
+  .dd .dd-body { padding:1rem .75rem; background:#fff; }
+  .dd .dd-why { padding:.5rem .75rem; font-size:.75rem; color:var(--color-muted-foreground); border-top:1px solid var(--color-border); background:var(--color-surface-muted); }
+
+  /* ============ Real components ============ */
+  .code-chip { display:inline-flex; align-items:center; gap:.25rem; font-family:var(--font-mono); font-size:.75rem; font-weight:400; line-height:1.4; color:var(--color-muted-foreground); background:var(--color-muted); padding:.125rem .375rem; border-radius:var(--radius-sm); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .code-chip--copyable { cursor:pointer; border:0; transition:background-color .15s,color .15s; }
+  .code-chip--copyable:hover { background:rgba(0,0,0,.07); color:var(--color-foreground); }
+  .status-row { display:inline-flex; align-items:center; gap:.375rem; }
+  .activity-title { font-size:1rem; font-weight:500; color:var(--color-foreground); line-height:1.25; min-width:0; text-wrap:wrap; }
+  .activity-title > .code-chip { margin-right:.375rem; vertical-align:middle; }
+  .activity-acronym { font:inherit; color:inherit; }
+
+  .btn { display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; border-radius:var(--radius-md); font-family:var(--font-sans); font-size:1rem; font-weight:500; height:2.5rem; padding:.5rem 1rem; border:0; cursor:pointer; transition:all .15s; }
+  .btn:active { transform:scale(.97); }
+  .btn:focus-visible { outline:none; box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--color-ring); }
+  .btn:disabled { pointer-events:none; opacity:.5; }
+  .btn-default { background:var(--color-primary); color:var(--color-primary-foreground); }
+  .btn-default:hover { background:rgba(29,31,33,.9); }
+  .btn-destructive { background:var(--color-destructive); color:var(--color-destructive-foreground); }
+  .btn-destructive:hover { background:rgba(239,68,68,.9); }
+  .btn-outline { background:var(--color-background); color:var(--color-foreground); border:1px solid var(--color-border); }
+  .btn-outline:hover { background:var(--color-muted); }
+  .btn-secondary { background:var(--color-muted); color:var(--color-foreground); }
+  .btn-secondary:hover { background:rgba(0,0,0,.08); }
+  .btn-ghost { background:transparent; color:var(--color-foreground); }
+  .btn-ghost:hover { background:var(--color-muted); }
+  .btn-link { background:transparent; color:var(--color-primary); text-underline-offset:4px; }
+  .btn-link:hover { text-decoration:underline; }
+  .btn-sm { height:2.25rem; padding:0 .75rem; }
+  .btn-lg { height:2.75rem; padding:0 2rem; }
+  .btn-icon { width:2.5rem; padding:0; }
+
+  .badge { display:inline-flex; align-items:center; border-radius:var(--radius-md); padding:.125rem .625rem; font-size:.875rem; font-weight:600; }
+  .badge-success { background:var(--color-success-bg); color:var(--color-success-text); }
+  .badge-warning { background:var(--color-warning-bg); color:var(--color-warning-text); }
+  .badge-error { background:var(--color-error-bg); color:var(--color-error-text); }
+  .badge-info { background:var(--color-info-bg); color:var(--color-info-text); }
+  .badge-gray { background:var(--color-muted); color:var(--color-foreground); border:1px solid var(--color-border); }
+
+  .table-container { border:1px solid var(--color-border); overflow:hidden; width:100%; border-radius:0; }
+  table.table-shell { width:100%; border-collapse:collapse; font-size:1rem; font-variant-numeric:tabular-nums; }
+  .table-shell thead { background:var(--color-surface-muted); }
+  .table-shell th { height:3rem; padding:.75rem 1rem; text-align:left; vertical-align:top; font-weight:500; color:var(--color-muted-foreground); border-bottom:1px solid var(--color-border); }
+  .table-shell td { padding:.5rem 1rem; vertical-align:top; border-bottom:1px solid var(--color-border); }
+  .table-shell tbody tr:last-child td { border-bottom:0; }
+  .table-shell tbody tr { transition:background-color .15s; }
+  .table-shell tbody tr:hover { background:rgba(0,0,0,.025); }
+  .table-shell tfoot td { background:var(--color-surface-muted); font-weight:600; border-top:2px solid var(--color-border); border-bottom:0; }
+  .cell-numeric { text-align:right; }
+  .currency-prefix { font-size:.875rem; color:var(--color-muted-foreground); font-weight:400; margin-right:.25em; }
+  .th-right { text-align:right; }
+
+  input.input { display:flex; height:2.5rem; width:100%; max-width:320px; border-radius:var(--radius-md); border:1px solid var(--color-border); background:var(--color-background); padding:.5rem .75rem; font-size:1rem; font-family:var(--font-sans); }
+  input.input::placeholder { color:var(--color-muted-foreground); }
+  input.input:focus-visible { outline:none; box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--color-ring); position:relative; }
+  label.lbl { display:block; font-size:1rem; font-weight:500; margin-bottom:.25rem; }
+
+  .card { background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); }
+  .card-hover:hover { box-shadow:var(--shadow-card-hover); }
+  .dialog-demo { max-width:480px; border:1px solid var(--color-border); border-radius:var(--radius-lg); box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1); overflow:hidden; background:#fff; }
+  .dialog-head { background:var(--color-surface-muted); padding:1rem 1.5rem; border-bottom:1px solid var(--color-border); }
+  .dialog-head h4 { font-size:1.125rem; font-weight:600; line-height:1; letter-spacing:-.01em; }
+  .dialog-head p { font-size:1rem; color:var(--color-muted-foreground); margin-top:.375rem; }
+  .dialog-body { padding:1.5rem; }
+  .dialog-foot { display:flex; justify-content:flex-end; gap:.5rem; padding:0 1.5rem 1.5rem; }
+
+  .empty-state { background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-lg); box-shadow:0 1px 2px rgba(0,0,0,.05); padding:3rem; text-align:center; }
+  .empty-state .t { font-weight:500; margin-bottom:.25rem; }
+  .empty-state .m { color:var(--color-muted-foreground); }
+
+  .row-flex { display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; }
+
+  /* --- Page navigation tabs (canonical — Workspace/profile/admin pages) ---
+     White bordered track; ACTIVE = muted gray pill. Inverse of shadcn default. */
+  .page-tabs { display:flex; flex-wrap:wrap; align-items:center; gap:.25rem; padding:.25rem; height:auto; background:var(--color-background); border:1px solid var(--color-border); border-radius:var(--radius-md); }
+  .page-tab { display:inline-flex; align-items:center; gap:.5rem; white-space:nowrap; border-radius:var(--radius-md); padding:.375rem .75rem; font-size:1rem; font-weight:500; font-family:var(--font-sans); border:0; background:transparent; color:var(--color-foreground); cursor:pointer; transition:all .15s; }
+  .page-tab .tab-icon { width:1rem; height:1rem; opacity:.8; }
+  .page-tab[data-state="active"] { background:var(--color-muted); color:var(--color-foreground); box-shadow:0 1px 2px rgba(0,0,0,.05); }
+  .page-tab .count-badge { display:inline-flex; align-items:center; justify-content:center; height:1.25rem; min-width:1.25rem; padding:0 .25rem; border-radius:var(--radius-md); background:var(--color-destructive); color:#fff; font-size:.875rem; font-weight:600; }
+
+  /* --- Nested sub-tabs (ui/tabs.tsx default — secondary contexts only) --- */
+  .tabs-list { display:inline-flex; height:2.5rem; align-items:center; justify-content:flex-start; border-radius:var(--radius-md); background:var(--color-muted); padding:.25rem; color:var(--color-muted-foreground); }
+  .tab { display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; border-radius:var(--radius-md); padding:.375rem .75rem; font-size:1rem; font-weight:500; font-family:var(--font-sans); border:0; background:transparent; color:inherit; cursor:pointer; transition:all .15s; }
+  .tab[data-state="active"] { background:var(--color-background); color:var(--color-foreground); box-shadow:0 1px 2px rgba(0,0,0,.1); }
+
+  /* --- Select trigger / date-picker trigger (ui/select.tsx, ui/date-picker.tsx) --- */
+  .select-trigger { display:flex; height:2.5rem; width:100%; max-width:280px; align-items:center; justify-content:space-between; border-radius:var(--radius-md); border:1px solid var(--color-border); background:var(--color-background); padding:.5rem .75rem; font-size:1rem; font-family:var(--font-sans); color:var(--color-foreground); cursor:pointer; }
+  .select-trigger .placeholder { color:var(--color-muted-foreground); }
+  .select-trigger .chev { color:var(--color-muted-foreground); opacity:.6; font-size:.75rem; }
+
+  /* --- Menu panels: select content, dropdown menu, command (z 10001) --- */
+  .menu-panel { min-width:8rem; max-width:280px; border-radius:var(--radius-md); border:1px solid var(--color-border); background:#fff; padding:.25rem; color:var(--color-foreground); box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1); }
+  .menu-item { position:relative; display:flex; align-items:center; gap:.5rem; border-radius:var(--radius-sm); padding:.375rem .5rem; font-size:1rem; cursor:default; transition:background-color .15s; }
+  .menu-item:hover, .menu-item[data-active] { background:var(--color-muted); }
+  .menu-item[data-disabled] { opacity:.5; pointer-events:none; }
+
+  /* --- Popover (z 10005) --- */
+  .popover-panel { width:18rem; border-radius:var(--radius-md); border:1px solid var(--color-border); background:#fff; padding:1rem; box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1); }
+
+  /* --- Tooltip (z 10010) --- */
+  .tooltip-panel { display:inline-block; overflow:hidden; border-radius:var(--radius-md); border:1px solid var(--color-border); background:#fff; padding:.375rem .75rem; font-size:1rem; font-weight:400; color:var(--color-muted-foreground); box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1); max-width:16rem; }
+
+  /* --- Command palette (ui/command.tsx) --- */
+  .command-input-row { display:flex; align-items:center; border-bottom:1px solid var(--color-border); padding:0 .75rem; gap:.5rem; color:var(--color-muted-foreground); }
+  .command-input-row input { height:2.75rem; width:100%; border:0; outline:none; background:transparent; font-size:1rem; font-family:var(--font-sans); }
+  .command-list { max-height:300px; overflow-y:auto; padding:.25rem; }
+
+  /* --- Checkbox (ui/checkbox.tsx) --- */
+  .cbx { display:inline-flex; align-items:center; justify-content:center; height:1rem; width:1rem; flex-shrink:0; border-radius:var(--radius-sm); border:1px solid var(--color-primary); background:#fff; font-size:.6875rem; line-height:1; }
+  .cbx[data-state="checked"] { background:var(--color-primary); color:var(--color-primary-foreground); }
+  .cbx-row { display:inline-flex; align-items:center; gap:.5rem; font-size:1rem; font-weight:500; }
+
+  /* --- Switch (ui/switch.tsx) — brand colors, not neutral --- */
+  .switch { display:inline-flex; height:1.5rem; width:2.75rem; align-items:center; border-radius:9999px; border:2px solid transparent; transition:background-color .15s; cursor:pointer; }
+  .switch[data-state="unchecked"] { background:var(--color-brand-pale-slate); }
+  .switch[data-state="checked"] { background:var(--color-brand-blue-slate); }
+  .switch .thumb { display:block; height:1.25rem; width:1.25rem; border-radius:9999px; background:var(--color-background); box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1); transition:transform .15s; }
+  .switch[data-state="checked"] .thumb { transform:translateX(1.25rem); }
+
+  /* --- Textarea --- */
+  textarea.input-area { display:flex; min-height:80px; width:100%; max-width:480px; border-radius:var(--radius-md); border:1px solid var(--color-border); background:var(--color-background); padding:.5rem .75rem; font-size:1rem; font-family:var(--font-sans); resize:vertical; }
+  textarea.input-area::placeholder { color:var(--color-muted-foreground); }
+
+  /* --- Alert (ui/alert.tsx) --- */
+  .alert { position:relative; width:100%; max-width:560px; border-radius:var(--radius-lg); border:1px solid var(--color-border); padding:.75rem 1rem .75rem 2.75rem; font-size:1rem; background:var(--color-background); color:var(--color-foreground); }
+  .alert .alert-icon { position:absolute; left:1rem; top:.875rem; }
+  .alert .alert-title { margin-bottom:.25rem; font-weight:500; line-height:1; letter-spacing:-.01em; }
+  .alert .alert-desc { line-height:1.625; }
+  .alert-destructive { border-color:rgba(239,68,68,.5); color:var(--color-destructive); }
+
+  /* --- Skeleton --- */
+  @keyframes sg-pulse { 50% { opacity:.5; } }
+  .skeleton { animation:sg-pulse 2s cubic-bezier(.4,0,.6,1) infinite; border-radius:var(--radius-md); background:var(--color-muted); }
+  @keyframes sg-shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }
+  .skeleton-shimmer { border-radius:var(--radius-md); background:linear-gradient(90deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.08) 50%, rgba(0,0,0,.04) 100%); background-size:200% 100%; animation:sg-shimmer 1.5s ease-in-out infinite; }
+
+  /* --- Progress (ui/progress.tsx) --- */
+  .progress { position:relative; height:.5rem; width:100%; max-width:280px; overflow:hidden; border-radius:9999px; background:var(--color-muted); }
+  .progress .bar { height:100%; border-radius:9999px; background:var(--color-brand-blue-slate); transition:all .15s; }
+
+  /* --- Avatar (ui/avatar.tsx) --- */
+  .avatar { position:relative; display:flex; height:2.5rem; width:2.5rem; flex-shrink:0; overflow:hidden; border-radius:9999px; box-shadow:inset 0 0 0 1px rgba(0,0,0,.08); }
+  .avatar .fallback { display:flex; height:100%; width:100%; align-items:center; justify-content:center; border-radius:9999px; background:var(--color-muted); font-size:.875rem; font-weight:500; color:var(--color-muted-foreground); }
+
+  /* --- Breadcrumbs (ui/breadcrumbs.tsx) --- */
+  .breadcrumbs { display:flex; align-items:center; gap:.375rem; font-size:1rem; color:var(--color-muted-foreground); }
+  .breadcrumbs a { color:inherit; text-decoration:none; transition:color .15s; }
+  .breadcrumbs a:hover { color:var(--color-foreground); }
+  .breadcrumbs .sep { color:rgba(115,115,115,.5); font-size:.8125rem; }
+  .breadcrumbs .current { font-weight:500; color:var(--color-foreground); }
+
+  /* --- Version badge --- */
+  .version-badge { padding:.125rem .375rem; font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:.025em; border-radius:var(--radius-sm); background:var(--color-muted); color:rgba(115,115,115,.8); user-select:none; }
+  .spec-table { width:100%; border-collapse:collapse; font-size:.875rem; }
+  .spec-table th, .spec-table td { text-align:left; padding:.375rem .75rem; border-bottom:1px solid var(--color-border); }
+  .spec-table th { color:var(--color-muted-foreground); font-weight:500; }
+  .spec-table code { font-family:var(--font-mono); font-size:.75rem; background:var(--color-muted); padding:.0625rem .25rem; border-radius:.25rem; }
+  .narrow { max-width:360px; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="sg-header">
+  <div class="eyebrow">Design System · v1 · 2026-06-11</div>
+  <h1>æther / AIMS Styleguide</h1>
+  <p>Reverse-engineered from the live app (Activities, Transactions, Activity Profile) and the shared <code style="font-family:var(--font-mono)">src/components/ui</code> library. Every value here is the real rendered value, not a guess. Body font is <strong>Geist Sans</strong>; codes are always <strong>Geist Mono</strong>.</p>
+</header>
+
+<!-- ============================== COLORS ============================== -->
+<section>
+  <h2 class="sg">1 · Color tokens</h2>
+  <p class="sg-sub">Neutrals carry the interface; brand colors are reserved for accents, charts, and the Project Bank pipeline. There are <em>three intentional light grays</em> with distinct roles — do not substitute one for another.</p>
+
+  <h3 class="sg">Core neutrals</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="chip" style="background:#0a0a0a"></div><div class="meta"><b>foreground</b><code>#0a0a0a</code> primary text</div></div>
+    <div class="swatch"><div class="chip" style="background:#1d1f21"></div><div class="meta"><b>primary (gunmetal)</b><code>#1d1f21</code> solid buttons, selected</div></div>
+    <div class="swatch"><div class="chip" style="background:#737373"></div><div class="meta"><b>muted-foreground</b><code>#737373</code> secondary text, chips, th</div></div>
+    <div class="swatch"><div class="chip" style="background:#e5e5e5"></div><div class="meta"><b>border</b><code>#e5e5e5</code> all borders &amp; inputs</div></div>
+    <div class="swatch"><div class="chip" style="background:#f5f5f5"></div><div class="meta"><b>muted</b><code>#f5f5f5</code> code-chip bg, hover bg</div></div>
+    <div class="swatch"><div class="chip" style="background:#f6f5f3"></div><div class="meta"><b>surface-muted</b><code>#f6f5f3</code> sidebar, thead, modal header</div></div>
+    <div class="swatch"><div class="chip" style="background:#ffffff; border-bottom:1px solid #e5e5e5"></div><div class="meta"><b>background</b><code>#ffffff</code> page &amp; cards</div></div>
+    <div class="swatch"><div class="chip" style="background:#ef4444"></div><div class="meta"><b>destructive</b><code>#ef4444</code> delete actions only</div></div>
+  </div>
+
+  <h3 class="sg">Brand palette</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="chip" style="background:#dc2625"></div><div class="meta"><b>scarlet</b><code>#dc2625</code> main accent</div></div>
+    <div class="swatch"><div class="chip" style="background:#4c5568"></div><div class="meta"><b>blue-slate</b><code>#4c5568</code> dark secondary</div></div>
+    <div class="swatch"><div class="chip" style="background:#7b95a7"></div><div class="meta"><b>cool-steel</b><code>#7b95a7</code> medium secondary</div></div>
+    <div class="swatch"><div class="chip" style="background:#cfd0d5"></div><div class="meta"><b>pale-slate</b><code>#cfd0d5</code> light gray accent</div></div>
+    <div class="swatch"><div class="chip" style="background:#f1f4f8"></div><div class="meta"><b>platinum</b><code>#f1f4f8</code> brand tint surface</div></div>
+  </div>
+
+  <h3 class="sg">Semantic feedback</h3>
+  <div class="row-flex">
+    <span class="badge badge-success">Validated</span>
+    <span class="badge badge-warning">Pending Validation</span>
+    <span class="badge badge-error">Rejected</span>
+    <span class="badge badge-info">Informational</span>
+    <span class="badge badge-gray">Draft</span>
+  </div>
+  <table class="spec-table" style="margin-top:1rem">
+    <tr><th>Intent</th><th>bg</th><th>text</th><th>border</th><th>Allowed for</th></tr>
+    <tr><td>success</td><td><code>hsl(142 76% 93%)</code></td><td><code>hsl(143 64% 24%)</code></td><td><code>hsl(142 69% 84%)</code></td><td>Validated, accepted, published-confirmed, copy-success icon</td></tr>
+    <tr><td>warning</td><td><code>hsl(48 96% 89%)</code></td><td><code>hsl(41 96% 25%)</code></td><td><code>hsl(48 96% 77%)</code></td><td>Pending states, unlinked-org "Unlinked" badge, caution</td></tr>
+    <tr><td>error</td><td><code>hsl(0 93% 94%)</code></td><td><code>hsl(0 63% 31%)</code></td><td><code>hsl(0 93% 87%)</code></td><td>Rejected, failed, destructive confirmation context</td></tr>
+    <tr><td>info</td><td><code>hsl(214 95% 93%)</code></td><td><code>hsl(224 71% 30%)</code></td><td><code>hsl(214 93% 85%)</code></td><td>Neutral notices</td></tr>
+  </table>
+  <p class="sg-sub" style="margin-top:.75rem">Status colors are for <strong>validation / publication state badges</strong>. IATI lifecycle statuses (Pipeline, Implementation, Closed…) are <strong>not</strong> color-coded in tables — they render as plain text with a code chip (see §6).</p>
+</section>
+
+<!-- ============================== TYPOGRAPHY ============================== -->
+<section>
+  <h2 class="sg">2 · Type scale</h2>
+  <p class="sg-sub">Geist Sans everywhere; Geist Mono strictly for codes/IDs. The default size is <strong>16px (<code style="font-family:var(--font-mono)">text-body</code>)</strong> — including buttons and table headers. Numbers in tables and mono text use tabular figures.</p>
+
+  <div class="type-row"><div class="spec">page-title · 30px / 1.15 · 700</div><div style="font-size:1.875rem;line-height:1.15;font-weight:700">Activities</div></div>
+  <div class="type-row"><div class="spec">section-title · 24px / 1.2 · 600</div><div style="font-size:1.5rem;line-height:1.2;font-weight:600">Financial Overview</div></div>
+  <div class="type-row"><div class="spec">card-title · 20px / 1.3 · 600</div><div style="font-size:1.25rem;line-height:1.3;font-weight:600">Disbursements by Sector</div></div>
+  <div class="type-row"><div class="spec">body-lg · 18px / 1.5 · 600 (dialog titles)</div><div style="font-size:1.125rem;font-weight:600">Edit Transaction</div></div>
+  <div class="type-row"><div class="spec">body · 16px / 1.55 · 400 — default</div><div>Browse, manage, and track all aid activities in the system.</div></div>
+  <div class="type-row"><div class="spec">helper · 14px / 1.5 · 400 · muted</div><div style="font-size:.875rem;color:#737373">Secondary descriptions, table currency prefixes, hints.</div></div>
+  <div class="type-row"><div class="spec">section-label · 12px / 1.3 · +0.05em · UPPER</div><div class="eyebrow" style="margin:0">Parties Involved</div></div>
+  <div class="type-row"><div class="spec">caption / chip · 12px / 1.4 · mono for codes</div><div><span class="code-chip">XM-DAC-41119-SMNHS-2026</span></div></div>
+</section>
+
+<!-- ============================== SPACING / RADII / SHADOWS ============================== -->
+<section>
+  <h2 class="sg">3 · Spacing, radii, shadows</h2>
+  <table class="spec-table narrow" style="max-width:560px">
+    <tr><th>Token</th><th>Value</th><th>Used for</th></tr>
+    <tr><td><code>radius-sm</code></td><td>4px</td><td>code chips</td></tr>
+    <tr><td><code>radius-md</code></td><td>6px</td><td>buttons, inputs, badges, selects</td></tr>
+    <tr><td><code>radius-lg</code></td><td>12px</td><td>cards, dialogs</td></tr>
+    <tr><td><code>radius: 0</code></td><td>0px</td><td><strong>tables — always square corners</strong></td></tr>
+    <tr><td><code>shadow-card</code></td><td>0 1px 3px .06 / 0 4px 12px .04</td><td>resting cards</td></tr>
+    <tr><td><code>shadow-card-hover</code></td><td>0 2px 4px .06 / 0 4px 12px .06</td><td>clickable card hover lift</td></tr>
+  </table>
+  <p class="sg-sub" style="margin-top:.75rem">Spacing follows the Tailwind 4px grid. Canonical paddings: chip <code style="font-family:var(--font-mono)">2px 6px</code> · dense cell <code style="font-family:var(--font-mono)">8px 16px</code> · th <code style="font-family:var(--font-mono)">12px 16px</code> · default cell <code style="font-family:var(--font-mono)">16px</code> · card/dialog <code style="font-family:var(--font-mono)">24px</code> · empty state <code style="font-family:var(--font-mono)">48px</code>.</p>
+</section>
+
+<!-- ============================== BUTTONS ============================== -->
+<section>
+  <h2 class="sg">4 · Buttons</h2>
+  <p class="sg-sub">16px medium text, 6px radius, 40px default height, <code style="font-family:var(--font-mono)">active:scale(0.97)</code> press feedback, 2px offset focus ring. Primary = gunmetal <code style="font-family:var(--font-mono)">#1d1f21</code> — never gray-900, never scarlet.</p>
+
+  <h3 class="sg">Variants (hover &amp; press are live)</h3>
+  <div class="row-flex">
+    <button class="btn btn-default">Primary</button>
+    <button class="btn btn-secondary">Secondary</button>
+    <button class="btn btn-outline">Outline</button>
+    <button class="btn btn-ghost">Ghost</button>
+    <button class="btn btn-destructive">Destructive</button>
+    <button class="btn btn-link">Link</button>
+  </div>
+  <h3 class="sg">Sizes</h3>
+  <div class="row-flex">
+    <button class="btn btn-default btn-lg">Large · 44px</button>
+    <button class="btn btn-default">Default · 40px</button>
+    <button class="btn btn-default btn-sm">Small · 36px</button>
+    <button class="btn btn-outline btn-icon" aria-label="icon">⌄</button>
+  </div>
+  <h3 class="sg">Disabled</h3>
+  <div class="row-flex">
+    <button class="btn btn-default" disabled>Primary</button>
+    <button class="btn btn-outline" disabled>Outline</button>
+    <button class="btn btn-destructive" disabled>Destructive</button>
+  </div>
+  <table class="spec-table" style="margin-top:1.25rem">
+    <tr><th>Variant</th><th>Default</th><th>Hover</th><th>Use when</th></tr>
+    <tr><td>default</td><td><code>bg-primary</code> on <code>primary-foreground</code></td><td>90% opacity bg</td><td>The single main action of a view</td></tr>
+    <tr><td>secondary</td><td><code>bg-muted</code></td><td>80% bg</td><td>Co-equal secondary actions</td></tr>
+    <tr><td>outline</td><td>white + <code>border</code></td><td><code>bg-muted</code></td><td>Toolbars, filters, neutral actions</td></tr>
+    <tr><td>ghost</td><td>transparent</td><td><code>bg-muted</code></td><td>Icon buttons, dense rows</td></tr>
+    <tr><td>destructive</td><td><code>bg-destructive</code></td><td>90% bg</td><td>Delete / irreversible only</td></tr>
+  </table>
+</section>
+
+<!-- ============================== CODE CHIP ============================== -->
+<section>
+  <h2 class="sg">5 · The code chip</h2>
+  <p class="sg-sub">The signature element of this app. <strong>Every machine code</strong> — IATI identifiers, activity IDs, status codes, transaction-type codes, finance/aid-type codes, sector codes — renders in this exact chip.</p>
+  <div class="row-flex">
+    <span class="code-chip">2</span>
+    <span class="code-chip">PARTNER-41119000</span>
+    <span class="code-chip">XM-DAC-41119-SMNHS-2026</span>
+    <button class="code-chip code-chip--copyable" title="Click to copy">XM-DAC-12-1-CDZ-2026 ⧉</button>
+  </div>
+  <table class="spec-table" style="margin-top:1.25rem; max-width:640px">
+    <tr><th>Property</th><th>Value</th><th>Tailwind</th></tr>
+    <tr><td>Font</td><td>Geist Mono · 12px · 400</td><td><code>font-mono text-xs</code></td></tr>
+    <tr><td>Color</td><td>#737373 on #f5f5f5</td><td><code>text-muted-foreground bg-muted</code></td></tr>
+    <tr><td>Padding</td><td>2px 6px</td><td><code>px-1.5 py-0.5</code></td></tr>
+    <tr><td>Radius</td><td>4px</td><td><code>rounded</code></td></tr>
+    <tr><td>Hover (copyable only)</td><td>darker bg, foreground text</td><td><code>hover:bg-muted/70 hover:text-foreground</code></td></tr>
+  </table>
+  <p class="sg-sub" style="margin-top:.75rem">Never bold, never colored, never smaller than 12px, never pill-shaped (4px radius, not 9999px). On image overlays use the overlay variant: <code style="font-family:var(--font-mono)">bg-white/20 text-white/90</code>.</p>
+</section>
+
+<!-- ============================== COMPOSITION RULES ============================== -->
+<section>
+  <h2 class="sg">6 · Composition rules (enforced)</h2>
+
+  <h3 class="sg">Rule A — Status always carries its code, on the left</h3>
+  <div class="dd-grid">
+    <div class="dd dd-do">
+      <div class="dd-head">✅ Do</div>
+      <div class="dd-body">
+        <div class="status-row"><span class="code-chip">2</span><span>Implementation</span></div><br><br>
+        <div class="status-row"><span class="code-chip">3</span><span>Disbursement</span></div>
+      </div>
+      <div class="dd-why"><code>inline-flex items-center gap-1.5</code> — chip first, label second, 6px gap.</div>
+    </div>
+    <div class="dd dd-dont">
+      <div class="dd-head">❌ Don't</div>
+      <div class="dd-body">
+        <div>Implementation</div><br>
+        <div><span style="background:#dbeafe;color:#1e40af;padding:.125rem .625rem;border-radius:9999px;font-size:.875rem;font-weight:600">Implementation</span></div>
+      </div>
+      <div class="dd-why">No bare labels (the code is the IATI ground truth) and no colored status pills for lifecycle statuses.</div>
+    </div>
+  </div>
+
+  <h3 class="sg">Rule B — Activity ID + title inline; title wraps, chip anchors</h3>
+  <div class="dd-grid">
+    <div class="dd dd-do">
+      <div class="dd-head">✅ Do</div>
+      <div class="dd-body" style="max-width:360px">
+        <h4 class="activity-title"><button class="code-chip code-chip--copyable" title="Click to copy Activity ID">PARTNER-41119000</button>Strengthening Maternal &amp; Newborn Health Services in Conflict-Affected Areas<span class="activity-acronym"> (SMNHS)</span></h4>
+      </div>
+      <div class="dd-why">Chip rendered <em>inside</em> the heading with <code>mr-1.5 align-middle whitespace-nowrap</code>; heading is <code>font-medium leading-tight min-w-0 [text-wrap:wrap]</code> so the title wraps under itself while the chip holds the first line.</div>
+    </div>
+    <div class="dd dd-dont">
+      <div class="dd-head">❌ Don't</div>
+      <div class="dd-body" style="max-width:360px">
+        <div style="font-size:.75rem;font-family:var(--font-mono);color:#737373">PARTNER-41119000</div>
+        <div style="font-weight:500">Strengthening Maternal &amp; Newborn Health Services in Conflict-Affected Areas</div>
+      </div>
+      <div class="dd-why">Never stack the ID above/below the title in lists, and never truncate the title to keep one line — wrap it.</div>
+    </div>
+  </div>
+
+  <h3 class="sg">Rule C — Acronym matches the title exactly</h3>
+  <div class="dd-grid">
+    <div class="dd dd-do">
+      <div class="dd-head">✅ Do</div>
+      <div class="dd-body">
+        <span class="activity-title">Central Dry Zone Smallholder Agriculture and Climate Resilience Project<span class="activity-acronym"> (AGRI-CDZ)</span></span>
+      </div>
+      <div class="dd-why">Single space + parentheses; the acronym span inherits the title's family, size, and weight (<code>font-medium text-foreground</code>).</div>
+    </div>
+    <div class="dd dd-dont">
+      <div class="dd-head">❌ Don't</div>
+      <div class="dd-body">
+        <span class="activity-title">Central Dry Zone Smallholder Agriculture and Climate Resilience Project <span style="font-size:.75rem;color:#737373;font-weight:400">AGRI-CDZ</span></span>
+      </div>
+      <div class="dd-why">No smaller/lighter/muted acronyms, no separators other than parentheses, no acronym-as-chip.</div>
+    </div>
+  </div>
+
+  <h3 class="sg">Rule D — Numbers right, currency prefix muted</h3>
+  <div class="dd-grid">
+    <div class="dd dd-do">
+      <div class="dd-head">✅ Do</div>
+      <div class="dd-body"><div style="text-align:right;font-variant-numeric:tabular-nums"><span class="currency-prefix">USD</span><strong style="font-weight:500">36.0m</strong></div></div>
+      <div class="dd-why">Numeric cells are <code>text-right tabular-nums</code>; "USD" is <code>text-helper text-muted-foreground</code>, the value is foreground 500.</div>
+    </div>
+    <div class="dd dd-dont">
+      <div class="dd-head">❌ Don't</div>
+      <div class="dd-body"><div style="text-align:left">$36,000,000.00 USD</div></div>
+      <div class="dd-why">No left-aligned numbers, no symbol-prefix in tables, no equal-emphasis currency code.</div>
+    </div>
+  </div>
+
+  <h3 class="sg">Rule E — Tables are square; modal headers are surface-muted</h3>
+  <p class="sg-sub">Table wrappers never get <code style="font-family:var(--font-mono)">rounded-*</code>. Every dialog header is shaded <code style="font-family:var(--font-mono)">bg-surface-muted (#f6f5f3)</code> with a bottom border, and dialog titles are text-only (no leading icon).</p>
+</section>
+
+<!-- ============================== TABLE ============================== -->
+<section>
+  <h2 class="sg">7 · Data table (live example)</h2>
+  <p class="sg-sub">Header on <code style="font-family:var(--font-mono)">surface-muted</code>, hairline row dividers (no zebra), row hover <code style="font-family:var(--font-mono)">bg-muted/50</code>, single-chevron sort indicator only on the active column.</p>
+  <div class="table-container">
+    <table class="table-shell">
+      <thead>
+        <tr>
+          <th>Activity Title <span style="font-size:.75rem">▲</span></th>
+          <th>Activity Status</th>
+          <th>Reported by</th>
+          <th class="th-right">Total Budgeted</th>
+          <th class="th-right">Total Planned Disbursements</th>
+          <th>Last Edited</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="max-width:380px"><h4 class="activity-title"><button class="code-chip code-chip--copyable">PARTNER-41119000</button>Strengthening Maternal &amp; Newborn Health Services in Conflict-Affected Areas<span class="activity-acronym"> (SMNHS)</span></h4></td>
+          <td><span class="status-row"><span class="code-chip">2</span><span>Implementation</span></span></td>
+          <td>UNFPA</td>
+          <td class="cell-numeric"><span class="currency-prefix">USD</span><span style="font-weight:500">36.0m</span></td>
+          <td class="cell-numeric"><span class="currency-prefix">USD</span><span style="font-weight:500">19.8m</span></td>
+          <td>11 Jun 2026</td>
+        </tr>
+        <tr>
+          <td style="max-width:380px"><h4 class="activity-title"><button class="code-chip code-chip--copyable">ASDB-2026-0001</button>Central Dry Zone Smallholder Agriculture and Climate Resilience Project<span class="activity-acronym"> (AGRI-CDZ)</span></h4></td>
+          <td><span class="status-row"><span class="code-chip">2</span><span>Implementation</span></span></td>
+          <td>AsDB</td>
+          <td class="cell-numeric"><span class="currency-prefix">USD</span><span style="font-weight:500">45.0m</span></td>
+          <td class="cell-numeric"><span class="currency-prefix">USD</span><span style="font-weight:500">45.0m</span></td>
+          <td>08 Jun 2026</td>
+        </tr>
+        <tr>
+          <td style="max-width:380px"><h4 class="activity-title"><button class="code-chip code-chip--copyable">PARTNER-41119000</button>Reproductive Health Commodities Pre-Positioning — Phase 1<span class="activity-acronym"> (RHCPP1)</span></h4></td>
+          <td><span class="status-row"><span class="code-chip">4</span><span>Closed</span></span></td>
+          <td>UNFPA</td>
+          <td class="cell-numeric"><span class="currency-prefix">USD</span><span style="font-weight:500">12.0m</span></td>
+          <td class="cell-numeric"><span class="currency-prefix">USD</span><span style="font-weight:500">0</span></td>
+          <td>08 Jun 2026</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3">Total</td>
+          <td class="cell-numeric"><span class="currency-prefix">USD</span>93.0m</td>
+          <td class="cell-numeric"><span class="currency-prefix">USD</span>64.8m</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <table class="spec-table" style="margin-top:1.25rem">
+    <tr><th>Part</th><th>Spec</th></tr>
+    <tr><td>Container</td><td><code>border overflow-hidden</code> — square corners, single outer border</td></tr>
+    <tr><td>Header cell</td><td><code>h-12 px-4 py-3 text-left align-top text-body font-medium text-muted-foreground</code> on <code>bg-surface-muted</code></td></tr>
+    <tr><td>Body cell</td><td><code>p-4 align-top</code> default · <code>px-4 py-2</code> in dense list tables</td></tr>
+    <tr><td>Row</td><td><code>border-b hover:bg-muted/50 transition-colors</code>, last row borderless — no zebra striping</td></tr>
+    <tr><td>Sort</td><td>single <code>ChevronUp/Down h-4 w-4 text-muted-foreground</code> on the active column only; sortable th gets <code>cursor-pointer hover:bg-muted/80</code></td></tr>
+    <tr><td>Footer</td><td><code>bg-surface-muted font-semibold border-t-2</code></td></tr>
+  </table>
+
+  <h3 class="sg">Empty state</h3>
+  <div class="empty-state" style="max-width:560px">
+    <div style="font-size:2rem;opacity:.4;margin-bottom:.75rem">▭</div>
+    <p class="t">No activities found</p>
+    <p class="m">Try adjusting your filters, or add a new activity to get started.</p>
+    <button class="btn btn-default btn-sm" style="margin-top:1rem">Add New Activity</button>
+  </div>
+</section>
+
+<!-- ============================== FORMS ============================== -->
+<section>
+  <h2 class="sg">8 · Form elements</h2>
+  <p class="sg-sub">All field-shaped controls share one silhouette: <strong>40px tall, 6px radius, <code style="font-family:var(--font-mono)">border-input</code> hairline, white bg, 16px text</strong>. Label above at 16px medium (<code style="font-family:var(--font-mono)">ui/label.tsx</code>); helper below at 14px muted. Focus = 2px ring with 2px offset, app-wide.</p>
+
+  <h3 class="sg">Text input &amp; textarea</h3>
+  <label class="lbl" for="demo-in">Activity title</label>
+  <input id="demo-in" class="input" placeholder="Enter activity title">
+  <p style="font-size:.875rem;color:#737373;margin:.375rem 0 1rem">Helper text sits below at 14px muted.</p>
+  <label class="lbl" for="demo-ta">Description</label>
+  <textarea id="demo-ta" class="input-area" placeholder="General description of the activity…"></textarea>
+  <p class="sg-sub" style="margin-top:.375rem">Textarea: <code style="font-family:var(--font-mono)">min-h-[80px] resize-y</code>, otherwise identical to the input recipe.</p>
+
+  <h3 class="sg">Select &amp; date-picker triggers</h3>
+  <div class="row-flex">
+    <button class="select-trigger"><span>Implementation</span><span class="chev">▾</span></button>
+    <button class="select-trigger"><span class="placeholder">All Sectors</span><span class="chev">▾</span></button>
+    <button class="select-trigger"><span class="placeholder">dd MMM yyyy</span><span class="chev" style="opacity:.8">▦</span></button>
+  </div>
+  <p class="sg-sub" style="margin-top:.5rem">Same recipe as the input (<code style="font-family:var(--font-mono)">h-10 rounded-md border-input bg-background px-3 py-2 text-body</code>) with <code style="font-family:var(--font-mono)">justify-between</code> and a muted chevron/calendar adornment. Unselected value = <code style="font-family:var(--font-mono)">text-muted-foreground</code>. Calendar selected day = pill on <code style="font-family:var(--font-mono)">#1d1f21</code>.</p>
+
+  <h3 class="sg">Checkbox &amp; switch</h3>
+  <div class="row-flex" style="gap:2rem">
+    <span class="cbx-row"><span class="cbx" data-state="unchecked"></span> Unchecked</span>
+    <span class="cbx-row"><span class="cbx" data-state="checked">✓</span> Checked</span>
+    <span class="cbx-row"><span class="switch" data-state="unchecked"><span class="thumb"></span></span> Off</span>
+    <span class="cbx-row"><span class="switch" data-state="checked"><span class="thumb"></span></span> On</span>
+  </div>
+  <p class="sg-sub" style="margin-top:.5rem">Checkbox: <code style="font-family:var(--font-mono)">h-4 w-4 rounded-sm border-primary</code>, checked fills <code style="font-family:var(--font-mono)">bg-primary</code>. Switch is the one control that uses <strong>brand colors</strong>: checked <code style="font-family:var(--font-mono)">#4c5568</code> (blue-slate), unchecked <code style="font-family:var(--font-mono)">#cfd0d5</code> (pale-slate) — never green.</p>
+
+  <h3 class="sg">Required, validation errors &amp; autosave</h3>
+  <div style="display:grid;gap:1rem;max-width:480px">
+    <div>
+      <label class="lbl">Activity title <span style="display:inline-block;width:6px;height:6px;border-radius:9999px;background:var(--color-destructive);margin-left:.25rem;vertical-align:middle"></span></label>
+      <input class="input" value="">
+      <p style="font-size:.875rem;color:var(--color-destructive);margin-top:.25rem">Title is required.</p>
+    </div>
+    <div>
+      <label class="lbl" style="display:flex;align-items:center;gap:.5rem">Description <span style="color:#ea580c;font-size:.875rem">◌ saving…</span></label>
+      <input class="input" value="Strengthening maternal health services">
+    </div>
+    <div>
+      <label class="lbl" style="display:flex;align-items:center;gap:.5rem">Description <span style="color:hsl(143 64% 24%);font-size:.875rem">✓ saved</span></label>
+      <input class="input" value="Strengthening maternal health services">
+    </div>
+  </div>
+  <table class="spec-table" style="margin-top:1rem;max-width:640px">
+    <tr><th>State</th><th>Recipe</th></tr>
+    <tr><td>Required marker</td><td><code>RequiredDot</code>: 6px circle <code>w-1.5 h-1.5 rounded-full bg-destructive ml-1 align-middle</code> after the label — a red dot, <strong>not an asterisk</strong></td></tr>
+    <tr><td>Field error</td><td>14px destructive text below the field: <code>text-helper text-destructive mt-1</code>; the input border stays neutral</td></tr>
+    <tr><td>Autosave: saving</td><td><code>CircleDashed h-4 w-4 text-orange-600 animate-spin</code> beside the label (<code>SaveIndicator</code> / <code>LabelSaveIndicator</code>)</td></tr>
+    <tr><td>Autosave: saved</td><td><code>CheckCircle h-4 w-4 text-[hsl(var(--success-icon))]</code> (green-800) beside the label</td></tr>
+  </table>
+  <p class="sg-sub" style="margin-top:.5rem">Editor fields use the <code style="font-family:var(--font-mono)">autosave-input</code>/<code style="font-family:var(--font-mono)">autosave-select</code> wrappers (label + indicator + field + error slot, <code style="font-family:var(--font-mono)">space-y-2</code>) — don't hand-roll save feedback.</p>
+</section>
+
+<!-- ============================== OVERLAYS & MENUS ============================== -->
+<section>
+  <h2 class="sg">9 · Overlays &amp; menus</h2>
+  <p class="sg-sub">All floating panels: white bg, hairline border, 6px radius, shadow, 16px items. Stacking order is fixed: dialogs <code style="font-family:var(--font-mono)">z-10000</code> → selects/dropdowns <code style="font-family:var(--font-mono)">z-10001</code> → popovers <code style="font-family:var(--font-mono)">z-10005</code> → tooltips <code style="font-family:var(--font-mono)">z-10010</code>. Open animation: fade + zoom-in-95 with <code style="font-family:var(--font-mono)">ease-out-expo</code>, 150ms close.</p>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem;align-items:start">
+    <div>
+      <div class="eyebrow">Dropdown / select menu</div>
+      <div class="menu-panel">
+        <div class="menu-item" data-active>Edit activity</div>
+        <div class="menu-item">Duplicate</div>
+        <div class="menu-item">Export XML</div>
+        <div class="menu-item" data-disabled>Validate</div>
+        <div style="height:1px;background:var(--color-border);margin:.25rem 0"></div>
+        <div class="menu-item" style="color:var(--color-destructive)">Delete</div>
+      </div>
+      <p class="sg-sub" style="margin-top:.5rem">Items: <code style="font-family:var(--font-mono)">rounded-sm px-2 py-1.5 text-body hover:bg-muted</code>; destructive items use destructive text, not a red bg.</p>
+    </div>
+    <div>
+      <div class="eyebrow">Popover</div>
+      <div class="popover-panel">
+        <div style="font-weight:600;margin-bottom:.25rem">Filter by sector</div>
+        <p style="font-size:.875rem;color:#737373">Popovers carry 16px padding (<code style="font-family:var(--font-mono)">p-4</code>) and a stronger shadow than menus.</p>
+      </div>
+      <div class="eyebrow" style="margin-top:1.25rem">Tooltip</div>
+      <span class="tooltip-panel">Click to copy</span>
+      <p class="sg-sub" style="margin-top:.5rem">Tooltips are <strong>light</strong>: white bg, border, <code style="font-family:var(--font-mono)">text-muted-foreground</code> — never dark/inverted. Leaf components must self-provide <code style="font-family:var(--font-mono)">TooltipProvider</code>.</p>
+    </div>
+    <div>
+      <div class="eyebrow">Command palette / combobox</div>
+      <div class="menu-panel" style="padding:0;max-width:280px">
+        <div class="command-input-row"><span>⌕</span><input placeholder="Search organisations…"></div>
+        <div class="command-list">
+          <div class="menu-item" data-active>UNFPA — United Nations Population Fund</div>
+          <div class="menu-item">AsDB — Asian Development Bank</div>
+          <div class="menu-item">DFAT — Dept. of Foreign Affairs and Trade</div>
+        </div>
+      </div>
+      <p class="sg-sub" style="margin-top:.5rem">44px input row with bottom hairline; list max 300px scroll; selected item <code style="font-family:var(--font-mono)">bg-accent</code> (= muted).</p>
+    </div>
+  </div>
+
+  <h3 class="sg">Toasts (sonner)</h3>
+  <p class="sg-sub">Configured once in <code style="font-family:var(--font-mono)">layout.tsx</code>: <code style="font-family:var(--font-mono)">position="top-center" richColors closeButton duration={5000} visibleToasts={5} expand gap={12}</code>, body 14px, action button <code style="font-family:var(--font-mono)">#166534</code> (green-800) white text 500. Use <code style="font-family:var(--font-mono)">toast.success/error</code> from sonner — never roll custom toasts.</p>
+</section>
+
+<!-- ============================== NAVIGATION ============================== -->
+<section>
+  <h2 class="sg">10 · Navigation</h2>
+
+  <h3 class="sg">Page navigation tabs (canonical)</h3>
+  <div class="page-tabs">
+    <button class="page-tab" data-state="active"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Overview</button>
+    <button class="page-tab"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>My Portfolio</button>
+    <button class="page-tab"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Locations</button>
+    <button class="page-tab"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Notifications<span class="count-badge">6</span></button>
+    <button class="page-tab"><svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>Bookmarks</button>
+  </div>
+  <p class="sg-sub" style="margin-top:.5rem">The canonical page-level tab bar (Workspace, Activity/Org profiles, Admin, Library, Data Clinic — 10+ pages). Track: <code style="font-family:var(--font-mono)">p-1 h-auto bg-background gap-1 border flex flex-wrap mb-6</code> — <strong>white, hairline-bordered, wraps</strong>. Trigger: <code style="font-family:var(--font-mono)">rounded-md px-3 py-1.5 text-body font-medium flex items-center gap-2</code> with a leading <code style="font-family:var(--font-mono)">h-4 w-4</code> icon; <strong>active = muted gray pill</strong> (<code style="font-family:var(--font-mono)">data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm</code>). Counts (e.g. unread notifications) use a destructive Badge: <code style="font-family:var(--font-mono)">h-5 min-w-5 px-1 text-helper</code>, capped at "99+".</p>
+
+  <h3 class="sg">Nested sub-tabs (secondary contexts only)</h3>
+  <div class="tabs-list">
+    <button class="tab" data-state="active">Activities</button>
+    <button class="tab">Organisations</button>
+  </div>
+  <p class="sg-sub" style="margin-top:.5rem">The <code style="font-family:var(--font-mono)">ui/tabs.tsx</code> default (muted track, raised white active pill) is the <em>inverse</em> of the page bar — reserve it for small nested toggles inside a tab's content (e.g. Activities/Organisations inside My Portfolio). Never use it for page-level navigation. Content fades in 150ms (<code style="font-family:var(--font-mono)">tab-enter</code>).</p>
+
+  <h3 class="sg">Breadcrumbs</h3>
+  <nav class="breadcrumbs">
+    <a href="#">Activities</a>
+    <span class="sep">›</span>
+    <a href="#">UNFPA</a>
+    <span class="sep">›</span>
+    <span class="current">Strengthening Maternal &amp; Newborn Health Services…</span>
+  </nav>
+  <p class="sg-sub" style="margin-top:.5rem"><code style="font-family:var(--font-mono)">text-body text-muted-foreground gap-1.5 mb-4</code>; current page <code style="font-family:var(--font-mono)">font-medium text-foreground</code>; items truncate at <code style="font-family:var(--font-mono)">max-w-[200px]</code>; separator chevron at 50% opacity.</p>
+
+  <h3 class="sg">Pagination</h3>
+  <div style="display:flex;align-items:center;gap:.25rem">
+    <button class="btn btn-ghost btn-sm" style="font-size:1rem;color:#737373;height:auto;padding:.25rem .5rem">‹ Previous</button>
+    <button class="btn btn-sm" style="height:auto;padding:.25rem .5rem;background:var(--color-muted);font-weight:600">1</button>
+    <button class="btn btn-ghost btn-sm" style="height:auto;padding:.25rem .5rem;color:#737373">2</button>
+    <button class="btn btn-ghost btn-sm" style="height:auto;padding:.25rem .5rem;color:#737373">3</button>
+    <button class="btn btn-ghost btn-sm" style="font-size:1rem;color:#737373;height:auto;padding:.25rem .5rem">Next ›</button>
+  </div>
+  <p class="sg-sub" style="margin-top:.5rem">Quiet text buttons: <code style="font-family:var(--font-mono)">px-2 py-1 rounded text-body text-muted-foreground hover:bg-muted</code>; active page <code style="font-family:var(--font-mono)">bg-muted text-foreground font-semibold</code>. No bordered button-pagers.</p>
+</section>
+
+<!-- ============================== FEEDBACK & INDICATORS ============================== -->
+<section>
+  <h2 class="sg">11 · Feedback &amp; indicators</h2>
+
+  <h3 class="sg">Alerts</h3>
+  <div style="display:grid;gap:.75rem">
+    <div class="alert">
+      <span class="alert-icon">ⓘ</span>
+      <div class="alert-title">Heads up</div>
+      <div class="alert-desc" style="color:#737373">Default alert: white bg, hairline border, 12px radius, icon top-left at 16px inset.</div>
+    </div>
+    <div class="alert alert-destructive">
+      <span class="alert-icon">⚠</span>
+      <div class="alert-title">Import failed</div>
+      <div class="alert-desc">Destructive alert keeps the white bg — only border (50% destructive) and text go red.</div>
+    </div>
+  </div>
+
+  <h3 class="sg">Skeletons</h3>
+  <div style="display:grid;gap:.5rem;max-width:480px">
+    <div class="skeleton" style="height:1.25rem;width:60%"></div>
+    <div class="skeleton" style="height:1.25rem;width:85%"></div>
+    <div class="skeleton-shimmer" style="height:1.25rem;width:72%"></div>
+  </div>
+  <p class="sg-sub" style="margin-top:.5rem">Default: <code style="font-family:var(--font-mono)">animate-pulse rounded-md bg-muted</code> (rows 1–2). The gradient <code style="font-family:var(--font-mono)">.skeleton-shimmer</code> (row 3) is the alternative for large hero/table blocks. Match the skeleton's shape to the real content's type scale.</p>
+
+  <h3 class="sg">Progress</h3>
+  <div class="progress"><div class="bar" style="width:62%"></div></div>
+  <p class="sg-sub" style="margin-top:.5rem"><code style="font-family:var(--font-mono)">h-2 rounded-full bg-secondary</code> track, blue-slate <code style="font-family:var(--font-mono)">#4c5568</code> bar — progress is informational, so it uses brand-neutral, not green. In-progress operations (e.g. XML parsing) may add the striped <code style="font-family:var(--font-mono)">.progress-stripes</code> animation.</p>
+
+  <h3 class="sg">Avatar</h3>
+  <div class="row-flex">
+    <span class="avatar"><span class="fallback">LM</span></span>
+    <span class="avatar" style="height:2rem;width:2rem"><span class="fallback" style="font-size:.75rem">UN</span></span>
+  </div>
+  <p class="sg-sub" style="margin-top:.5rem"><code style="font-family:var(--font-mono)">h-10 w-10 rounded-full</code> (32px small variant), fallback initials on <code style="font-family:var(--font-mono)">bg-muted</code>; every avatar/logo image gets the inset <code style="font-family:var(--font-mono)">.image-outline</code> ring so it doesn't bleed into same-colored backgrounds.</p>
+
+  <h3 class="sg">Version badge</h3>
+  <div class="row-flex"><strong>æther</strong> <span class="version-badge">Beta</span> <span class="version-badge">v4.0.9</span></div>
+  <p class="sg-sub" style="margin-top:.5rem">Micro-label: <code style="font-family:var(--font-mono)">text-[9px] font-semibold uppercase tracking-wide rounded bg-muted text-muted-foreground/80</code>. The one sanctioned sub-12px text.</p>
+</section>
+
+<!-- ============================== SURFACES ============================== -->
+<section>
+  <h2 class="sg">12 · Cards &amp; dialogs</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start">
+    <div class="card card-hover" style="padding:1.5rem;border-color:rgba(229,229,229,.6);box-shadow:var(--shadow-card),0 0 0 1px rgba(0,0,0,.03)">
+      <div class="eyebrow">Card · rounded-xl · shadow-card · ring</div>
+      <div style="font-size:1.5rem;font-weight:600;line-height:1;letter-spacing:-.01em;margin-bottom:.5rem">Card title</div>
+      <p style="color:#737373">Real recipe: <code style="font-family:var(--font-mono)">rounded-xl border-border/60 shadow-card ring-1 ring-black/[0.03]</code>; CardTitle is <code style="font-family:var(--font-mono)">text-2xl font-semibold tracking-tight</code>; CardHeader/Content <code style="font-family:var(--font-mono)">p-6</code>/<code style="font-family:var(--font-mono)">p-6 pt-0</code>. Hover lifts to shadow-card-hover only when clickable.</p>
+    </div>
+    <div class="dialog-demo">
+      <div class="dialog-head">
+        <h4>Dialog title</h4>
+        <p>Headers are always bg-surface-muted with a bottom border. Title is text-only.</p>
+      </div>
+      <div class="dialog-body" style="color:#737373">Body padding 24px. Overlay is black/50 with backdrop blur at z-10000.</div>
+      <div class="dialog-foot">
+        <button class="btn btn-outline btn-sm">Cancel</button>
+        <button class="btn btn-default btn-sm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sg">Chart cards &amp; profile cards (specs)</h3>
+  <p class="sg-sub" style="margin-bottom:.5rem"><strong>CompactChartCard</strong> (analytics dashboards): standard Card with <code style="font-family:var(--font-mono)">CardHeader pb-2</code>; 18px semibold truncated title + one-line muted description; top-right control cluster of 28px (<code style="font-family:var(--font-mono)">h-7 w-7</code>) bordered icon buttons — including the serif <strong>ƒ</strong> formula-tooltip button — with <code style="font-family:var(--font-mono)">gap-1</code>. Toolbar rows above charts: <code style="font-family:var(--font-mono)">flex items-center justify-between gap-2 flex-wrap mb-4</code> (filters left, view controls right).</p>
+  <p class="sg-sub"><strong>CardShell</strong> (org/activity profile cards): the one deliberate outlier — <code style="font-family:var(--font-mono)">rounded-3xl</code> with a 192px (<code style="font-family:var(--font-mono)">h-48</code>) banner image, bottom black gradient overlay for text, circular logo overlay (56px, 4px white border) straddling the banner edge, and a dashed "rip line" separator. Reserve this treatment for profile/gallery cards; everything else uses the standard Card.</p>
+</section>
+
+<!-- ============================== APP SHELL & LAYOUT ============================== -->
+<section>
+  <h2 class="sg">13 · App shell &amp; page layout</h2>
+  <p class="sg-sub">The frame every screen sits in. Desktop-first by design — mobile gets the <code style="font-family:var(--font-mono)">MobileGate</code> overlay ("Best on a bigger screen"); don't invest in sub-768px layouts. <strong>Dark mode is intentionally disabled</strong> (<code style="font-family:var(--font-mono)">darkMode: '.__dark-mode-disabled__'</code>) — never add <code style="font-family:var(--font-mono)">dark:</code> variants.</p>
+
+  <h3 class="sg">Sidebar (288px, surface-muted)</h3>
+  <div style="display:flex;gap:1.5rem;align-items:flex-start">
+    <div style="width:240px;background:var(--color-surface-muted);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:.75rem .5rem">
+      <div class="eyebrow" style="padding:0 .75rem;margin-bottom:.375rem">Explore</div>
+      <div style="display:grid;gap:2px">
+        <div style="padding:.5rem .75rem;margin-left:.5rem;font-size:1rem;font-weight:500;color:var(--color-foreground);border-radius:var(--radius-md)">Country Analytics</div>
+        <div style="padding:.5rem .75rem;margin-left:.5rem;font-size:1rem;font-weight:600;background:#fff;color:var(--color-foreground);border-radius:var(--radius-md);box-shadow:0 1px 2px rgba(0,0,0,.05),0 0 0 1px rgba(0,0,0,.05)">Activities</div>
+        <div style="padding:.5rem .75rem;margin-left:.5rem;font-size:1rem;font-weight:500;color:var(--color-foreground);border-radius:var(--radius-md)">Transactions</div>
+      </div>
+    </div>
+    <div style="flex:1;font-size:.875rem;color:#737373">
+      <p style="margin-bottom:.5rem">Bg <code style="font-family:var(--font-mono)">surface-muted #f6f5f3</code>, hairline right border, 288px (<code style="font-family:var(--font-mono)">w-72</code>).</p>
+      <p style="margin-bottom:.5rem"><strong>Active item = raised white pill:</strong> <code style="font-family:var(--font-mono)">bg-[hsl(var(--nav-active-bg))] shadow-sm ring-1 ring-black/5 rounded-md font-semibold</code>. Hover: <code style="font-family:var(--font-mono)">--nav-hover-bg</code> (near-white). Group headings use the section-label token.</p>
+      <p>Per-module accent tokens: <code style="font-family:var(--font-mono)">--nav-accent-aims #dc2625</code> · <code style="font-family:var(--font-mono)">--nav-accent-project-bank #4c5568</code> · <code style="font-family:var(--font-mono)">--nav-accent-land-bank #7b95a7</code>.</p>
+    </div>
+  </div>
+
+  <h3 class="sg">Page header + filter bar</h3>
+  <div style="border:1px dashed var(--color-border);border-radius:var(--radius-md);padding:1.5rem">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem">
+      <div>
+        <div style="font-size:1.875rem;line-height:1.15;font-weight:700">Activities</div>
+        <p style="color:#737373;margin-top:.25rem">Browse, manage, and track all aid activities in the system</p>
+      </div>
+      <button class="btn btn-outline btn-icon" aria-label="Export" style="height:2.25rem;width:2.25rem">↓</button>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap">
+      <div><div style="font-size:1rem;font-weight:500;color:#737373;margin-bottom:.25rem">Status</div><button class="select-trigger" style="width:160px"><span>All</span><span class="chev">▾</span></button></div>
+      <div><div style="font-size:1rem;font-weight:500;color:#737373;margin-bottom:.25rem">Sector</div><button class="select-trigger" style="width:160px"><span class="placeholder">All Sectors</span><span class="chev">▾</span></button></div>
+      <div style="margin-left:auto"><button class="btn btn-outline btn-sm">☰ Compact</button></div>
+    </div>
+  </div>
+  <p class="sg-sub" style="margin-top:.5rem">Pattern: 30px/700 title + 16px muted subtitle, page-level actions top-right; labelled filter row beneath (16px medium muted labels above 36px outline triggers), view toggles right-aligned. The primary CTA lives in the sidebar, not the page header.</p>
+
+  <h3 class="sg">Profile hero &amp; loading bar</h3>
+  <p class="sg-sub">Profile pages (activity/org) open with <code style="font-family:var(--font-mono)">ProfileHero</code>: fixed heights — <strong>360px with banner image, 260px without</strong> (exported constants; never eyeball these). Route transitions show the NProgress bar: <code style="font-family:var(--font-mono)">3px</code>, slate <code style="font-family:var(--font-mono)">#64748b</code>, top of viewport, no spinner.</p>
+</section>
+
+<!-- ============================== STATUS SYSTEMS ============================== -->
+<section>
+  <h2 class="sg">14 · Status systems (domain mappings)</h2>
+  <p class="sg-sub">Three independent status axes — never merge them. Lifecycle is plain code+label (§6 Rule A); the other two are colored badges.</p>
+
+  <table class="spec-table">
+    <tr><th>Axis</th><th>Values</th><th>Treatment</th></tr>
+    <tr>
+      <td>Activity lifecycle<br><span style="font-size:.75rem;color:#737373">IATI activity-status</span></td>
+      <td><span class="status-row"><span class="code-chip">1</span>Pipeline</span> &nbsp; <span class="status-row"><span class="code-chip">2</span>Implementation</span> &nbsp; <span class="status-row"><span class="code-chip">3</span>Finalisation</span> &nbsp; <span class="status-row"><span class="code-chip">4</span>Closed</span> &nbsp; <span class="status-row"><span class="code-chip">5</span>Cancelled</span> &nbsp; <span class="status-row"><span class="code-chip">6</span>Suspended</span></td>
+      <td>Code chip + plain label. No color.</td>
+    </tr>
+    <tr>
+      <td>Validation<br><span style="font-size:.75rem;color:#737373">lib/validation-status.ts</span></td>
+      <td><span class="badge badge-warning">Pending Validation</span> <span class="badge badge-success">Validated</span> <span class="badge badge-error">Rejected</span></td>
+      <td>3-state display model. Raw <code>submission_status</code> values (draft/submitted/pending…) all collapse to "Pending Validation" — never surface them.</td>
+    </tr>
+    <tr>
+      <td>Publication<br><span style="font-size:.75rem;color:#737373">separate axis!</span></td>
+      <td><span class="badge badge-gray">Draft</span> <span class="badge badge-success">Published</span></td>
+      <td>"Is it publicly visible" — independent of validation.</td>
+    </tr>
+  </table>
+
+  <h3 class="sg">Project Bank pipeline badges (<code style="font-family:var(--font-mono)">pb-*</code> variants)</h3>
+  <div class="row-flex">
+    <span class="badge" style="background:#f1f4f8;color:#4c5568;border:1px solid #cfd0d5">Entry</span>
+    <span class="badge" style="background:#e8ecf1;color:#4c5568;border:1px solid #7b95a7">In progress</span>
+    <span class="badge" style="background:#7b95a7;color:#fff;border:1px solid #4c5568">Review</span>
+    <span class="badge" style="background:#4c5568;color:#fff;border:1px solid #4c5568">Approved / Active</span>
+    <span class="badge" style="background:#cfd0d5;color:#4c5568;border:1px solid #cfd0d5">Done</span>
+    <span class="badge" style="background:#dc2625;color:#fff;border:1px solid #dc2625">Rejected</span>
+  </div>
+  <p class="sg-sub" style="margin-top:.5rem">Pipeline progression darkens through the brand slate ramp (platinum → blue-slate); only Rejected uses scarlet. These are built into <code style="font-family:var(--font-mono)">badge.tsx</code> — use the variants, don't recreate.</p>
+</section>
+
+<!-- ============================== CHART COLORS ============================== -->
+<section>
+  <h2 class="sg">15 · Chart colors (standardized)</h2>
+  <p class="sg-sub"><strong>Financial-series colors are a single source of truth</strong> — <code style="font-family:var(--font-mono)">src/lib/chart-colors.ts</code>. Every chart, legend, table dot, and tooltip resolves through <code style="font-family:var(--font-mono)">getTransactionTypeColor(code)</code> / <code style="font-family:var(--font-mono)">getFinancialSeriesColor(name)</code>. Colors are <strong>deterministic per IATI code</strong> (never assigned by series index), so a Disbursement is the same red on every page.</p>
+
+  <h3 class="sg">IATI transaction types (codes 1–13) + financial anchors</h3>
+  <div class="swatch-grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))">
+    <div class="swatch"><div class="chip" style="background:#3ebcd2;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">1</span> Incoming Funds</b><code>#3ebcd2</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#379a8b;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">2</span> Outgoing Commitment</b><code>#379a8b</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#db444b;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">3</span> Disbursement (hero)</b><code>#db444b</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#9a607f;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">4</span> Expenditure</b><code>#9a607f</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#d1b07c;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">5</span> Interest Payment</b><code>#d1b07c</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#758d99;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">6</span> Loan Repayment</b><code>#758d99</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#a81829;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">7</span> Reimbursement</b><code>#a81829</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#78405f;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">8</span> Purchase of Equity</b><code>#78405f</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#00788d;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">9</span> Sale of Equity</b><code>#00788d</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#818a00;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">10</span> Credit Guarantee</b><code>#818a00</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#b4ba39;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">11</span> Incoming Commitment</b><code>#b4ba39</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#89a2ae;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">12</span> Outgoing Pledge</b><code>#89a2ae</code></div></div>
+    <div class="swatch"><div class="chip" style="background:#3d89c3;height:36px"></div><div class="meta"><b><span style="font-family:var(--font-mono);font-size:.6875rem">13</span> Incoming Pledge</b><code>#3d89c3</code></div></div>
+  </div>
+  <div class="swatch-grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));margin-top:.75rem">
+    <div class="swatch"><div class="chip" style="background:#006ba2;height:36px"></div><div class="meta"><b>Budget</b><code>#006ba2</code> anchor</div></div>
+    <div class="swatch"><div class="chip" style="background:#ebb434;height:36px"></div><div class="meta"><b>Planned Disbursement</b><code>#ebb434</code> anchor</div></div>
+    <div class="swatch"><div class="chip" style="background:#3f5661;height:36px"></div><div class="meta"><b>Total Spending</b><code>#3f5661</code> aggregate</div></div>
+    <div class="swatch"><div class="chip" style="background:#a4bdc9;height:36px"></div><div class="meta"><b>Perfect-spend line</b><code>#a4bdc9</code> reference</div></div>
+    <div class="swatch"><div class="chip" style="background:#94a3b8;height:36px"></div><div class="meta"><b>"All Others" bucket</b><code>#94a3b8</code> + unknown codes</div></div>
+  </div>
+
+  <h3 class="sg">Supporting palettes</h3>
+  <div style="display:flex;gap:0;max-width:560px;border:1px solid var(--color-border)">
+    <div style="flex:1;height:28px;background:#334155"></div><div style="flex:1;height:28px;background:#475569"></div><div style="flex:1;height:28px;background:#64748b"></div><div style="flex:1;height:28px;background:#94a3b8"></div><div style="flex:1;height:28px;background:#cbd5e1"></div><div style="flex:1;height:28px;background:#e2e8f0"></div><div style="flex:1;height:28px;background:#f1f5f9"></div>
+  </div>
+  <p class="sg-sub" style="margin-top:.5rem"><strong>Ranked slate ramp</strong> (above): for share-of-whole / Top-10 charts where the only signal is "darker = higher" (sector pies, rankings). <strong>Economist extended palette</strong> (20 hues anchored on the same red/blue/yellow): only for high-cardinality categorical breakdowns like ~20 DAC sectors. <strong>Brand 5-color palette</strong>: only for ad-hoc non-financial categories.</p>
+
+  <table class="spec-table" style="margin-top:.75rem">
+    <tr><th>Rule</th><th>Why</th></tr>
+    <tr><td><strong>DO</strong> resolve every financial series via <code>getTransactionTypeColor</code> / <code>getFinancialSeriesColor</code> — Budget, Planned Disbursements, Commitments, Disbursements, Expenditure all included</td><td>A "Disbursement" bar and a type-3 donut slice must be the same red on every page</td></tr>
+    <tr><td><strong>DON'T</strong> hardcode hex, use recharts defaults, or assign colors by series index</td><td>Index-based color flips when series are added/removed</td></tr>
+    <tr><td><strong>DO</strong> use <code>OTHERS_COLOR</code> for unknown codes and "All Others" buckets</td><td>Dirty data degrades to neutral slate instead of stealing a semantic hue</td></tr>
+    <tr><td><strong>DO</strong> give every chart card the ƒ formula-tooltip button explaining its calculation</td><td>Established convention on analytics cards</td></tr>
+  </table>
+</section>
+
+<!-- ============================== CONTENT & FORMATTING ============================== -->
+<section>
+  <h2 class="sg">16 · Content &amp; formatting standards</h2>
+  <p class="sg-sub">Canonical helpers live in <code style="font-family:var(--font-mono)">src/lib/format.ts</code> and <code style="font-family:var(--font-mono)">ui/currency-value.tsx</code> — import them, never define local formatters.</p>
+
+  <table class="spec-table">
+    <tr><th>What</th><th>Standard</th><th>Example</th></tr>
+    <tr><td>Currency — charts, tooltips, cards</td><td><code>formatCurrency</code>: symbol first, compact 1-dp lowercase k/m/b, sign first, currency-aware symbol</td><td style="font-variant-numeric:tabular-nums">$23.4m · €43.3k · -$1.2b · $850</td></tr>
+    <tr><td>Currency — data-table cells</td><td><code>&lt;CurrencyValue&gt;</code>: muted 14px ISO code + value (uppercase M/B/k), right-aligned tabular</td><td style="font-variant-numeric:tabular-nums"><span style="color:#737373;font-size:.875rem">USD</span> 36.0M</td></tr>
+    <tr><td>Dates</td><td><code>formatDate</code>: en-GB "D MMM YYYY", no leading zero; relative dates are a separate concern</td><td>18 May 2024 · 8 Jun 2026</td></tr>
+    <tr><td>Empty values</td><td>Em-dash in <code>text-muted-foreground</code> — never "N/A", "null", or blank</td><td style="color:#737373">—</td></tr>
+    <tr><td>Missing titles</td><td>Literal fallback string</td><td>Untitled Activity</td></tr>
+    <tr><td>Spelling &amp; case</td><td>British English; sentence case for UI copy, Title Case only for nav/page titles</td><td>Organisations · Finalisation</td></tr>
+    <tr><td>Numbers in tables</td><td>Always <code>tabular-nums</code> (automatic inside <code>&lt;table&gt;</code> and <code>.font-mono</code>)</td><td style="font-variant-numeric:tabular-nums">1,234,567</td></tr>
+  </table>
+  <p class="sg-sub" style="margin-top:.75rem"><strong>Two currency styles is deliberate, context-scoped:</strong> symbol-first compact (<code style="font-family:var(--font-mono)">$23.4m</code>) for narrative surfaces (charts/cards/tooltips); code-prefix (<code style="font-family:var(--font-mono)">USD 36.0M</code>) inside data tables, where the muted ISO code disambiguates multi-currency rows. Don't mix them within one surface.</p>
+</section>
+
+<footer style="border-top:1px solid var(--color-border); padding-top:1.5rem; color:#737373; font-size:.875rem">
+  Generated 2026-06-11 from the AIMS codebase + live render audit · see <code style="font-family:var(--font-mono)">design-system.md</code> for the full written spec and <code style="font-family:var(--font-mono)">tokens.css</code> / <code style="font-family:var(--font-mono)">components.jsx</code> for drop-in code.
+</footer>
+
+</main>
+</body>
+</html>

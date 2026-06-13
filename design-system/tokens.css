@@ -1,0 +1,212 @@
+/* ==========================================================================
+   AIMS (æther) Design Tokens
+   Reverse-engineered from frontend/tailwind.config.js + src/app/globals.css
+   and verified against rendered computed styles (Activities screen).
+   Drop-in: import after your reset; values mirror the live Tailwind theme.
+   ========================================================================== */
+
+:root {
+  /* ----- Color: core neutrals (verified rendered values) ----- */
+  --color-background: #ffffff;          /* hsl(0 0% 100%)  — page bg          */
+  --color-foreground: #0a0a0a;          /* hsl(0 0% 3.9%)  — primary text     */
+  --color-primary: #1d1f21;             /* hsl(210 6% 12%) — gunmetal; solid buttons, selected states */
+  --color-primary-foreground: #fafafa;
+  --color-muted: #f5f5f5;               /* hsl(0 0% 96.1%) — code chips, row hover (at 50%), input bg  */
+  --color-muted-foreground: #737373;    /* hsl(0 0% 45.1%) — secondary text, chip text, table headers  */
+  --color-border: #e5e5e5;              /* hsl(0 0% 89.8%) — all borders, dividers, inputs             */
+  --color-ring: #0a0a0a;                /* focus ring */
+  --color-destructive: #ef4444;         /* hsl(0 84.2% 60.2%) */
+  --color-destructive-foreground: #fafafa;
+
+  /* Structural warm-gray surface: left sidebar, table <thead>/<tfoot>,
+     modal headers, hover-card bg. NOT interchangeable with --color-muted. */
+  --color-surface-muted: #f6f5f3;
+
+  /* ----- Color: brand palette (charts, accents, Project Bank) ----- */
+  --color-brand-scarlet: #dc2625;       /* main accent / destructive emphasis */
+  --color-brand-blue-slate: #4c5568;
+  --color-brand-cool-steel: #7b95a7;
+  --color-brand-pale-slate: #cfd0d5;
+  --color-brand-platinum: #f1f4f8;      /* brand tint surface (not a neutral) */
+
+  /* ----- Color: semantic feedback (badges, alerts, toasts) ----- */
+  --color-success-bg: hsl(142 76% 93%);     /* ~#dcfce7 */
+  --color-success-text: hsl(143 64% 24%);   /* ~#166534 (green-800) */
+  --color-success-border: hsl(142 69% 84%); /* ~#bbf7d0 */
+  --color-warning-bg: hsl(48 96% 89%);      /* ~#fef3c7 */
+  --color-warning-text: hsl(41 96% 25%);    /* ~#7d5703 */
+  --color-warning-border: hsl(48 96% 77%);  /* ~#fde68a */
+  --color-error-bg: hsl(0 93% 94%);         /* ~#fee2e2 */
+  --color-error-text: hsl(0 63% 31%);       /* ~#7f1d1d (red-900) */
+  --color-error-border: hsl(0 93% 87%);     /* ~#fecaca */
+  --color-info-bg: hsl(214 95% 93%);        /* ~#dbeafe */
+  --color-info-text: hsl(224 71% 30%);      /* ~#1e3a8a (blue-900) */
+  --color-info-border: hsl(214 93% 85%);    /* ~#bfdbfe */
+  --color-success-icon: hsl(143 64% 24%);   /* copy-confirm checkmarks */
+
+  /* ----- Typography ----- */
+  --font-sans: 'Geist', 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+
+  /* Role-based scale (mirrors Tailwind text-* tokens) */
+  --text-caption: 0.75rem;        --leading-caption: 1.4;    /* 12px — chip text, captions   */
+  --text-helper: 0.875rem;        --leading-helper: 1.5;     /* 14px — secondary/help text   */
+  --text-body: 1rem;              --leading-body: 1.55;      /* 16px — DEFAULT everywhere:
+                                                                body, buttons, table headers & cells */
+  --text-body-lg: 1.125rem;       --leading-body-lg: 1.5;    /* 18px — dialog titles          */
+  --text-section-label: 0.75rem;  --leading-section-label: 1.3;
+  --tracking-section-label: 0.05em;                          /* 12px UPPERCASE eyebrow labels */
+  --text-card-title: 1.25rem;     --leading-card-title: 1.3; /* 20px */
+  --text-section-title: 1.5rem;   --leading-section-title: 1.2; /* 24px */
+  --text-page-title: 1.875rem;    --leading-page-title: 1.15;   /* 30px, weight 700 */
+
+  /* ----- Spacing (Tailwind 4px base — most-used steps) ----- */
+  --space-0-5: 0.125rem;  /*  2px — chip py            */
+  --space-1:   0.25rem;   /*  4px                      */
+  --space-1-5: 0.375rem;  /*  6px — chip px, gaps      */
+  --space-2:   0.5rem;    /*  8px — dense cell py      */
+  --space-3:   0.75rem;   /* 12px — th py              */
+  --space-4:   1rem;      /* 16px — cell px, button px */
+  --space-6:   1.5rem;    /* 24px — card/dialog padding*/
+  --space-12:  3rem;      /* 48px — empty-state padding*/
+
+  /* ----- Radii ----- */
+  --radius-sm: 0.25rem;   /*  4px — code chips ("rounded")        */
+  --radius-md: 0.375rem;  /*  6px — buttons, inputs, badges       */
+  --radius-lg: 0.75rem;   /* 12px — cards, modals (= --radius)    */
+  --radius-none: 0;       /* TABLES. Always. No rounded corners.  */
+
+  /* ----- Shadows ----- */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 2px 4px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.06);
+
+  /* ----- Z-index layers ----- */
+  --z-content: 1;
+  --z-search: 50;          /* search containers, sticky chrome   */
+  --z-map: 200;            /* leaflet panes live 200–800         */
+  --z-map-controls: 800;
+  --z-nprogress: 9999;     /* top loading bar                    */
+  --z-dialog: 10000;       /* dialog overlay + content           */
+
+  /* ----- Motion ----- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;  /* button transitions */
+  --duration-base: 200ms;  /* dialog close, accordions */
+  --duration-enter: 300ms; /* chart-modal open */
+
+  /* ----- App shell ----- */
+  --sidebar-width: 18rem;            /* 288px, bg = --color-surface-muted */
+  --nav-active-bg: #ffffff;          /* active nav item: raised white pill + shadow-sm + ring-black/5 */
+  --nav-hover-bg: #fafafa;
+  --nav-accent-aims: #dc2625;        /* per-module accent colors */
+  --nav-accent-project-bank: #4c5568;
+  --nav-accent-land-bank: #7b95a7;
+  --nprogress-color: #64748b;        /* 3px route-transition top bar (slate-500) */
+  --hero-height-with-image: 360px;   /* ProfileHero exported constants — never eyeball */
+  --hero-height-without-image: 260px;
+
+  /* ----- Chart colors (mirror of src/lib/chart-colors.ts — TS is the source
+     of truth; resolve via getTransactionTypeColor/getFinancialSeriesColor) ----- */
+  --chart-tx-1: #3ebcd2;   /* Incoming Funds */
+  --chart-tx-2: #379a8b;   /* Outgoing Commitment */
+  --chart-tx-3: #db444b;   /* Disbursement (hero red) */
+  --chart-tx-4: #9a607f;   /* Expenditure */
+  --chart-tx-5: #d1b07c;   /* Interest Payment */
+  --chart-tx-6: #758d99;   /* Loan Repayment */
+  --chart-tx-7: #a81829;   /* Reimbursement */
+  --chart-tx-8: #78405f;   /* Purchase of Equity */
+  --chart-tx-9: #00788d;   /* Sale of Equity */
+  --chart-tx-10: #818a00;  /* Credit Guarantee */
+  --chart-tx-11: #b4ba39;  /* Incoming Commitment */
+  --chart-tx-12: #89a2ae;  /* Outgoing Pledge */
+  --chart-tx-13: #3d89c3;  /* Incoming Pledge */
+  --chart-budget: #006ba2;              /* anchor */
+  --chart-planned-disbursement: #ebb434;/* anchor */
+  --chart-total-spending: #3f5661;
+  --chart-perfect-spend: #a4bdc9;
+  --chart-others: #94a3b8;              /* "All Others" + unknown codes */
+}
+
+/* ==========================================================================
+   Utility classes for the recurring composition patterns
+   ========================================================================== */
+
+/* --- Code chip ------------------------------------------------------------
+   The monospace gray chip used for ALL codes: IATI codes, activity IDs,
+   transaction types, finance/aid types. Verified rendered: Geist Mono 12px,
+   #737373 on #f5f5f5, padding 2px 6px, radius 4px. */
+.code-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);          /* 12px — never smaller */
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--color-muted-foreground);
+  background: var(--color-muted);
+  padding: var(--space-0-5) var(--space-1-5); /* 2px 6px */
+  border-radius: var(--radius-sm);            /* 4px */
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+/* Interactive (click-to-copy) variant */
+.code-chip--copyable { cursor: pointer; transition: background-color 150ms, color 150ms; }
+.code-chip--copyable:hover { background: rgba(0,0,0,0.07); color: var(--color-foreground); }
+/* On dark/imagery overlays only */
+.code-chip--overlay { background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.9); }
+
+/* --- Status row -----------------------------------------------------------
+   RULE: a status label is ALWAYS preceded by its code chip on the left.
+   <span class="status-row"><code class="code-chip">2</code><span>Implementation</span></span> */
+.status-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);                   /* 6px between chip and label */
+}
+.status-row > .status-label { font-size: var(--text-body); color: var(--color-foreground); }
+
+/* --- Activity row (ID + title + acronym) ----------------------------------
+   The chip lives INSIDE the heading element so the title wraps naturally
+   while the chip anchors the first line. Acronym matches the title exactly. */
+.activity-title {
+  font-size: var(--text-body);
+  font-weight: 500;                        /* font-medium */
+  color: var(--color-foreground);
+  line-height: 1.25;                       /* leading-tight */
+  min-width: 0;
+  text-wrap: wrap;
+}
+.activity-title > .code-chip {
+  margin-right: var(--space-1-5);          /* 6px */
+  vertical-align: middle;
+}
+.activity-acronym {                        /* " (SMNHS)" — same font, size, weight */
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+/* --- Section label ("eyebrow") --------------------------------------------*/
+.section-label {
+  font-size: var(--text-section-label);
+  line-height: var(--leading-section-label);
+  letter-spacing: var(--tracking-section-label);
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+/* --- Table shell -----------------------------------------------------------
+   Square corners ALWAYS. Single outer border, surface-muted header. */
+.table-container { border: 1px solid var(--color-border); overflow: hidden; width: 100%; border-radius: var(--radius-none); }
+.table-shell { width: 100%; border-collapse: collapse; font-size: var(--text-body); font-variant-numeric: tabular-nums; }
+.table-shell thead { background: var(--color-surface-muted); border-bottom: 1px solid var(--color-border); }
+.table-shell th { height: 3rem; padding: var(--space-3) var(--space-4); text-align: left; vertical-align: top; font-weight: 500; color: var(--color-muted-foreground); }
+.table-shell td { padding: var(--space-4); vertical-align: top; }
+.table-shell--dense td { padding: var(--space-2) var(--space-4); }
+.table-shell tbody tr { border-bottom: 1px solid var(--color-border); transition: background-color 150ms; }
+.table-shell tbody tr:last-child { border-bottom: 0; }
+.table-shell tbody tr:hover { background: rgba(0,0,0,0.025); }   /* bg-muted/50 */
+.table-shell tfoot { background: var(--color-surface-muted); font-weight: 500; border-top: 2px solid var(--color-border); }
+.table-shell .cell-numeric { text-align: right; font-variant-numeric: tabular-nums; }
+.table-shell .currency-prefix { font-size: var(--text-helper); color: var(--color-muted-foreground); font-weight: 400; margin-right: 0.25em; }
