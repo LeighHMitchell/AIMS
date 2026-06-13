@@ -73,8 +73,13 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <h4 className="font-medium text-foreground text-body mb-1">
-                  {notification.title}
+                <h4 className="font-medium text-foreground text-body mb-1 flex items-start gap-2">
+                  {!notification.isRead && (
+                    <Badge className="text-helper h-5 bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+                      New
+                    </Badge>
+                  )}
+                  <span>{notification.title}</span>
                 </h4>
                 {(() => {
                   const parsed = parseDescription(notification.description)
@@ -169,13 +174,9 @@ export function NotificationItem({ notification, onMarkAsRead, onArchive, onUnar
                     <ExternalLink className="h-3 w-3" />
                   </Link>
                 )}
-                {notification.isRead ? (
+                {notification.isRead && (
                   <Badge variant="outline" className="text-helper h-5">
                     Read
-                  </Badge>
-                ) : (
-                  <Badge className="text-helper h-5 bg-primary text-primary-foreground hover:bg-primary/90">
-                    New
                   </Badge>
                 )}
               </div>

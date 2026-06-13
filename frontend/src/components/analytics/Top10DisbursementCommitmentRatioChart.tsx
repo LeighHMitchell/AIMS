@@ -147,13 +147,6 @@ export function Top10DisbursementCommitmentRatioChart({
     )
   }
 
-  const formatCurrency = (value: number) => {
-    if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-      return '$0'
-    }
-    return `$${(value / 1000000).toFixed(1)}M`
-  }
-
   // Final data sanitization to ensure no NaN values
   const sanitizedData = data.map(item => ({
     ...item,

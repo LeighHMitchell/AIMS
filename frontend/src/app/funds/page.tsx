@@ -60,7 +60,10 @@ const FundFlowSankey = dynamic(
 import { OrganizationLogo } from "@/components/ui/organization-logo"
 import { MountWhenVisible } from "@/components/ui/mount-when-visible"
 import { getActivityStatusDisplay } from "@/lib/activity-status-utils"
+import { ActivityStatusRow } from "@/components/ui/status-row"
 import { formatActivityDate } from "@/lib/date-utils"
+import { formatCurrencyCompact } from "@/lib/format"
+import { CurrencyValue } from "@/components/ui/currency-value"
 
 interface FundSummary {
   id: string
@@ -84,26 +87,10 @@ interface FundSummary {
 
 type TableSortField = 'title' | 'fundManager' | 'status' | 'contributions' | 'disbursed' | 'balance' | 'utilised' | 'children'
 
-function formatUSD(value: number): string {
-  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (Math.abs(value) >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
-  return `$${value.toFixed(0)}`
-}
-
-// Activity-list style amount (no leading $, lowercase m/k); pair with a gray "USD" prefix
-function formatAmount(value: number): string {
-  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`
-  if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1)}k`
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value)
-}
-
 // Reusable gray "USD" prefix before an amount, matching the activity list
+// (thin wrapper over the shared CurrencyValue component)
 function UsdAmount({ value }: { value: number }) {
-  return (
-    <>
-      <span className="text-helper text-muted-foreground font-normal">USD</span> {formatAmount(value)}
-    </>
-  )
+  return <CurrencyValue amount={value} variant="short" />
 }
 
 // getActivityStatusDisplay imported from @/lib/activity-status-utils
@@ -316,7 +303,7 @@ export default function FundsPage() {
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setDeleteFundId(fund.id)}
-          className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 dark:focus:bg-red-900/20"
+          className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
         >
           <Trash2 className="h-4 w-4 mr-2" />
           Delete
@@ -519,16 +506,11 @@ export default function FundsPage() {
                               {fund.identifier}
                             </button>
                           </span>
-                          {fund.status && (() => {
-                            const { label, className } = getActivityStatusDisplay(fund.status)
-                            return (
-                              <span className="mt-1 block">
-                                <Badge className={className}>
-                                  {label}
-                                </Badge>
-                              </span>
-                            )
-                          })()}
+                          {fund.status && (
+                            <span className="mt-1 block">
+                              <ActivityStatusRow status={fund.status} className="text-helper" />
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
@@ -575,15 +557,15 @@ export default function FundsPage() {
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       <div>
                         <p className="text-helper text-muted-foreground">Contributions</p>
-                        <p className="text-body font-semibold">{formatUSD(fund.totalContributions)}</p>
+                        <p className="text-body font-semibold">{formatCurrencyCompact(fund.totalContributions)}</p>
                       </div>
                       <div>
                         <p className="text-helper text-muted-foreground">Disbursed</p>
-                        <p className="text-body font-semibold">{formatUSD(fund.totalDisbursements)}</p>
+                        <p className="text-body font-semibold">{formatCurrencyCompact(fund.totalDisbursements)}</p>
                       </div>
                       <div>
                         <p className="text-helper text-muted-foreground">Balance</p>
-                        <p className={`text-sm font-semibold ${balanceColor}`}>{formatUSD(fund.balance)}</p>
+                        <p className={`text-sm font-semibold ${balanceColor}`}>{formatCurrencyCompact(fund.balance)}</p>
                       </div>
                     </div>
 
@@ -819,7 +801,7 @@ export default function FundsPage() {
                         </TableCell>
                         <TableCell>
                           {status ? (
-                            <span className="text-helper text-foreground">{status.label}</span>
+                            <ActivityStatusRow status={fund.status} className="text-helper text-foreground" />
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}

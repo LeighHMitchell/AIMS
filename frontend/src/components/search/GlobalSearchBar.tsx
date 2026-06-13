@@ -424,7 +424,7 @@ export function GlobalSearchBar({
                           {/* Empty state — no quick matches, but full search is still one click away */}
                           {!isLoadingSuggestions && suggestions.length === 0 && (
                             <div className="px-2 py-3 text-center text-body text-muted-foreground">
-                              No quick matches — press Enter to search everything
+                              No quick matches. Press Enter to search everything
                             </div>
                           )}
                         </>

@@ -4,7 +4,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ActivityStatusRow } from '@/components/ui/status-row';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   Table,
   TableBody,
@@ -62,15 +65,8 @@ interface ActivityRow {
   daysRemaining?: number;
 }
 
-// Activity status labels
-const ACTIVITY_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  '1': { label: 'Pipeline', color: 'bg-muted text-foreground' },
-  '2': { label: 'Implementation', color: 'bg-blue-100 text-blue-700' },
-  '3': { label: 'Finalisation', color: 'bg-purple-100 text-purple-700' },
-  '4': { label: 'Closed', color: 'bg-muted text-foreground' },
-  '5': { label: 'Cancelled', color: 'bg-destructive/10 text-destructive' },
-  '6': { label: 'Suspended', color: 'bg-orange-100 text-orange-700' },
-};
+// Activity lifecycle status renders as [code] Label via ActivityStatusRow —
+// design-system Rule A: code chip left, never a colored pill.
 
 // Validation status labels
 const VALIDATION_STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -378,10 +374,7 @@ export function OrgActivitiesTable({
   const mainContent = (
     <>
       {activities.length === 0 ? (
-        <div className="text-center py-8">
-          <Icon className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-body text-muted-foreground">{config.emptyMessage}</p>
-        </div>
+        <EmptyState illustration="/images/empty-pushpin.webp" message={config.emptyMessage} />
       ) : (
           <Table>
             <TableHeader>
@@ -443,7 +436,7 @@ export function OrgActivitiesTable({
                     <p className="font-medium" title={activity.title}>
                       {activity.title}
                       {activity.iatiIdentifier && (
-                        <> <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{activity.iatiIdentifier}</code></>
+                        <> <CopyableIdBadge value={activity.iatiIdentifier} label="IATI identifier" tooltip="Click to copy IATI identifier" className="whitespace-nowrap" /></>
                       )}
                     </p>
                   </TableCell>
@@ -452,9 +445,7 @@ export function OrgActivitiesTable({
                     <>
                       <TableCell>
                         {activity.activityStatus && (
-                          <span className="text-body text-foreground">
-                            {ACTIVITY_STATUS_LABELS[activity.activityStatus]?.label || activity.activityStatus}
-                          </span>
+                          <ActivityStatusRow status={activity.activityStatus} className="text-body text-foreground" />
                         )}
                       </TableCell>
                       <TableCell>
@@ -512,7 +503,7 @@ export function OrgActivitiesTable({
                   {variant === 'closing_soon' && (
                     <>
                       <TableCell>
-                        {activity.plannedEndDate ? format(new Date(activity.plannedEndDate), 'MMM d, yyyy') : '-'}
+                        {activity.plannedEndDate ? format(new Date(activity.plannedEndDate), 'd MMM yyyy') : '-'}
                       </TableCell>
                       <TableCell>
                         {activity.daysRemaining !== undefined && (

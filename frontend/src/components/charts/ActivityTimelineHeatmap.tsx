@@ -100,7 +100,7 @@ export function ActivityTimelineHeatmap({ activities }: ActivityTimelineHeatmapP
                 <div
                   key={idx}
                   className={`aspect-square rounded-sm ${getIntensity(month.count)} hover:ring-2 hover:ring-primary transition-all cursor-pointer`}
-                  title={`${month.date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}: ${month.count} activities`}
+                  title={`${month.date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}: ${month.count} activities`}
                 />
               ))}
             </div>

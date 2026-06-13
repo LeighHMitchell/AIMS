@@ -285,27 +285,6 @@ export function Top10TotalFinancialValueChart({
     }
   }
 
-  const formatCurrency = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      const safeValue = Number(value)
-      if (isNaN(safeValue) || !isFinite(safeValue)) {
-        return '$0'
-      }
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 1
-      }).format(safeValue)
-    } catch (error) {
-      console.error('[Top10TotalFinancialValueChart] Error formatting currency:', error, value)
-      return '$0'
-    }
-  }
-
   // Single Blue Slate fill for all bars — bar length already encodes
   // "more vs less", so a varying ramp would just add noise. "Others"
   // stays a lighter shade for contrast.
@@ -374,7 +353,7 @@ export function Top10TotalFinancialValueChart({
                   size="sm"
                   className="h-8 gap-1"
                   title={localDateRange?.from && localDateRange?.to
-                    ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                    ? `${format(localDateRange.from, 'd MMM yyyy')} – ${format(localDateRange.to, 'd MMM yyyy')}`
                     : undefined}
                 >
                   <CalendarIcon className="h-4 w-4" />
@@ -625,7 +604,7 @@ export function Top10TotalFinancialValueChart({
       {/* Explanatory text — only in expanded view */}
       {isExpanded && (
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This chart ranks the top external development partners by the sum of their outgoing commitments and disbursements within the selected date range. Myanmar government ministries (recipient-country entities) are excluded so domestic budget transfers do not appear as donor flows. The horizontal bars make it easy to compare relative scale across organisations — if fewer than 10 partners have qualifying transactions in the period, the chart shows only the available rows. Hover over any bar to see the exact USD amount.
+          This chart ranks the top external development partners by the sum of their outgoing commitments and disbursements within the selected date range. Myanmar government ministries (recipient-country entities) are excluded so domestic budget transfers do not appear as donor flows. The horizontal bars make it easy to compare relative scale across organisations. If fewer than 10 partners have qualifying transactions in the period, the chart shows only the available rows. Hover over any bar to see the exact USD amount.
         </p>
       )}
     </div>

@@ -25,6 +25,7 @@ import {
   STATUS_THRESHOLDS
 } from '@/types/results';
 import { formatLongDateRange } from '@/lib/date-utils';
+import { formatCurrency } from '@/lib/format';
 
 interface PeriodRowProps {
   period: IndicatorPeriod;
@@ -79,7 +80,7 @@ export function PeriodRow({
       case 'percentage':
         return `${value}%`;
       case 'currency':
-        return `$${value.toLocaleString()}`;
+        return formatCurrency(value);
       case 'unit':
         return value.toLocaleString();
       default:

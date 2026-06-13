@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RequiredDot } from '@/components/ui/required-dot';
 import { SelectIATI } from '@/components/ui/SelectIATI';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -24,7 +24,6 @@ import {
   MapPin,
   Wallet,
   FileCheck,
-  Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ACTIVITY_STATUS_GROUPS } from '@/data/activity-status-types';
@@ -662,14 +661,11 @@ export function QuickAddActivityModal({ isOpen, onClose, user }: QuickAddActivit
             {/* Header */}
             <div className="border-b border-border/40 bg-muted/30 px-6 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                  <Zap className="h-5 w-5 text-primary" />
-                </div>
                 <div>
-                  <h2 className="text-lg font-semibold">Quick Add Activity</h2>
-                  <p className="text-body text-muted-foreground">
-                    Create a new activity with essential information
-                  </p>
+                  <DialogTitle className="text-lg font-semibold">Quick Add Activity</DialogTitle>
+                  <DialogDescription className="text-body text-muted-foreground">
+                    Create a new activity with the essential information. You can fill in the rest later in the full editor.
+                  </DialogDescription>
                 </div>
                 <Badge
                   variant="outline"

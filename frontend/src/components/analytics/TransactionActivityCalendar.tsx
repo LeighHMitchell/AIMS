@@ -414,7 +414,7 @@ export function TransactionActivityCalendar({
       {/* Explanatory text — only in expanded view */}
       {isExpanded && (
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This calendar heatmap shows daily activity density — each cell is one day, shaded by the number of
+          This calendar heatmap shows daily activity density. Each cell is one day, shaded by the number of
           records that day (darker = busier). Use the metrics control to choose what counts (transactions,
           planned disbursements, budgets), the development-partner filter to focus on specific providers, and the
           calendar/year picker to pick the year. Hover a day for the per-type breakdown, or export the daily

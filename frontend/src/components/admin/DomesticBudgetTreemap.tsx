@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { Treemap, ResponsiveContainer, Tooltip } from "recharts";
 import { DomesticBudgetData } from "@/types/domestic-budget";
 import { calculateExecutionRate } from "@/types/domestic-budget";
+import { formatCurrencyCompact, formatCurrencyPrecise } from "@/lib/format";
 
 // Single color for treemap
 const TREEMAP_COLOR = '#7b95a7';  // Cool Steel (lighter gray)
@@ -62,18 +63,6 @@ const CustomizedContent = (props: any) => {
       </g>
     );
   }
-
-  // Format value for display
-  const formatValue = (val: number) => {
-    if (val >= 1000000000) {
-      return `${(val / 1000000000).toFixed(1)}B`;
-    } else if (val >= 1000000) {
-      return `${(val / 1000000).toFixed(1)}M`;
-    } else if (val >= 1000) {
-      return `${(val / 1000).toFixed(1)}K`;
-    }
-    return val.toFixed(0);
-  };
 
   // Use more conservative character estimate for cross-browser compatibility
   // Firefox and high-DPI displays render text wider than Chrome
@@ -134,7 +123,7 @@ const CustomizedContent = (props: any) => {
               fontFamily: "system-ui, -apple-system, sans-serif"
             }}
           >
-            {displayCurrency} {formatValue(displayValue)}
+            {formatCurrencyCompact(displayValue, displayCurrency)}
           </text>
         </g>
       )}
@@ -147,15 +136,6 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0].payload as TreemapDataItem;
-  
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   return (
     <div

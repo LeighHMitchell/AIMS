@@ -51,7 +51,6 @@ import {
   Trash2,
   Search,
   RefreshCw,
-  AlertCircle,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api-fetch";
 
@@ -767,8 +766,7 @@ export function PBSectorsManagement() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
+            <AlertDialogTitle>
               {deleteTarget?.type === "sector"
                 ? "Deactivate Sector"
                 : "Remove Sub-sector"}

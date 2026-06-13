@@ -48,6 +48,7 @@ import { PartnerFundingSummarySkeleton } from "@/components/skeletons";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { INSTITUTIONAL_GROUPS, getAllInstitutionalGroupNames } from "@/data/location-groups";
 import { apiFetch } from '@/lib/api-fetch';
+import { formatCurrencyCompact } from '@/lib/format';
 import PartnerCardModern from '@/components/partners/PartnerCardModern';
 import type { Partner } from '@/hooks/usePartners';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -521,22 +522,10 @@ export default function PartnersPage() {
     toast.success(`Exported ${rows.length.toLocaleString()} partner rows`);
   };
 
-  // Format currency
-  const formatCurrency = (amount: number | null | undefined): string => {
-    // Handle null, undefined, or non-numeric values
-    if (amount === null || amount === undefined || typeof amount !== 'number' || isNaN(amount)) {
-      return "-";
-    }
-    
-    if (amount === 0) return "-";
-    if (Math.abs(amount) >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
-    if (Math.abs(amount) >= 1000) return `$${(amount / 1000).toFixed(1)}K`;
-    
-    try {
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    } catch {
-      return `$${amount}`;
-    }
+  // Empty-state handling (null/zero → em dash) on top of the canonical compact formatter
+  const formatCellAmount = (amount: number | null | undefined): string => {
+    if (typeof amount !== 'number' || isNaN(amount) || amount === 0) return '—';
+    return formatCurrencyCompact(amount);
   };
 
   // Get all institutional group names for filtering
@@ -618,22 +607,22 @@ export default function PartnersPage() {
             {country.organizations.reduce((sum, org) => sum + (org.receiverTransactionCount || 0), 0)}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2022'] || 0), 0))}
+            {formatCellAmount(country.organizations.reduce((sum, org) => sum + (org.financialData['2022'] || 0), 0))}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2023'] || 0), 0))}
+            {formatCellAmount(country.organizations.reduce((sum, org) => sum + (org.financialData['2023'] || 0), 0))}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2024'] || 0), 0))}
+            {formatCellAmount(country.organizations.reduce((sum, org) => sum + (org.financialData['2024'] || 0), 0))}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2025'] || 0), 0))}
+            {formatCellAmount(country.organizations.reduce((sum, org) => sum + (org.financialData['2025'] || 0), 0))}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2026'] || 0), 0))}
+            {formatCellAmount(country.organizations.reduce((sum, org) => sum + (org.financialData['2026'] || 0), 0))}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(country.organizations.reduce((sum, org) => sum + (org.financialData['2027'] || 0), 0))}
+            {formatCellAmount(country.organizations.reduce((sum, org) => sum + (org.financialData['2027'] || 0), 0))}
           </TableCell>
         </TableRow>
       );
@@ -682,22 +671,22 @@ export default function PartnersPage() {
                 {org.providerTransactionCount || 0} / {org.receiverTransactionCount || 0}
               </TableCell>
               <TableCell className="text-center font-semibold">
-                {formatCurrency(org.financialData['2022'])}
+                {formatCellAmount(org.financialData['2022'])}
               </TableCell>
               <TableCell className="text-center font-semibold">
-                {formatCurrency(org.financialData['2023'])}
+                {formatCellAmount(org.financialData['2023'])}
               </TableCell>
               <TableCell className="text-center font-semibold">
-                {formatCurrency(org.financialData['2024'])}
+                {formatCellAmount(org.financialData['2024'])}
               </TableCell>
               <TableCell className="text-center font-semibold">
-                {formatCurrency(org.financialData['2025'])}
+                {formatCellAmount(org.financialData['2025'])}
               </TableCell>
               <TableCell className="text-center font-semibold">
-                {formatCurrency(org.financialData['2026'])}
+                {formatCellAmount(org.financialData['2026'])}
               </TableCell>
               <TableCell className="text-center font-semibold">
-                {formatCurrency(org.financialData['2027'])}
+                {formatCellAmount(org.financialData['2027'])}
               </TableCell>
             </TableRow>
           );
@@ -751,22 +740,22 @@ export default function PartnersPage() {
                     -
                   </TableCell>
                   <TableCell className="text-center text-body">
-                    {formatCurrency(activity.financialData?.['2022'] || 0)}
+                    {formatCellAmount(activity.financialData?.['2022'] || 0)}
                   </TableCell>
                   <TableCell className="text-center text-body">
-                    {formatCurrency(activity.financialData?.['2023'] || 0)}
+                    {formatCellAmount(activity.financialData?.['2023'] || 0)}
                   </TableCell>
                   <TableCell className="text-center text-body">
-                    {formatCurrency(activity.financialData?.['2024'] || 0)}
+                    {formatCellAmount(activity.financialData?.['2024'] || 0)}
                   </TableCell>
                   <TableCell className="text-center text-body">
-                    {formatCurrency(activity.financialData?.['2025'] || 0)}
+                    {formatCellAmount(activity.financialData?.['2025'] || 0)}
                   </TableCell>
                   <TableCell className="text-center text-body">
-                    {formatCurrency(activity.financialData?.['2026'] || 0)}
+                    {formatCellAmount(activity.financialData?.['2026'] || 0)}
                   </TableCell>
                   <TableCell className="text-center text-body">
-                    {formatCurrency(activity.financialData?.['2027'] || 0)}
+                    {formatCellAmount(activity.financialData?.['2027'] || 0)}
                   </TableCell>
                 </TableRow>
               );
@@ -875,22 +864,22 @@ export default function PartnersPage() {
             {org.providerTransactionCount || 0} / {org.receiverTransactionCount || 0}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(org.financialData['2022'])}
+            {formatCellAmount(org.financialData['2022'])}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(org.financialData['2023'])}
+            {formatCellAmount(org.financialData['2023'])}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(org.financialData['2024'])}
+            {formatCellAmount(org.financialData['2024'])}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(org.financialData['2025'])}
+            {formatCellAmount(org.financialData['2025'])}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(org.financialData['2026'])}
+            {formatCellAmount(org.financialData['2026'])}
           </TableCell>
           <TableCell className="text-center font-semibold">
-            {formatCurrency(org.financialData['2027'])}
+            {formatCellAmount(org.financialData['2027'])}
           </TableCell>
         </TableRow>
         {isOrgExpanded && (hideInactiveOrgs 
@@ -938,22 +927,22 @@ export default function PartnersPage() {
               -
             </TableCell>
             <TableCell className="text-center text-body">
-              {formatCurrency(activity.financialData?.['2022'] || 0)}
+              {formatCellAmount(activity.financialData?.['2022'] || 0)}
             </TableCell>
             <TableCell className="text-center text-body">
-              {formatCurrency(activity.financialData?.['2023'] || 0)}
+              {formatCellAmount(activity.financialData?.['2023'] || 0)}
             </TableCell>
             <TableCell className="text-center text-body">
-              {formatCurrency(activity.financialData?.['2024'] || 0)}
+              {formatCellAmount(activity.financialData?.['2024'] || 0)}
             </TableCell>
             <TableCell className="text-center text-body">
-              {formatCurrency(activity.financialData?.['2025'] || 0)}
+              {formatCellAmount(activity.financialData?.['2025'] || 0)}
             </TableCell>
             <TableCell className="text-center text-body">
-              {formatCurrency(activity.financialData?.['2026'] || 0)}
+              {formatCellAmount(activity.financialData?.['2026'] || 0)}
             </TableCell>
             <TableCell className="text-center text-body">
-              {formatCurrency(activity.financialData?.['2027'] || 0)}
+              {formatCellAmount(activity.financialData?.['2027'] || 0)}
             </TableCell>
           </TableRow>
         ))}
@@ -1629,7 +1618,7 @@ export default function PartnersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-body font-medium text-foreground">Acronym</label>
-                  <p className="text-foreground">{selectedOrg.acronym || 'N/A'}</p>
+                  <p className="text-foreground">{selectedOrg.acronym || <span className="text-muted-foreground">—</span>}</p>
                 </div>
                 <div>
                   <label className="text-body font-medium text-foreground">Type</label>
@@ -1637,7 +1626,7 @@ export default function PartnersPage() {
                 </div>
                 <div>
                   <label className="text-body font-medium text-foreground">Country</label>
-                  <p className="text-foreground">{selectedOrg.countryRepresented || 'N/A'}</p>
+                  <p className="text-foreground">{selectedOrg.countryRepresented || <span className="text-muted-foreground">—</span>}</p>
                 </div>
                 <div>
                   <label className="text-body font-medium text-foreground">Activities</label>
@@ -1655,7 +1644,7 @@ export default function PartnersPage() {
                     <div key={year} className="text-center p-3 bg-muted rounded">
                       <div className="text-body text-muted-foreground">{year}</div>
                       <div className="font-mono font-medium">
-                        {formatCurrency(selectedOrg.financialData[year.toString()] || 0)}
+                        {formatCellAmount(selectedOrg.financialData[year.toString()] || 0)}
                       </div>
                     </div>
                   ))}
@@ -1664,7 +1653,7 @@ export default function PartnersPage() {
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-foreground">Total:</span>
                     <span className="font-mono font-bold text-lg">
-                      {formatCurrency(selectedOrg.totalAmount)}
+                      {formatCellAmount(selectedOrg.totalAmount)}
                     </span>
                   </div>
                 </div>

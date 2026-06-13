@@ -247,9 +247,6 @@ interface YearlyData {
   [key: string]: number | string
 }
 
-// Currency formatter for axis labels — delegate to shared helper.
-const formatCurrency = formatAxisCurrency
-
 export function FinancialTotalsBarChart({
   dateRange,
   refreshKey,
@@ -1282,7 +1279,7 @@ export function FinancialTotalsBarChart({
     }
 
     const yAxisProps = {
-      tickFormatter: formatCurrency,
+      tickFormatter: formatAxisCurrency,
       stroke: "#64748B",
       fontSize: isCompact ? 10 : 12,
     }
@@ -1488,7 +1485,7 @@ export function FinancialTotalsBarChart({
           <BarChart data={chartData} margin={{ top: 10, right: 20, left: 20, bottom: 30 }} barGap={0} barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke={CHART_STRUCTURE_COLORS.grid} />
             <XAxis dataKey="displayYear" stroke="#64748B" fontSize={11} tickLine={false} />
-            <YAxis tickFormatter={formatCurrency} stroke="#64748B" fontSize={10} />
+            <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={10} />
             <Tooltip content={<CustomTooltip />} />
             {activeDataKeys.map(key => {
               const stackId = disaggStackId(key, stackBy)
@@ -1582,7 +1579,7 @@ export function FinancialTotalsBarChart({
                       size="sm"
                       className="h-8 gap-1"
                       title={effectiveDateRange?.from && effectiveDateRange?.to
-                        ? `${format(effectiveDateRange.from, 'MMM d, yyyy')} – ${format(effectiveDateRange.to, 'MMM d, yyyy')}`
+                        ? `${format(effectiveDateRange.from, 'd MMM yyyy')} – ${format(effectiveDateRange.to, 'd MMM yyyy')}`
                         : undefined}
                     >
                       <CalendarIcon className="h-4 w-4" />
@@ -2000,7 +1997,7 @@ export function FinancialTotalsBarChart({
 
       {isExpanded && (
         <p className={cn("text-body text-muted-foreground leading-relaxed shrink-0", fillsCard && "mt-16")}>
-          Each year pairs the activity's planned commitments — <strong>approved budgets</strong> and <strong>scheduled planned disbursements</strong> — against the actual money that moved as recorded <strong>transactions</strong> (commitments, disbursements, expenditures). Comparing the year-by-year heights surfaces when planned amounts matched delivery and when they diverged: tall budget bars with short disbursement bars mean funds were approved but not yet released, while the reverse points to spending that outpaced plan. Together this is the quickest way to gauge whether the activity is delivering its budget on schedule and which years saw the biggest slippage.
+          Each year pairs the activity's planned commitments (<strong>approved budgets</strong> and <strong>scheduled planned disbursements</strong>) against the actual money that moved as recorded <strong>transactions</strong> (commitments, disbursements, expenditures). Comparing the year-by-year heights surfaces when planned amounts matched delivery and when they diverged: tall budget bars with short disbursement bars mean funds were approved but not yet released, while the reverse points to spending that outpaced plan. Together this is the quickest way to gauge whether the activity is delivering its budget on schedule and which years saw the biggest slippage.
         </p>
       )}
     </div>

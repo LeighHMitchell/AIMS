@@ -46,6 +46,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { CurrencyValue } from '@/components/ui/currency-value'
 
 // Color scheme
 const COLORS = {
@@ -235,18 +236,6 @@ export function FundingOverTimeAnalytics() {
       return org ? (org.acronym || org.name) : id
     })
   }, [selectedDonors, organizations])
-
-  // Format currency for display
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(2)}B`
-    } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`
-    }
-    return `$${value.toFixed(0)}`
-  }
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null
@@ -681,7 +670,7 @@ export function FundingOverTimeAnalytics() {
                       const rowTotal = donorNames.reduce((sum, name) => sum + (row[name] || 0), 0)
                       const firstDonorDataType = row[`${donorNames[0]}_data_type`] as string
                       return (
-                        <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#ffffff' : COLORS.platinum }}>
+                        <tr key={index} className="hover:bg-muted/50 transition-colors">
                           <td className="border p-3 font-medium" style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}>
                             {row.year}
                           </td>
@@ -703,11 +692,11 @@ export function FundingOverTimeAnalytics() {
                               className="border p-3 text-right"
                               style={{ color: COLORS.blueSlate, borderColor: COLORS.paleSlate }}
                             >
-                              {formatCurrency(row[name] || 0)}
+                              <CurrencyValue amount={row[name] || 0} variant="short" />
                             </td>
                           ))}
                           <td className="border p-3 text-right font-semibold" style={{ color: COLORS.primaryScarlet, borderColor: COLORS.paleSlate }}>
-                            {formatCurrency(rowTotal)}
+                            <CurrencyValue amount={rowTotal} variant="short" />
                           </td>
                         </tr>
                       )
@@ -730,7 +719,7 @@ export function FundingOverTimeAnalytics() {
               <p>
                 <strong>Past years</strong> show confirmed transaction data (disbursements and expenditures). 
                 <strong> Current year</strong> figures are year-to-date and will update as new transactions are recorded. 
-                <strong> Future years</strong> reflect indicative organisation-level budgets and are subject to change—they should not be treated as firm commitments.
+                <strong> Future years</strong> reflect indicative organisation-level budgets and are subject to change; they should not be treated as firm commitments.
               </p>
             </div>
           </div>

@@ -465,7 +465,7 @@ export default function GovernmentEndorsementTab({
               {formData.validation_date && (
                 <div className="flex items-center gap-2 text-body text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  {format(new Date(formData.validation_date), 'MMM dd, yyyy')}
+                  {format(new Date(formData.validation_date), 'dd MMM yyyy')}
                 </div>
               )}
             </div>

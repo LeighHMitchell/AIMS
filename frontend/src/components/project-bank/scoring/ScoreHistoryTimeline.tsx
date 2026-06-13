@@ -46,13 +46,13 @@ export function ScoreHistoryTimeline({ scores }: ScoreHistoryTimelineProps) {
             {/* Date column */}
             <div className="w-[52px] text-right flex-shrink-0 pt-1">
               <div className="text-helper text-muted-foreground">
-                {new Date(score.calculated_at).toLocaleDateString('en-US', {
+                {new Date(score.calculated_at).toLocaleDateString('en-GB', {
                   month: 'short',
                   day: 'numeric',
                 })}
               </div>
               <div className="text-[10px] text-muted-foreground">
-                {new Date(score.calculated_at).toLocaleDateString('en-US', { year: 'numeric' })}
+                {new Date(score.calculated_at).toLocaleDateString('en-GB', { year: 'numeric' })}
               </div>
             </div>
 

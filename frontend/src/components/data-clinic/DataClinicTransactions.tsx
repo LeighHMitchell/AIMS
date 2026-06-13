@@ -236,7 +236,7 @@ export function DataClinicTransactions() {
           type="button"
           onClick={linkClick}
           disabled={!isSuperUser}
-          title={isSuperUser ? 'Linked — click to change' : 'Linked to an organisation record'}
+          title={isSuperUser ? 'Linked. Click to change' : 'Linked to an organisation record'}
           className="flex items-center gap-2 rounded px-1 py-0.5 -mx-1 hover:bg-muted/60 transition-colors text-left disabled:cursor-default disabled:hover:bg-transparent"
         >
           {org?.logo ? (
@@ -256,7 +256,7 @@ export function DataClinicTransactions() {
           <Badge
             variant="outline"
             className={`text-helper border border-amber-500 text-amber-600 bg-transparent whitespace-nowrap ${isSuperUser ? 'cursor-pointer hover:bg-amber-50' : ''}`}
-            title="Named but not linked to an organisation record — click to link"
+            title="Named but not linked to an organisation record. Click to link"
             onClick={linkClick}
           >
             <Unlink className="h-3 w-3 mr-1" />
@@ -270,7 +270,7 @@ export function DataClinicTransactions() {
       <Badge
         variant="outline"
         className={`text-helper border border-red-500 text-red-600 bg-transparent ${isSuperUser ? 'cursor-pointer hover:bg-red-50' : ''}`}
-        title={isSuperUser ? 'No organisation — click to link' : undefined}
+        title={isSuperUser ? 'No organisation. Click to link' : undefined}
         onClick={linkClick}
       >
         <AlertCircle className="h-3 w-3 mr-1" />

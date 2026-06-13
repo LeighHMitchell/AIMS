@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, GitBranch } from "lucide-react";
@@ -72,7 +73,10 @@ export function RollupDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg border-b border-border">
-          <DialogTitle>Roll-up — what contributes to this node</DialogTitle>
+          <DialogTitle>Roll-up: what contributes to this node</DialogTitle>
+          <DialogDescription>
+            See every node and link that feeds into this result, with the weight each one contributes.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="pt-2 space-y-5">
@@ -83,7 +87,7 @@ export function RollupDialog({
                 Target node
                 <HelpTextTooltip
                   size="sm"
-                  content="Everything listed below contributes to this node — directly or through a chain of contribution links. Activity sub-logic nodes appear here once they roll up, which is how an activity shows under an investment outcome."
+                  content="Everything listed below contributes to this node, either directly or through a chain of contribution links. Activity sub-logic nodes appear here once they roll up, which is how an activity shows under an investment outcome."
                 />
               </div>
               <p className="text-sm font-medium">{node.statement}</p>

@@ -412,7 +412,7 @@ function MeetingsTable({ meetings, workingGroupId, onEdit, onDelete }: MeetingsT
             <tr key={meeting.id} className="hover:bg-muted/50">
               <td className="px-4 py-3 text-body font-medium text-foreground">{meeting.title}</td>
               <td className="px-4 py-3 text-body text-muted-foreground">
-                {format(new Date(meeting.meeting_date), 'MMM d, yyyy')}
+                {format(new Date(meeting.meeting_date), 'd MMM yyyy')}
               </td>
               <td className="px-4 py-3 text-body text-muted-foreground">
                 {meeting.start_time

@@ -330,7 +330,7 @@ export function IATISyncPanel({
         toast.success(`Synced: ${fieldLabels}`);
         onUpdate?.();
       } else if (result.action === 'unchanged') {
-        toast.info('No changes found — already up to date');
+        toast.info('No changes found; already up to date');
       } else if (result.action === 'failed') {
         toast.error(result.error || 'Sync failed');
       }

@@ -26,7 +26,7 @@ import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-te
 import { AlertCircle } from 'lucide-react'
 import { SDG_GOALS } from '@/data/sdg-targets'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
-import { formatAxisCurrency } from '@/lib/format'
+import { formatAxisCurrency, formatTooltipCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 
@@ -106,25 +106,6 @@ export function SDGCoverageChart({
     }
   }
 
-  const formatCurrency = (value: number) => {
-    if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-      return '$0'
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
-
-  const formatValue = (value: number) => {
-    if (selectedMetric === 'activities') {
-      return value.toFixed(1)
-    }
-    return formatCurrency(value)
-  }
-
   const metricValueOf = (item: CoverageData, m: SDGMetric) => {
     if (m === 'activities') return item.activityCount
     if (m === 'budget') return item.totalBudget
@@ -164,8 +145,8 @@ export function SDGCoverageChart({
           subtitle="Values are equally split when activities map to multiple SDGs"
           rows={[
             { label: 'Activities', value: data.activityCount.toFixed(1), color: data.fill || data.color },
-            { label: 'Total Budget', value: formatCurrency(data.totalBudget) },
-            { label: 'Planned Disbursements', value: formatCurrency(data.totalPlannedDisbursements) },
+            { label: 'Total Budget', value: formatTooltipCurrency(data.totalBudget, isExpanded) },
+            { label: 'Planned Disbursements', value: formatTooltipCurrency(data.totalPlannedDisbursements, isExpanded) },
           ]}
         />
       )

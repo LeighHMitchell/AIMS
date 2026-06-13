@@ -41,24 +41,6 @@ import {
 import { ChartDataTable } from '@/components/ui/chart-data-table'
 import { txUsd, getReportableActivityIds, getPooledFundIds, excludeInternalTransfers } from '@/lib/analytics-transaction-filters'
 import { safeUsd } from '@/lib/safe-usd'
-// Inline currency formatter to avoid initialization issues
-const formatCurrencyAbbreviated = (value: number): string => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${(absValue / 1000000).toFixed(1)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${(absValue / 1000).toFixed(1)}k`
-  } else {
-    formatted = `$${absValue.toFixed(0)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
-}
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -243,7 +225,7 @@ function PlannedVsActualDisbursementsInner({
         sortKey = period
       } else {
         const date = new Date(item.date)
-        period = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        period = date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
         periodKey = `${item.year}-${String(item.month).padStart(2, '0')}`
         sortKey = periodKey
       }
@@ -330,18 +312,6 @@ function PlannedVsActualDisbursementsInner({
     exportChartToCSV(rows, 'Planned vs Actual Disbursements')
     toast.success('Chart data exported successfully')
   }
-
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}m`
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}k`
-    }
-    return `$${value.toFixed(0)}`
-  }
-
-  // Use the module-level currency formatter for tooltips
-  const formatTooltipValue = formatCurrencyAbbreviated
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -529,7 +499,7 @@ function PlannedVsActualDisbursementsInner({
                       return value
                     }
                     const date = new Date(value)
-                    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
                   }}
                   stroke="#64748B"
                   fontSize={12}
@@ -571,7 +541,7 @@ function PlannedVsActualDisbursementsInner({
                       return value
                     }
                     const date = new Date(value)
-                    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                    return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
                   }}
                   stroke="#64748B"
                   fontSize={12}

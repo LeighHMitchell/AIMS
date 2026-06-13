@@ -8,6 +8,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge'
 // Tabs removed — all content shown on single page
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -524,7 +525,7 @@ export default function SDGProfilePage() {
                         backgroundColor: '#f1f5f9',
                         color: '#94a3b8',
                       }}
-                      title={`${target.targetText}${target.totalValue > 0 ? ` — ${formatCurrencyShort(target.totalValue)}` : ' — No funding'}`}
+                      title={`${target.targetText}${target.totalValue > 0 ? `: ${formatCurrencyShort(target.totalValue)}` : ': No funding'}`}
                     >
                       {target.targetId}
                     </span>
@@ -667,29 +668,32 @@ export default function SDGProfilePage() {
                 {activityView === 'card' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {paginatedActivities.map(activity => (
-                      <Link key={activity.id} href={`/activities/${activity.id}`}>
-                        <Card className="h-full hover:shadow-card-hover transition-shadow cursor-pointer">
+                      <div key={activity.id} className="relative">
+                        <Card className="h-full hover:shadow-card-hover transition-shadow">
                           <CardContent className="p-6">
-                            <div className="flex items-start justify-between mb-2">
-                              <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
-                              <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                            </div>
-                            <div className="flex items-start gap-1.5 mb-1">
-                              <h3 className="font-medium text-body text-foreground line-clamp-2 flex-1 min-w-0">{activity.title_narrative || 'Untitled Activity'}</h3>
-                              {activity.iati_identifier && <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>}
-                            </div>
-                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-                              <div><p className="text-helper text-muted-foreground font-normal">Committed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
-                              <div><p className="text-helper text-muted-foreground font-normal">Disbursed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
-                            </div>
-                            {activity.commitments > 0 && (
-                              <div className="w-full bg-muted rounded-full h-1 mt-2">
-                                <div className="h-1 rounded-full" style={{ width: `${Math.min((activity.disbursements / activity.commitments) * 100, 100)}%`, backgroundColor: '#4c5568' }} />
+                            <Link href={`/activities/${activity.id}`} className="absolute inset-0 z-0 cursor-pointer" aria-label={`View ${activity.title_narrative || 'activity'}`} />
+                            <div className="relative z-10 pointer-events-none">
+                              <div className="flex items-start justify-between mb-2">
+                                <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
+                                <ExternalLink className="h-3 w-3 text-muted-foreground" />
                               </div>
-                            )}
+                              <div className="flex items-start gap-1.5 mb-1">
+                                <h3 className="font-medium text-body text-foreground line-clamp-2 flex-1 min-w-0">{activity.title_narrative || 'Untitled Activity'}</h3>
+                                {activity.iati_identifier && <CopyableIdBadge value={activity.iati_identifier} label="IATI identifier" tooltip="Click to copy IATI identifier" className="text-[10px] px-1 flex-shrink-0 pointer-events-auto" />}
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
+                                <div><p className="text-helper text-muted-foreground font-normal">Committed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
+                                <div><p className="text-helper text-muted-foreground font-normal">Disbursed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
+                              </div>
+                              {activity.commitments > 0 && (
+                                <div className="w-full bg-muted rounded-full h-1 mt-2">
+                                  <div className="h-1 rounded-full" style={{ width: `${Math.min((activity.disbursements / activity.commitments) * 100, 100)}%`, backgroundColor: '#4c5568' }} />
+                                </div>
+                              )}
+                            </div>
                           </CardContent>
                         </Card>
-                      </Link>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -720,7 +724,7 @@ export default function SDGProfilePage() {
                               <div className="flex items-center gap-2">
                                 <Link href={`/activities/${activity.id}`} className="font-medium text-foreground hover:underline">{(activity.title_narrative || 'Untitled').substring(0, 60)}</Link>
                                 {activity.iati_identifier && (
-                                  <code className="text-[10px] font-mono bg-muted text-muted-foreground px-1 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>
+                                  <CopyableIdBadge value={activity.iati_identifier} label="IATI identifier" tooltip="Click to copy IATI identifier" className="text-[10px] px-1 flex-shrink-0" />
                                 )}
                               </div>
                             </TableCell>

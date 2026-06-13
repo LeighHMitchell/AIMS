@@ -12,6 +12,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { convertToUSD } from '@/lib/currency-conversion-api';
+import { CurrencyValue } from '@/components/ui/currency-value';
+import { formatDate } from '@/lib/format';
 
 interface TransactionData {
   id: string;
@@ -78,33 +80,17 @@ export function TransactionValueDisplay({
     conversion_date: transaction.usd_conversion_date || null
   });
 
-  const formatCurrency = (value: number, currency: string = "USD") => {
-    // Ensure currency is a valid 3-letter code, fallback to USD
-    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase()) 
-      ? currency.toUpperCase() 
+  // Thin wrapper around the shared <CurrencyValue> (style b: muted ISO prefix
+  // + value-only number); falls back to USD for malformed currency codes.
+  const renderCurrency = (value: number, currency: string = "USD") => {
+    const safeCurrency = currency && /^[A-Za-z]{3}$/.test(currency.trim())
+      ? currency.trim().toUpperCase()
       : "USD";
-    
-    try {
-      // Format number with commas
-      const formattedValue = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-      
-      // Return as JSX with gray currency code
-      return <><span className="text-muted-foreground text-helper">{safeCurrency}</span> {formattedValue}</>;
-    } catch (error) {
-      console.warn(`[TransactionValueDisplay] Invalid currency "${currency}", using USD:`, error);
-      const formattedValue = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-      return <><span className="text-helper text-muted-foreground font-normal">USD</span> {formattedValue}</>;
-    }
+    return <CurrencyValue amount={value} currency={safeCurrency} />;
   };
 
   const formatOriginalValue = () => {
-    return formatCurrency(transaction.value, transaction.currency);
+    return renderCurrency(transaction.value, transaction.currency);
   };
 
   const getConversionStatus = (): ConversionStatus => {
@@ -219,7 +205,7 @@ export function TransactionValueDisplay({
       <div className="flex items-center space-x-2">
         {!monotone && <DollarSign className="h-4 w-4 text-[hsl(var(--success-icon))]" />}
         <span className={monotone ? "font-medium text-foreground" : "font-medium text-[hsl(var(--success-icon))]"}>
-          {formatCurrency(conversionData.usd_amount, 'USD')}
+          {renderCurrency(conversionData.usd_amount, 'USD')}
         </span>
       </div>
     );
@@ -232,7 +218,7 @@ export function TransactionValueDisplay({
         
         {conversionData.usd_amount !== null && conversionData.usd_amount !== transaction.value && (
           <span className={monotone ? "text-body text-foreground" : "text-body text-[hsl(var(--success-icon))]"}>
-            ({formatCurrency(conversionData.usd_amount, 'USD')})
+            ({renderCurrency(conversionData.usd_amount, 'USD')})
           </span>
         )}
         
@@ -279,7 +265,7 @@ export function TransactionValueDisplay({
         <div className="flex items-center space-x-2">
           {!monotone && <DollarSign className="h-4 w-4 text-[hsl(var(--success-icon))]" />}
           <span className={monotone ? "text-lg font-semibold text-foreground" : "text-lg font-semibold text-[hsl(var(--success-icon))]"}>
-            {formatCurrency(conversionData.usd_amount, 'USD')}
+            {renderCurrency(conversionData.usd_amount, 'USD')}
           </span>
           
           {transaction.currency === 'USD' ? (
@@ -292,7 +278,7 @@ export function TransactionValueDisplay({
                   <p>USD value calculated using value date: {transaction.value_date}</p>
                   {conversionData.conversion_date && (
                     <p className="text-helper mt-1">
-                      Calculated: {new Date(conversionData.conversion_date).toLocaleDateString()}
+                      Calculated: {formatDate(conversionData.conversion_date)}
                     </p>
                   )}
                 </TooltipContent>
@@ -308,7 +294,7 @@ export function TransactionValueDisplay({
                   <p>1 {transaction.currency} = {conversionData.exchange_rate.toFixed(4)} USD</p>
                   {conversionData.conversion_date && (
                     <p className="text-helper mt-1">
-                      Converted: {new Date(conversionData.conversion_date).toLocaleDateString()}
+                      Converted: {formatDate(conversionData.conversion_date)}
                     </p>
                   )}
                 </TooltipContent>

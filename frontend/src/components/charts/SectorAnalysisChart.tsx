@@ -19,7 +19,7 @@ import { ChartViewToggle } from "@/components/ui/chart-view-toggle";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, CHART_RANKED_PALETTE, BUDGET_COLOR, getTransactionTypeColor, OTHERS_COLOR } from '@/lib/chart-colors';
-import { formatAxisCurrency } from '@/lib/format';
+import { formatAxisCurrency, formatTooltipCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { InlineViewToggle, InlineCsvButton, useChartCardTableMode } from "@/components/ui/inline-toolbar-buttons";
 import { useChartExpansion } from "@/lib/chart-expansion-context";
@@ -91,25 +91,14 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
   // visually consistent with other ranked charts on the dashboard.
   const COLORS = CHART_RANKED_PALETTE;
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(1)}B`;
-    } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`;
-    }
-    return `$${value.toFixed(0)}`;
-  };
-
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       const rows = [
         { label: 'Activities', value: String(data.activityCount), color: OTHERS_COLOR },
-        { label: 'Budget', value: `${formatCurrency(data.totalBudget)} (${data.budgetPercentage.toFixed(1)}%)`, color: BUDGET_COLOR },
-        { label: 'Disbursements', value: `${formatCurrency(data.totalDisbursements)} (${data.disbursementPercentage.toFixed(1)}%)`, color: getTransactionTypeColor('3') },
-        { label: 'Expenditures', value: `${formatCurrency(data.totalExpenditures)} (${data.expenditurePercentage.toFixed(1)}%)`, color: getTransactionTypeColor('4') },
+        { label: 'Budget', value: `${formatTooltipCurrency(data.totalBudget, isExpanded)} (${data.budgetPercentage.toFixed(1)}%)`, color: BUDGET_COLOR },
+        { label: 'Disbursements', value: `${formatTooltipCurrency(data.totalDisbursements, isExpanded)} (${data.disbursementPercentage.toFixed(1)}%)`, color: getTransactionTypeColor('3') },
+        { label: 'Expenditures', value: `${formatTooltipCurrency(data.totalExpenditures, isExpanded)} (${data.expenditurePercentage.toFixed(1)}%)`, color: getTransactionTypeColor('4') },
       ];
       return (
         <ChartTooltipCard
@@ -268,7 +257,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
                 `${sectorName}: ${displayPercentage.toFixed(1)}%`
               }
               outerRadius={150}
-              fill="#8884d8"
+              fill={OTHERS_COLOR}
               dataKey="displayValue"
             >
               {chartData.map((entry, index) => (
@@ -305,7 +294,7 @@ export const SectorAnalysisChart: React.FC<SectorAnalysisChartProps> = ({
       <div className="mt-6">
         <p className="text-body text-muted-foreground leading-relaxed">
           This chart shows how activity funding is distributed across DAC sectors, ranked by the selected
-          metric. Use it to see which sectors absorb the most resources and where coverage is thin — the
+          metric. Use it to see which sectors absorb the most resources and where coverage is thin. The
           pie view emphasises each sector&apos;s share of the whole, while the bar view makes absolute
           values easy to compare. Switch the Top-N control to widen or narrow the field, and use the
           metric toggle to compare how budgets, disbursements and expenditures are spread across sectors.

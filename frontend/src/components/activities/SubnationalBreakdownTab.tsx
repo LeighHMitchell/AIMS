@@ -429,11 +429,11 @@ export function SubnationalBreakdownTab({
     }
     
     if (totalPercentage > 100) {
-      return { isValid: false, message: `❌ Total: ${totalPercentage.toFixed(1)}% — Reduce allocations to reach exactly 100%`, variant: "destructive" as const }
+      return { isValid: false, message: `❌ Total: ${totalPercentage.toFixed(1)}%. Reduce allocations to reach exactly 100%`, variant: "destructive" as const }
     }
     
     const remaining = 100 - totalPercentage
-    return { isValid: false, message: `Total: ${totalPercentage.toFixed(1)}% — Add ${remaining.toFixed(1)}% more to reach 100%`, variant: "default" as const }
+    return { isValid: false, message: `Total: ${totalPercentage.toFixed(1)}%. Add ${remaining.toFixed(1)}% more to reach 100%`, variant: "default" as const }
   }
 
   const validationStatus = getValidationStatus()

@@ -80,21 +80,6 @@ const METRIC_OPTIONS = [
   { value: "disbursements", label: "Disbursements" },
 ];
 
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `$${Math.round(value / 1_000_000_000)}B`;
-  } else if (value >= 1_000_000) {
-    return `$${Math.round(value / 1_000_000)}M`;
-  } else if (value >= 1_000) {
-    return `$${Math.round(value / 1_000)}K`;
-  }
-  return `$${Math.round(value)}`;
-}
-
-function formatCurrencyFull(value: number): string {
-  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
 export function SubnationalAllocationsChart({ refreshKey = 0, organizationId, compact = false }: SubnationalAllocationsChartProps) {
   const isExpanded = useChartExpansion();
   const [data, setData] = useState<RankedItem[]>([]);
@@ -590,7 +575,7 @@ export function SubnationalAllocationsChart({ refreshKey = 0, organizationId, co
               <p className="text-body text-muted-foreground mt-2">
                 This table provides precise figures for aid allocations across Myanmar&apos;s states and regions.
                 The data shows the exact USD value, percentage share, and number of activities for each location.
-                Use this detailed breakdown to analyze funding concentration, compare regional investments,
+                Use this detailed breakdown to analyse funding concentration, compare regional investments,
                 and identify areas that may be underserved relative to their needs.
               </p>
 

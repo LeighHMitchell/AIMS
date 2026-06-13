@@ -154,7 +154,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (needsRevision && reason) {
       snapshot = await recordSnapshot(ctx.admin, logicId, {
         type: 'revision',
-        version_label: body.revision_label?.trim() || `Revision — edit "${data.statement}"`,
+        version_label: body.revision_label?.trim() || `Revision: edit "${data.statement}"`,
         reason,
         userId: ctx.user.id,
       });
@@ -208,7 +208,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     if (needsRevision && reason) {
       snapshot = await recordSnapshot(ctx.admin, logicId, {
         type: 'revision',
-        version_label: `Revision — delete "${node.statement}"`,
+        version_label: `Revision: delete "${node.statement}"`,
         reason,
         userId: ctx.user.id,
       });

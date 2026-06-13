@@ -353,7 +353,7 @@ export function OrganizationEditor({
           their own footer inside OrganizationFormContent, so we only render
           this one when a non-form section is active to avoid duplicates. */}
       {!['general', 'reporting', 'contact', 'social', 'aliases', 'merge'].includes(activeSection) && (
-        <footer className="fixed bottom-0 right-0 left-72 bg-card/60 dark:bg-gray-900/60 backdrop-blur-md py-4 px-8 z-[60]">
+        <footer className="fixed bottom-0 right-0 left-72 bg-card/60 backdrop-blur-md py-4 px-8 z-[60]">
           <div className="max-w-full flex items-center justify-end gap-3">
             {/* Comments Button */}
             {organization?.id ? (
@@ -450,6 +450,9 @@ export function OrganizationEditor({
           <DialogContent className="max-w-3xl min-h-[60vh] max-h-[95vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>Comments</DialogTitle>
+              <DialogDescription>
+                Discuss this organisation with your team: post comments and reply to others.
+              </DialogDescription>
             </DialogHeader>
             <div className="flex-1 min-h-0 overflow-hidden">
               <OrganizationComments

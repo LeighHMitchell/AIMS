@@ -14,6 +14,7 @@ import {
   Minus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/format';
 import { 
   IndicatorPeriod, 
   ResultIndicator, 
@@ -106,7 +107,7 @@ export function ProgressTimeline({
       case 'percentage':
         return `${value}%`;
       case 'currency':
-        return `$${value.toLocaleString()}`;
+        return formatCurrency(value);
       case 'unit':
         return value.toLocaleString();
       default:
@@ -230,7 +231,7 @@ export function ProgressTimeline({
                 {getStatusIcon(segment.status)}
                 {getTrendIndicator(segments, index)}
                 <span className="font-medium">
-                  {new Date(segment.period.period_start).toLocaleDateString('en-US', { 
+                  {new Date(segment.period.period_start).toLocaleDateString('en-GB', { 
                     month: 'short', 
                     year: 'numeric' 
                   })}

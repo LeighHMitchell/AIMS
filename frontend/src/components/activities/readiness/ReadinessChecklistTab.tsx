@@ -542,7 +542,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality, onEndorseme
                     >
                       <FileArchive className="h-4 w-4 mr-2 text-muted-foreground" />
                       <div className="flex flex-col items-start">
-                        <span className="font-medium">ZIP — summary + originals</span>
+                        <span className="font-medium">ZIP: summary + originals</span>
                         <span className="text-helper text-muted-foreground">
                           Keeps Word / Excel / PDF / images in their native formats.
                         </span>
@@ -554,7 +554,7 @@ export function ReadinessChecklistTab({ activityId, defaultModality, onEndorseme
                     >
                       <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
                       <div className="flex flex-col items-start">
-                        <span className="font-medium">Single PDF — everything merged</span>
+                        <span className="font-medium">Single PDF: everything merged</span>
                         <span className="text-helper text-muted-foreground">
                           Summary + PDF and image evidence in one file. Word/Excel listed only.
                         </span>

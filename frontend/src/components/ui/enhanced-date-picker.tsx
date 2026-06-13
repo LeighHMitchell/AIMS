@@ -50,7 +50,7 @@ export function EnhancedDatePicker({
 
   useEffect(() => {
     if (value) {
-      setDisplayValue(formatDate(value, format))
+      setDisplayValue(formatDateWithPattern(value, format))
       setViewDate(value)
     } else {
       setDisplayValue('')
@@ -75,7 +75,10 @@ export function EnhancedDatePicker({
     }
   }, [isOpen])
 
-  const formatDate = (date: Date, format: string) => {
+  // Pattern-driven display formatter for the editable input. This is NOT the
+  // canonical display formatter (@/lib/format formatDate) — it must mirror the
+  // configurable `format` prop exactly so parseDate() can round-trip the text.
+  const formatDateWithPattern = (date: Date, format: string) => {
     const dayNum = date.getDate()
     const day = String(dayNum).padStart(2, '0')
     const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -189,11 +192,11 @@ export function EnhancedDatePicker({
     if (displayValue) {
       const parsedDate = parseDate(displayValue, format)
       if (parsedDate) {
-        setDisplayValue(formatDate(parsedDate, format))
+        setDisplayValue(formatDateWithPattern(parsedDate, format))
       } else {
         // Invalid date, reset to original value
         if (value) {
-          setDisplayValue(formatDate(value, format))
+          setDisplayValue(formatDateWithPattern(value, format))
         } else {
           setDisplayValue('')
           onChange(null)
@@ -212,7 +215,7 @@ export function EnhancedDatePicker({
 
   const handleDateSelect = (date: Date) => {
     onChange(date)
-    setDisplayValue(formatDate(date, format))
+    setDisplayValue(formatDateWithPattern(date, format))
     setIsOpen(false)
   }
 
@@ -288,7 +291,7 @@ export function EnhancedDatePicker({
           placeholder={placeholder}
           className={cn(
             "w-full pl-10 pr-4 py-2 border border-input rounded-md",
-            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+            "focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
             "disabled:bg-muted disabled:cursor-not-allowed",
             "text-body font-normal",
             "bg-white cursor-pointer"

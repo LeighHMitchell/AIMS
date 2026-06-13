@@ -299,7 +299,7 @@ export function FS2AssignmentPanel({ projectId, feasibilityStage, onUpdated }: F
 
           {assignment.status === "in_progress" && (
             <div className="border-t border-border pt-4 space-y-3">
-              <h4 className="text-body font-medium">Complete Study — Enter Results</h4>
+              <h4 className="text-body font-medium">Complete Study: Enter Results</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-helper">FIRR (%) <RequiredDot /></Label>

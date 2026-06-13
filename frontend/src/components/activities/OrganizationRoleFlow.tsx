@@ -12,7 +12,7 @@ import {
   Legend,
   Cell
 } from 'recharts'
-import { formatAxisCurrency } from '@/lib/format'
+import { formatAxisCurrency, formatCurrencyCompact } from '@/lib/format'
 
 interface OrganizationRoleFlowProps {
   data: {
@@ -143,15 +143,6 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
     )
   }
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`
-    }
-    return `$${value.toFixed(0)}`
-  }
-
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
@@ -164,7 +155,7 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
           </p>
           <p className="text-body text-muted-foreground">
             <span className="font-medium">Total Value: </span>
-            {formatCurrency(data.totalValue)}
+            {formatCurrencyCompact(data.totalValue)}
           </p>
           {data.orgNames && (
             <p className="text-helper text-muted-foreground mt-2 max-w-xs">
@@ -218,7 +209,7 @@ export default function OrganizationRoleFlow({ data, transactions = [] }: Organi
                 </div>
                 <div className="text-right">
                   <p className="text-body font-semibold text-foreground">{item.organizations} orgs</p>
-                  <p className="text-helper text-muted-foreground">{formatCurrency(item.totalValue)}</p>
+                  <p className="text-helper text-muted-foreground">{formatCurrencyCompact(item.totalValue)}</p>
                 </div>
               </div>
             </div>

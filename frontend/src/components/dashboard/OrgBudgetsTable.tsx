@@ -14,7 +14,8 @@ import {
   sortableHeaderClasses,
 } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { Wallet } from 'lucide-react';
+import { StatusRow } from '@/components/ui/status-row';
+import { EmptyState } from '@/components/ui/empty-state';
 import { FullPagination } from '@/components/ui/full-pagination';
 import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 import { apiFetch } from '@/lib/api-fetch';
@@ -166,10 +167,7 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
   return (
     <>
       {budgets.length === 0 ? (
-        <div className="text-center py-8">
-          <Wallet className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-body text-muted-foreground">No budgets found</p>
-        </div>
+        <EmptyState illustration="/images/empty-aqueduct.webp" message="No budgets found" />
       ) : (
         <>
           <Table>
@@ -215,12 +213,12 @@ export function OrgBudgetsTable({ organizationId, userId, filterConfig }: OrgBud
                     <TableCell>
                       <span className="text-body text-muted-foreground whitespace-nowrap">
                         {budget.period_start ? format(new Date(budget.period_start), 'MMM yyyy') : '-'}
-                        {' — '}
+                        {' to '}
                         {budget.period_end ? format(new Date(budget.period_end), 'MMM yyyy') : '-'}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-body">{BUDGET_TYPE_LABELS[budget.type] || `Type ${budget.type}`}</span>
+                      <StatusRow code={budget.type} label={BUDGET_TYPE_LABELS[budget.type] || `Type ${budget.type}`} className="text-body" />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

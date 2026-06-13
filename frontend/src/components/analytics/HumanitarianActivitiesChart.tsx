@@ -594,8 +594,8 @@ export function HumanitarianActivitiesChart({
       {isExpanded && (
         <p className="text-body text-muted-foreground leading-relaxed mt-6">
           This chart lists every activity with a humanitarian component as a horizontal bar. In <strong>By metric</strong> mode
-          you choose which financial metrics to show — Total Budgets, Total Planned Disbursements, or any of the 13 IATI
-          transaction types — and either stack them into a single bar or group them side by side. Switch to{' '}
+          you choose which financial metrics to show (Total Budgets, Total Planned Disbursements, or any of the 13 IATI
+          transaction types) and either stack them into a single bar or group them side by side. Switch to{' '}
           <strong>Humanitarian split</strong> to recolour each bar into its humanitarian (red) versus development share of
           actual spend (disbursements and expenditures), making it easy to see which activities are predominantly
           humanitarian. Use the calendar, sector, partner, organisation-type, aid-type and finance-type filters to narrow the

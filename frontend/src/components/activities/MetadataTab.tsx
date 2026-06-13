@@ -32,6 +32,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TableContainer } from '@/components/ui/table';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 import { LockedOrganizationField } from '@/components/ui/locked-organization-field';
 import { useOrganizations } from '@/hooks/use-organizations';
 import { getActivityStatusByCode } from '@/data/activity-status-types';
@@ -240,15 +241,6 @@ const ACTIVITY_STATUS_WORD_TO_CODE: Record<string, string> = {
   closed: '4',
   cancelled: '5',
   suspended: '6',
-};
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
 };
 
 // Module-level cache so re-mounts don't flash a skeleton for already-fetched data
@@ -468,14 +460,22 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
             <tr>
               <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">Code</td>
               <td className="px-4 py-3">
-                <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.partner_id || 'Not assigned'}</code>
+                {metadata.partner_id ? (
+                  <CopyableIdBadge value={metadata.partner_id} label="Activity code" tooltip="Click to copy activity code" />
+                ) : (
+                  <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono text-muted-foreground">Not assigned</code>
+                )}
               </td>
             </tr>
             {/* IATI ID */}
             <tr>
               <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">IATI ID</td>
               <td className="px-4 py-3">
-                <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.iati_identifier || 'Not assigned'}</code>
+                {metadata.iati_identifier ? (
+                  <CopyableIdBadge value={metadata.iati_identifier} label="IATI identifier" tooltip="Click to copy IATI identifier" />
+                ) : (
+                  <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono text-muted-foreground">Not assigned</code>
+                )}
               </td>
             </tr>
             {/* UUID (technical) */}
@@ -483,7 +483,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
               <tr>
                 <td className="px-4 py-3 font-medium text-muted-foreground bg-muted/30 align-top">UUID</td>
                 <td className="px-4 py-3">
-                  <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono">{metadata.id}</code>
+                  <CopyableIdBadge value={metadata.id} label="UUID" tooltip="Click to copy UUID" />
                 </td>
               </tr>
             )}
@@ -611,8 +611,8 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                     saving={savingReportingOrg}
                     isSuperUser={true}
                     placeholder="Select reporting organisation..."
-                    lockTooltip="Click to unlock and change the reporting organization"
-                    unlockTooltip="Click to unlock and change the reporting organization"
+                    lockTooltip="Click to unlock and change the reporting organisation"
+                    unlockTooltip="Click to unlock and change the reporting organisation"
                     disabled={organizationsLoading}
                   />
                   {(metadata.created_by_org_name || metadata.created_by_org_acronym) && (
@@ -664,7 +664,7 @@ export default function MetadataTab({ activityId }: MetadataTabProps) {
                         {getActionDescription(log)}
                       </p>
                       <time className="text-helper text-muted-foreground whitespace-nowrap">
-                        {format(new Date(log.created_at), 'MMM d, yyyy')}
+                        {format(new Date(log.created_at), 'd MMM yyyy')}
                       </time>
                     </div>
                     {log.details.metadata?.fieldChanged && showTechnical && (

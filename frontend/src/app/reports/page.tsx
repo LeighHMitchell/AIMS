@@ -182,7 +182,7 @@ const activityReports: ReportConfig[] = [
   },
   {
     title: "Activities Ending Soon",
-    description: "Activities scheduled to end within the next 12 months, with remaining undisbursed balance — useful for closure and pipeline planning.",
+    description: "Activities scheduled to end within the next 12 months, with remaining undisbursed balance, useful for closure and pipeline planning.",
     apiEndpoint: "/api/reports/activities-ending-soon",
     filename: "activities_ending_soon",
     headers: [
@@ -341,7 +341,7 @@ const geographicReports: ReportConfig[] = [
   },
   {
     title: "Activity Location Register",
-    description: "Raw export of every reported activity location with administrative area and geographic coordinates — ready for mapping or GIS.",
+    description: "Raw export of every reported activity location with administrative area and geographic coordinates, ready for mapping or GIS.",
     apiEndpoint: "/api/reports/location-register",
     filename: "activity_location_register",
     headers: [
@@ -486,7 +486,7 @@ export default function ReportsPage() {
           <TabsContent value="standard" className="space-y-8 mt-0 border-0 p-0">
             {/* Detail Exports — every Transaction, Budget and Planned Disbursement */}
             <section>
-              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Detail Exports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -502,7 +502,7 @@ export default function ReportsPage() {
                 ))}
                 <WorkbookReportCard
                   title="Financial Data (Excel)"
-                  description="One Excel workbook with three tabs — Transactions, Budgets, and Planned Disbursements — for all published activities."
+                  description="One Excel workbook with three tabs (Transactions, Budgets, and Planned Disbursements) for all published activities."
                   filename="financial_data"
                   sheets={[
                     { endpoint: "/api/reports/transactions-detail", sheetName: "Transactions", headers: detailExports[0].headers },
@@ -515,7 +515,7 @@ export default function ReportsPage() {
 
             {/* Activity Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Activity Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -534,7 +534,7 @@ export default function ReportsPage() {
 
             {/* Financial Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Financial Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -553,7 +553,7 @@ export default function ReportsPage() {
 
             {/* Organization Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Organisation Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -572,7 +572,7 @@ export default function ReportsPage() {
 
             {/* Geographic Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Geographic Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -591,7 +591,7 @@ export default function ReportsPage() {
 
             {/* Fund Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Pooled Fund Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -610,7 +610,7 @@ export default function ReportsPage() {
 
             {/* Data Quality Reports */}
             <section>
-              <h2 className="text-lg font-semibold text-foreground dark:text-gray-200 mb-4">
+              <h2 className="text-lg font-semibold text-foreground mb-4">
                 Data Quality Reports
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

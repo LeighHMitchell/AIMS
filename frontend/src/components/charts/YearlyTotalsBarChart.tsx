@@ -27,7 +27,7 @@ import {
 import { CustomYear, crossesCalendarYear, getCustomYearLabel } from '@/types/custom-years'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS, getTransactionTypeColor } from '@/lib/chart-colors'
-import { formatAxisCurrency } from '@/lib/format'
+import { formatAxisCurrency, formatTooltipCurrency, formatCurrencyCompact } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 type ViewMode = 'bar' | 'line' | 'table'
@@ -93,43 +93,6 @@ interface YearlyTotalsBarChartProps {
   // Actual data range (for "Data" button) - years that have data before filtering
   dataMinYear?: number | null
   dataMaxYear?: number | null
-}
-
-// Currency formatters matching CumulativeFinancialOverview
-const formatCurrency = (value: number) => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${Math.round(absValue / 1000000000)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${Math.round(absValue / 1000000)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${Math.round(absValue / 1000)}k`
-  } else {
-    formatted = `$${Math.round(absValue)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
-}
-
-const formatTooltipValue = (value: number) => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${(absValue / 1000000000).toFixed(2)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${(absValue / 1000000).toFixed(2)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${(absValue / 1000).toFixed(2)}k`
-  } else {
-    formatted = `$${absValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
 }
 
 export function YearlyTotalsBarChart({
@@ -225,7 +188,7 @@ export function YearlyTotalsBarChart({
         const typeConfig = TRANSACTION_TYPE_CONFIG[entry.dataKey]
         return {
           label: typeConfig?.label || entry.name,
-          value: formatTooltipValue(entry.value),
+          value: formatTooltipCurrency(entry.value, isExpanded),
           color: entry.color,
           code: typeConfig ? entry.dataKey : undefined,
         }
@@ -244,7 +207,7 @@ export function YearlyTotalsBarChart({
           title={formatYearLabel(label)}
           rows={[{
             label: 'Total',
-            value: formatTooltipValue(p.value),
+            value: formatTooltipCurrency(p.value, isExpanded),
             color: p.color || p.fill,
           }]}
         />
@@ -320,11 +283,11 @@ export function YearlyTotalsBarChart({
                     <td className="py-2.5 px-4 font-medium text-foreground">{formatYearLabel(row.year)}</td>
                     {activeTransactionTypes.map(type => (
                       <td key={type} className="text-right py-2.5 px-4 text-foreground font-mono text-xs">
-                        {row[type] ? formatTooltipValue(Number(row[type])) : '—'}
+                        {row[type] ? formatCurrencyCompact(Number(row[type])) : '—'}
                       </td>
                     ))}
                     <td className="text-right py-2.5 px-4 font-semibold text-foreground font-mono text-xs">
-                      {formatTooltipValue(rowTotal)}
+                      {formatCurrencyCompact(rowTotal)}
                     </td>
                   </tr>
                 )
@@ -335,11 +298,11 @@ export function YearlyTotalsBarChart({
                 <td className="py-3 px-4 font-bold text-foreground">Total</td>
                 {activeTransactionTypes.map(type => (
                   <td key={type} className="text-right py-3 px-4 font-bold text-foreground font-mono text-xs">
-                    {formatTooltipValue(grandTotals[type])}
+                    {formatCurrencyCompact(grandTotals[type])}
                   </td>
                 ))}
                 <td className="text-right py-3 px-4 font-bold text-foreground font-mono text-xs">
-                  {formatTooltipValue(grandTotal)}
+                  {formatCurrencyCompact(grandTotal)}
                 </td>
               </tr>
             </tfoot>
@@ -365,7 +328,7 @@ export function YearlyTotalsBarChart({
               <tr key={row.year} className={idx % 2 === 0 ? 'bg-white' : 'bg-muted/50'}>
                 <td className="py-2.5 px-4 font-medium text-foreground">{formatYearLabel(row.year)}</td>
                 <td className="text-right py-2.5 px-4 text-foreground font-mono text-xs">
-                  {row.total ? formatTooltipValue(Number(row.total)) : '—'}
+                  {row.total ? formatCurrencyCompact(Number(row.total)) : '—'}
                 </td>
               </tr>
             ))}
@@ -374,7 +337,7 @@ export function YearlyTotalsBarChart({
             <tr className="border-t-2 border-input bg-muted">
               <td className="py-3 px-4 font-bold text-foreground">Total</td>
               <td className="text-right py-3 px-4 font-bold text-foreground font-mono text-xs">
-                {formatTooltipValue(grandTotal)}
+                {formatCurrencyCompact(grandTotal)}
               </td>
             </tr>
           </tfoot>

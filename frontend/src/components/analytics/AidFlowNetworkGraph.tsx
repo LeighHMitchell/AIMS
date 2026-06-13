@@ -363,15 +363,6 @@ export default function AidFlowNetworkGraph({
     setFullscreen(!fullscreen)
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
-
   const getTransactionTypeName = (type: string): string => {
     const types: Record<string, string> = {
       '1': 'Incoming Funds',

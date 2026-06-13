@@ -107,40 +107,6 @@ function getDateRangeFromTimeRange(timeRange: TimeRangeType): { from: Date | und
   return { from, to: now };
 }
 
-function formatCurrency(value: number): string {
-  const absValue = Math.abs(value);
-  const sign = value < 0 ? '-' : '';
-
-  if (absValue >= 1_000_000_000) {
-    return `${sign}$${(absValue / 1_000_000_000).toFixed(1)}B`;
-  } else if (absValue >= 1_000_000) {
-    return `${sign}$${(absValue / 1_000_000).toFixed(1)}M`;
-  } else if (absValue >= 1_000) {
-    return `${sign}$${(absValue / 1_000).toFixed(1)}K`;
-  }
-  return `${sign}$${absValue.toFixed(0)}`;
-}
-
-function formatCurrencyWithSymbol(value: number): string {
-  const absValue = Math.abs(value);
-  const sign = value < 0 ? '-' : '';
-
-  if (absValue >= 1_000_000_000) {
-    return `${sign}${(absValue / 1_000_000_000).toFixed(1)}B USD`;
-  } else if (absValue >= 1_000_000) {
-    return `${sign}${(absValue / 1_000_000).toFixed(1)}M USD`;
-  } else if (absValue >= 1_000) {
-    return `${sign}${(absValue / 1_000).toFixed(1)}K USD`;
-  }
-  return `${sign}${absValue.toFixed(0)} USD`;
-}
-
-function formatCurrencyFull(value: number): string {
-  const absValue = Math.abs(value);
-  const sign = value < 0 ? '-' : '';
-  return `${sign}$${absValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
 interface TopSectorsChartProps {
   refreshKey?: number;
   compact?: boolean;

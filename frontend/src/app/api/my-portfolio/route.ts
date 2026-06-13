@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       // Activity events for contribution calendar
       supabase
         .from('activities')
-        .select('id, title_narrative, created_at, updated_at')
+        .select('id, title_narrative, acronym, created_at, updated_at')
         .eq('created_by', userId)
         .order('created_at', { ascending: false })
         .limit(500),
@@ -167,7 +167,8 @@ export async function GET(request: NextRequest) {
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
     const inactive90Days = activities?.filter((activity: any) =>
       activity.updated_at &&
-      new Date(activity.updated_at) < ninetyDaysAgo
+      new Date(activity.updated_at) < ninetyDaysAgo &&
+      String(activity.activity_status) !== '4' // exclude Closed activities
     ).map((activity: any) => ({
       id: activity.id,
       title: activity.title_narrative || 'Untitled Activity',
@@ -272,18 +273,19 @@ export async function GET(request: NextRequest) {
     const { data: activityEvents } = activityEventsResult
     if (activityEvents) {
       activityEvents.forEach((a: any) => {
+        const activityLabel = `${a.title_narrative || 'Untitled'}${a.acronym ? ` (${a.acronym})` : ''}`
         if (a.created_at) {
           userActivityEvents.push({
             date: a.created_at,
             type: 'activity_created',
-            description: `Created activity: ${a.title_narrative || 'Untitled'}`
+            description: `Created activity: ${activityLabel}`
           })
         }
         if (a.updated_at && a.created_at !== a.updated_at) {
           userActivityEvents.push({
             date: a.updated_at,
             type: 'activity_updated',
-            description: `Updated activity: ${a.title_narrative || 'Untitled'}`
+            description: `Updated activity: ${activityLabel}`
           })
         }
       })

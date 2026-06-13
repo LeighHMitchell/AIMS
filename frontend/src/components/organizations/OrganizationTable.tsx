@@ -32,7 +32,7 @@ import {
   ORGANIZATION_COLUMN_ORDER_LOCALSTORAGE_KEY,
 } from "@/app/organizations/columns";
 import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
-import { formatDate as formatDateCanonical } from "@/lib/format";
+import { formatCurrencyCompact, formatDate as formatDateCanonical } from "@/lib/format";
 import { Checkbox } from "@/components/ui/checkbox";
 
 type Organization = {
@@ -86,30 +86,20 @@ interface OrganizationTableProps {
   onToggleSelectAll?: (checked: boolean) => void;
 }
 
-// Format currency helper - returns JSX with gray currency code
-const formatCurrency = (amount: number | null | undefined): React.ReactNode => {
-  if (amount == null || isNaN(amount)) return '-';
-  const abs = Math.abs(amount);
-  const formattedValue =
-    abs >= 1_000_000_000
-      ? `${(amount / 1_000_000_000).toFixed(1)}b`
-      : abs >= 1_000_000
-      ? `${(amount / 1_000_000).toFixed(1)}m`
-      : abs >= 1_000
-      ? `${(amount / 1_000).toFixed(0)}k`
-      : amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
-
+// Table-style currency cell: muted ISO-code prefix ("USD 36.0m") with the
+// compact value delegated to the canonical lib formatter. Values here are
+// always USD aggregates, so the leading "$" is dropped in favour of the
+// muted code prefix.
+const formatTableCurrency = (amount: number | null | undefined): React.ReactNode => {
+  if (amount == null || isNaN(amount)) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+  const formattedValue = formatCurrencyCompact(amount, 'USD').replace('$', '');
   return (
     <>
       <span className="text-helper text-muted-foreground font-normal">USD</span> {formattedValue}
     </>
   );
-};
-
-// Format date helper
-const formatDate = (dateString: string): string => {
-  if (!dateString) return '-';
-  return formatDateCanonical(dateString) || '-';
 };
 
 // Get organization type label
@@ -433,7 +423,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                         {org.country_represented}
                       </div>
                     ) : (
-                      '-'
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
                 ),
@@ -442,7 +432,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                     {org.residency_status ? (
                       <span>{org.residency_status === 'resident' ? 'Resident' : 'Non-Resident'}</span>
                     ) : (
-                      <span className="text-muted-foreground">-</span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
                 ),
@@ -485,7 +475,7 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                         <TooltipTrigger asChild>
                           <div className="flex items-center justify-end gap-1">
                             <span>
-                              {formatCurrency(org.totalBudgeted)}
+                              {formatTableCurrency(org.totalBudgeted)}
                             </span>
                           </div>
                         </TooltipTrigger>
@@ -499,7 +489,9 @@ export const OrganizationTable: React.FC<OrganizationTableProps> = ({
                 created_at: (
                   <TableCell key="created_at" className="px-4 py-3 text-body text-foreground">
                     <span>
-                      {formatDate(org.created_at)}
+                      {formatDateCanonical(org.created_at) || (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </span>
                   </TableCell>
                 ),

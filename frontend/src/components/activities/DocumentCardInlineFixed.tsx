@@ -297,7 +297,7 @@ export function DocumentCardInlineFixed({
                 {formData.documentDate && (
                   <Badge variant="outline" className="text-helper gap-1">
                     <Calendar className="w-3 h-3" />
-                    {format(new Date(formData.documentDate), 'MMM d, yyyy')}
+                    {format(new Date(formData.documentDate), 'd MMM yyyy')}
                   </Badge>
                 )}
                 </div>

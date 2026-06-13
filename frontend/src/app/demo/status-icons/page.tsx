@@ -254,7 +254,7 @@ export default function StatusIconsDemoPage() {
                   <li>• Space-efficient - Icons take less space than text badges</li>
                   <li>• Consistent visual language across the application</li>
                   <li>• Hover tooltips provide clear status descriptions</li>
-                  <li>• Black color scheme maintains readability</li>
+                  <li>• Black colour scheme maintains readability</li>
                   <li>• Accessible with proper ARIA attributes</li>
                 </ul>
               </div>

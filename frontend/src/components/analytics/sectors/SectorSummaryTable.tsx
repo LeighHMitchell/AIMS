@@ -9,24 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { SectorMetrics, SectorSortField, SortDirection } from '@/types/sector-analytics'
 import { Search, Download, ChevronDown, ChevronRight } from 'lucide-react'
 import { getBroadCategoryForCode } from '@/lib/sector-hierarchy'
-// Inline currency formatter to avoid initialization issues
-const formatCurrencyAbbreviated = (value: number): string => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${(absValue / 1000000).toFixed(1)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${(absValue / 1000).toFixed(1)}k`
-  } else {
-    formatted = `$${absValue.toFixed(0)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
-}
+import { formatCurrencyCompact } from '@/lib/format'
 
 interface SectorSummaryTableProps {
   data: SectorMetrics[]
@@ -171,20 +154,8 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
     }
   }
 
-  const formatCurrency = (value: number) => {
-    if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-      return '$0.00'
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value)
-  }
-
-  // Use the module-level currency formatter
-  const formatCompactCurrency = formatCurrencyAbbreviated
+  // Canonical compact currency from the shared lib.
+  const formatCompactCurrency = formatCurrencyCompact
 
   const handleExportCSV = () => {
     const headers = [
@@ -417,7 +388,7 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
                               {group.sub.projects.toLocaleString()}
                             </TableCell>
                             <TableCell className="text-right font-bold text-muted-foreground">
-                              –
+                              —
                             </TableCell>
                           </TableRow>
                           {!collapsed && group.rows.map((item, index) => renderDataRow(item, `${group.code}-${index}`))}
@@ -447,8 +418,8 @@ export function SectorSummaryTable({ data }: SectorSummaryTableProps) {
                     <TableCell className="text-right font-bold">
                       {totals.projects.toLocaleString()}
                     </TableCell>
-                    <TableCell className="text-right font-bold">
-                      -
+                    <TableCell className="text-right font-bold text-muted-foreground">
+                      —
                     </TableCell>
                   </TableRow>
                 </>

@@ -53,9 +53,11 @@ import {
   sortableHeaderClasses,
 } from "@/components/ui/table"
 import { RailBlock } from "@/components/profile/RailBlock"
+import { SafeHtml } from "@/components/ui/safe-html"
 import { OrganizationSocialLinks } from "@/components/organizations/OrganizationSocialLinks"
 import { OrganizationActivityDatesTimeline } from "@/components/profile/OrganizationActivityDatesTimeline"
 import { countries as COUNTRY_LIST } from "@/data/countries"
+import { IATI_COUNTRIES } from "@/data/iati-countries"
 import { isInstitutionalGroup } from "@/data/location-groups"
 import { Mail, Phone, MapPin, Building2, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react"
 import Flag from "react-world-flags"
@@ -67,15 +69,25 @@ import { getActivityStatusLabel, normalizeActivityStatusCode } from "@/lib/activ
 // (e.g. "United Nations") which are handled separately.
 function findCountryIso2(value: string | null | undefined): string | undefined {
   if (!value) return undefined
-  const normalized = value.toLowerCase().trim()
   if (isInstitutionalGroup(value)) return undefined
   const upper = value.toUpperCase().trim()
   if (upper.length === 2) {
     const direct = COUNTRY_LIST.find((c) => c.code === upper)
     if (direct) return direct.code
   }
-  const byName = COUNTRY_LIST.find((c) => c.name.toLowerCase() === normalized)
-  return byName?.code
+  // Normalise names before matching so IATI long-form names resolve too:
+  // drop the trailing "(the)" and any punctuation. e.g. the org's
+  // "United States of America (the)" → "united states of america", which
+  // matches the IATI list even though @/data/countries calls it
+  // "United States".
+  const norm = (s: string) =>
+    s.toLowerCase().replace(/\(the\)/g, "").replace(/[^a-z ]+/g, " ").replace(/\s+/g, " ").trim()
+  const normalized = norm(value)
+  const inList = COUNTRY_LIST.find((c) => norm(c.name) === normalized)
+  if (inList) return inList.code
+  const inIati = IATI_COUNTRIES.find((c) => norm(c.name) === normalized)
+  if (inIati) return inIati.code
+  return undefined
 }
 
 // Render the same flag glyphs the activity editor's "Location Represented"
@@ -430,9 +442,24 @@ export function OrganizationProfileV2View({ organization, activeTab, onTabChange
     })()),
   ]
 
+  const missionHtml = (organization?.mission ?? "").trim()
   const rail = (
     <>
-      {/* p-6 matches the About card's padding so the "Identity" header sits
+      {/* Mission (when set) sits above Identity in its own card. */}
+      {missionHtml && (
+        <RailBlock
+          label="Mission"
+          helpText="This organisation's mission statement, entered in the organisation editor."
+          className="p-6"
+        >
+          <SafeHtml
+            html={missionHtml}
+            level="rich"
+            className="text-body text-foreground/85 leading-relaxed"
+          />
+        </RailBlock>
+      )}
+      {/* p-6 matches the About card's padding so the top rail header sits
           at the same Y as the "About" header rather than ~8px higher. */}
       <RailIdentity rows={identityRows} className="p-6" />
       <RailContactInformation organization={organization} />

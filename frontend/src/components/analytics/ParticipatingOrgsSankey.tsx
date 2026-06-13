@@ -27,6 +27,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import * as d3Sankey from 'd3-sankey'
+import { formatCurrencyCompact } from '@/lib/format'
+import { CurrencyValue } from '@/components/ui/currency-value'
 
 interface ParticipatingOrgsSankeyProps {
   refreshKey?: number
@@ -137,15 +139,6 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
   useEffect(() => {
     fetchData()
   }, [fetchData, refreshKey])
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(value)
-  }
 
   const formatNumber = (value: number) => {
     return new Intl.NumberFormat('en-US').format(Math.round(value))
@@ -493,7 +486,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                             <title>
                               {sourceNode?.name} → {targetNode?.name}
                               {'\n'}Activities: {link.activityCount}
-                              {metricMode === 'value' && `\nValue: ${formatCurrency(link.value)}`}
+                              {metricMode === 'value' && `\nValue: ${formatCurrencyCompact(link.value)}`}
                             </title>
                           </path>
                         </g>
@@ -599,7 +592,7 @@ export function ParticipatingOrgsSankey({ refreshKey = 0 }: ParticipatingOrgsSan
                           </TableCell>
                           {metricMode === 'value' && (
                             <TableCell className="text-right">
-                              {formatCurrency(link.value)}
+                              <CurrencyValue amount={link.value} variant="short" />
                             </TableCell>
                           )}
                         </TableRow>

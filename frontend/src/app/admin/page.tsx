@@ -6,7 +6,7 @@ import { useUser } from "@/hooks/useUser"
 import { MainLayout } from "@/components/layout/main-layout"
 import { AdminUserTable } from "@/components/AdminUserTable"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from "@/components/ui/tabs"
 import { Shield, Users, FileText, AlertCircle, Settings, MessageSquare, Landmark, DollarSign, Map, HelpCircle, Book, BookOpen, FileCode2, Calendar, Activity, Target, AlertTriangle, Scale, Layers, Gauge, Trash2 } from "lucide-react"
 import { USER_ROLES } from "@/types/user"
 import { SystemsSettings } from "@/components/admin/SystemsSettings"
@@ -15,6 +15,7 @@ import { BudgetClassificationsManagement } from "@/components/admin/BudgetClassi
 import { DomesticBudgetManagement } from "@/components/admin/DomesticBudgetManagement"
 import { SectorMappingsManagement } from "@/components/admin/SectorMappingsManagement"
 import { FAQManagement } from "@/components/admin/FAQManagement"
+import { GlossaryManagement } from "@/components/admin/GlossaryManagement"
 import { PageHelpManagement } from "@/components/admin/PageHelpManagement"
 import { CountrySectorVocabularyManagement } from "@/components/admin/CountrySectorVocabularyManagement"
 import { PendingValidationsManagement } from "@/components/admin/PendingValidationsManagement"
@@ -38,7 +39,7 @@ function AdminPageContent() {
   const [activeSubTab, setActiveSubTab] = useState("classifications")
 
   // Valid tab values
-  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "page-help", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "national-plans", "compliance-rules", "scoring-rubric", "recycle-bin"]
+  const validTabs = ["users", "user-activity", "import-logs", "validations", "feedback", "faq", "glossary", "page-help", "systems", "chart-of-accounts", "project-references", "emergencies", "calendar-events", "national-plans", "compliance-rules", "scoring-rubric", "recycle-bin"]
   const validSubTabs = ["classifications", "sector-mappings", "country-sectors", "domestic-budget", "pb-sectors"]
 
   useEffect(() => {
@@ -131,72 +132,76 @@ function AdminPageContent() {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+          <PageTabsList>
+            <PageTabsTrigger value="users">
               <Users className="h-4 w-4" />
               User Management
-            </TabsTrigger>
-            <TabsTrigger value="user-activity" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="user-activity">
               <Activity className="h-4 w-4" />
               User Activity
-            </TabsTrigger>
-            <TabsTrigger value="import-logs" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="import-logs">
               <FileText className="h-4 w-4" />
               IATI Import Logs
-            </TabsTrigger>
-            <TabsTrigger value="validations" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="validations">
               <AlertCircle className="h-4 w-4" />
               Pending Validations
-            </TabsTrigger>
-            <TabsTrigger value="feedback" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="feedback">
               <MessageSquare className="h-4 w-4" />
               Feedback
-            </TabsTrigger>
-            <TabsTrigger value="faq" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="faq">
               <HelpCircle className="h-4 w-4" />
               FAQ
-            </TabsTrigger>
-            <TabsTrigger value="page-help" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="glossary">
+              <BookOpen className="h-4 w-4" />
+              Glossary
+            </PageTabsTrigger>
+            <PageTabsTrigger value="page-help">
               <HelpCircle className="h-4 w-4" />
               Page Help
-            </TabsTrigger>
-            <TabsTrigger value="systems" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="systems">
               <Settings className="h-4 w-4" />
               Systems Settings
-            </TabsTrigger>
-            <TabsTrigger value="chart-of-accounts" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="chart-of-accounts">
               <Landmark className="h-4 w-4" />
               Chart of Accounts
-            </TabsTrigger>
-            <TabsTrigger value="project-references" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="project-references">
               <FileCode2 className="h-4 w-4" />
               Project References
-            </TabsTrigger>
-            <TabsTrigger value="emergencies" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="emergencies">
               <AlertTriangle className="h-4 w-4" />
               Emergencies
-            </TabsTrigger>
-            <TabsTrigger value="calendar-events" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="calendar-events">
               <Calendar className="h-4 w-4" />
               Calendar Events
-            </TabsTrigger>
-            <TabsTrigger value="national-plans" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="national-plans">
               <BookOpen className="h-4 w-4" />
               National Plans
-            </TabsTrigger>
-            <TabsTrigger value="compliance-rules" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="compliance-rules">
               <Scale className="h-4 w-4" />
               Compliance Rules
-            </TabsTrigger>
-            <TabsTrigger value="scoring-rubric" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="scoring-rubric">
               <Gauge className="h-4 w-4" />
               Scoring Rubric
-            </TabsTrigger>
-            <TabsTrigger value="recycle-bin" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="recycle-bin">
               <Trash2 className="h-4 w-4" />
               Recycle Bin
-            </TabsTrigger>
-          </TabsList>
+            </PageTabsTrigger>
+          </PageTabsList>
 
           <TabsContent value="users" className="space-y-6">
             <AdminUserTable />
@@ -222,6 +227,10 @@ function AdminPageContent() {
             <FAQManagement />
           </TabsContent>
 
+          <TabsContent value="glossary" className="space-y-6">
+            <GlossaryManagement />
+          </TabsContent>
+
           <TabsContent value="page-help" className="space-y-6">
             <PageHelpManagement />
           </TabsContent>
@@ -232,28 +241,28 @@ function AdminPageContent() {
 
           <TabsContent value="chart-of-accounts" className="space-y-6">
             <Tabs value={activeSubTab} onValueChange={handleSubTabChange}>
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-4">
-                <TabsTrigger value="classifications" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <PageTabsList className="mb-4">
+                <PageTabsTrigger value="classifications">
                   <Landmark className="h-4 w-4" />
                   Classifications
-                </TabsTrigger>
-                <TabsTrigger value="sector-mappings" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                </PageTabsTrigger>
+                <PageTabsTrigger value="sector-mappings">
                   <Map className="h-4 w-4" />
                   Sector Mappings
-                </TabsTrigger>
-                <TabsTrigger value="country-sectors" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                </PageTabsTrigger>
+                <PageTabsTrigger value="country-sectors">
                   <Book className="h-4 w-4" />
                   Country Sectors
-                </TabsTrigger>
-                <TabsTrigger value="domestic-budget" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                </PageTabsTrigger>
+                <PageTabsTrigger value="domestic-budget">
                   <DollarSign className="h-4 w-4" />
                   Domestic Budget
-                </TabsTrigger>
-                <TabsTrigger value="pb-sectors" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                </PageTabsTrigger>
+                <PageTabsTrigger value="pb-sectors">
                   <Layers className="h-4 w-4" />
                   Project Bank Sectors
-                </TabsTrigger>
-              </TabsList>
+                </PageTabsTrigger>
+              </PageTabsList>
 
               <TabsContent value="classifications">
                 <BudgetClassificationsManagement />

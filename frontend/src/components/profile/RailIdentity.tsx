@@ -20,7 +20,7 @@ interface RailIdentityProps {
 }
 
 const DEFAULT_IDENTITY_HELP =
-  "Identifiers used to reference this activity — the system Activity ID, IATI Identifier, and any other reference codes assigned to it."
+  "Identifiers used to reference this activity: the system Activity ID, IATI Identifier, and any other reference codes assigned to it."
 
 export function RailIdentity({
   rows,

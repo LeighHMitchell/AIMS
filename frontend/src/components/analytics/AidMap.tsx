@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { MapPin } from 'lucide-react'
 import { txUsd } from '@/lib/analytics-transaction-filters'
+import { CurrencyValue } from '@/components/ui/currency-value'
 
 interface AidMapProps {
   dateRange: {
@@ -133,15 +134,6 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
     }
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
-
   if (loading) {
     return (
       <ChartLoadingPlaceholder />
@@ -171,9 +163,9 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
           </thead>
           <tbody>
             {data.map((location, index) => (
-              <tr 
+              <tr
                 key={index}
-                className={index % 2 === 0 ? 'bg-card' : 'bg-muted'}
+                className="border-b last:border-0 hover:bg-muted/50 transition-colors"
               >
                 <td className="py-3 px-4 text-body text-foreground font-medium">
                   <div className="flex items-center gap-2">
@@ -188,7 +180,7 @@ export function AidMap({ dateRange, filters, country, refreshKey }: AidMapProps)
                   {location.projectCount}
                 </td>
                 <td className="py-3 px-4 text-body text-foreground text-right font-medium">
-                  {formatCurrency(location.totalDisbursement)}
+                  <CurrencyValue amount={location.totalDisbursement} variant="short" />
                 </td>
               </tr>
             ))}

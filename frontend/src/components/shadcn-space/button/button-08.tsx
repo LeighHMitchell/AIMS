@@ -24,12 +24,12 @@ const ButtonSocialIconDemo = () => {
         <img
           src="https://images.shadcnspace.com/assets/svgs/icon-github.svg"
           alt="github icon"
-          className="dark:hidden h-4 w-4"
+          className=" h-4 w-4"
         />
         <img
           src="https://images.shadcnspace.com/assets/svgs/icon-github-white.svg"
           alt="github icon"
-          className="hidden dark:block h-4 w-4"
+          className="hidden h-4 w-4"
         />
       </Button>
       {/* linkedin */}

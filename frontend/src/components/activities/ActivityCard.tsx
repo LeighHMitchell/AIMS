@@ -15,11 +15,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatActivityDate, formatDateRange, formatRelativeTime, calculateDuration } from '@/lib/date-utils';
+import { formatCurrencyCompact } from '@/lib/format';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
 import { formatReportedBy } from '@/utils/format-helpers';
 import { StatusIcon } from '@/components/ui/status-icon';
 import { TIED_STATUS_LABELS } from '@/types/transaction';
-import { getActivityStatusDisplay } from '@/lib/activity-status-utils';
+import { ActivityStatusRow } from '@/components/ui/status-row';
 import { CardShell, CardShellLogoOverlay, CardShellRipLine } from '@/components/ui/card-shell';
 import { codeAndName } from '@/lib/iati/codelist-resolver';
 
@@ -82,22 +83,6 @@ const submissionColors = {
   'rejected': 'destructive',
   'submitted': 'default'
 } as const;
-
-// Currency formatting utility with compact notation
-const formatCurrency = (value: number) => {
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}m`;
-  } else if (value >= 1000) {
-    return `$${(value / 1000).toFixed(1)}k`;
-  } else {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  }
-};
 
 const ActivityCard: React.FC<ActivityCardProps> = ({
   activity,
@@ -288,14 +273,9 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
         {/* Status Pills */}
         <div className="flex flex-wrap gap-2 items-center mb-3">
-          {activity.activity_status && (() => {
-            const { label, className: statusCls } = getActivityStatusDisplay(activity.activity_status);
-            return (
-              <Badge className={`text-helper font-medium leading-tight ${statusCls}`}>
-                {label}
-              </Badge>
-            );
-          })()}
+          {activity.activity_status && (
+            <ActivityStatusRow status={activity.activity_status} className="text-helper font-medium leading-tight" />
+          )}
           {activity.is_pooled_fund && (
             <Badge className="text-xs font-medium leading-tight bg-[#3C6255] text-white">
               Fund
@@ -349,11 +329,11 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <>
                 <div className="flex justify-between items-center">
                   <span className="text-section-label font-medium text-muted-foreground uppercase">Total Budgeted</span>
-                  <span className="text-body text-foreground">{formatCurrency(activity.totalBudget || 0)}</span>
+                  <span className="text-body text-foreground">{formatCurrencyCompact(activity.totalBudget || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center pb-2 border-b border-border">
                   <span className="text-section-label font-medium text-muted-foreground uppercase">Total Disbursed</span>
-                  <span className="text-body text-foreground">{formatCurrency(activity.totalDisbursed || 0)}</span>
+                  <span className="text-body text-foreground">{formatCurrencyCompact(activity.totalDisbursed || 0)}</span>
                 </div>
               </>
             )}

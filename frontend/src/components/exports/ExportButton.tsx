@@ -132,7 +132,7 @@ export function ExportButton({
                 {format.label}
                 {format.description && (
                   <span className="ml-1 font-normal opacity-70">
-                    — {format.description}
+                    ({format.description})
                   </span>
                 )}
               </DropdownMenuLabel>

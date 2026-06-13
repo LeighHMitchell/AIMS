@@ -27,24 +27,7 @@ import {
 import { apiFetch } from '@/lib/api-fetch';
 import { FullPagination } from '@/components/ui/full-pagination';
 import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination';
-
-// Format currency with abbreviations (K, M, B)
-const formatCurrencyAbbreviated = (value: number) => {
-  const absValue = Math.abs(value);
-  let formattedValue: string;
-
-  if (absValue >= 1_000_000_000) {
-    formattedValue = (value / 1_000_000_000).toFixed(1) + 'B';
-  } else if (absValue >= 1_000_000) {
-    formattedValue = (value / 1_000_000).toFixed(1) + 'M';
-  } else if (absValue >= 1_000) {
-    formattedValue = (value / 1_000).toFixed(1) + 'K';
-  } else {
-    formattedValue = value.toFixed(0);
-  }
-
-  return '$' + formattedValue;
-};
+import { formatCurrencyCompact } from '@/lib/format';
 
 // Simple Hero Card Component
 interface HeroCardProps {
@@ -101,7 +84,7 @@ interface OrganizationPlannedDisbursementsTabProps {
 }
 
 // Helper function to safely format dates
-const safeFormatDate = (dateStr: string | null | undefined, formatStr: string, fallback: string = '-'): string => {
+const safeFormatDate = (dateStr: string | null | undefined, formatStr: string, fallback: string = '—'): string => {
   if (!dateStr) return fallback;
   try {
     const parsed = parseISO(dateStr);
@@ -181,7 +164,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
         return org.acronym || org.name;
       }
     }
-    return fallbackName || '-';
+    return fallbackName || '—';
   };
 
   // Get unique activities for filter dropdown
@@ -311,7 +294,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
         <div className="flex gap-4 flex-wrap">
           <HeroCard
             title="Total Planned Disbursements"
-            value={formatCurrencyAbbreviated(totalUSD)}
+            value={formatCurrencyCompact(totalUSD)}
             subtitle={`${filteredDisbursements.length} disbursement${filteredDisbursements.length !== 1 ? 's' : ''}`}
             icon={<DollarSign className="h-5 w-5" />}
           />
@@ -556,9 +539,9 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                         </TableCell>
                         <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '100px' }}>
                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">
-                            {disbursement.status === 'original' ? '1' : disbursement.status === 'revised' ? '2' : '-'}
+                            {disbursement.status === 'original' ? '1' : disbursement.status === 'revised' ? '2' : '—'}
                           </code>
-                          {disbursement.status === 'original' ? 'Original' : disbursement.status === 'revised' ? 'Revised' : '-'}
+                          {disbursement.status === 'original' ? 'Original' : disbursement.status === 'revised' ? 'Revised' : '—'}
                         </TableCell>
                         <TableCell className="py-3 px-4" style={{ width: '280px' }}>
                           <div className="flex items-center gap-2 min-w-0">
@@ -594,7 +577,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                           </span>
                         </TableCell>
                         <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '110px' }}>
-                          {safeFormatDate(disbursement.value_date, 'MMM d, yyyy', '-')}
+                          {safeFormatDate(disbursement.value_date, 'd MMM yyyy', '—')}
                         </TableCell>
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                           {disbursement.usd_amount != null ? (
@@ -603,7 +586,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                               {disbursement.usd_amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground">-</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
                       </TableRow>
@@ -632,9 +615,9 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                     </TableCell>
                     <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '100px' }}>
                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">
-                        {disbursement.status === 'original' ? '1' : disbursement.status === 'revised' ? '2' : '-'}
+                        {disbursement.status === 'original' ? '1' : disbursement.status === 'revised' ? '2' : '—'}
                       </code>
-                      {disbursement.status === 'original' ? 'Original' : disbursement.status === 'revised' ? 'Revised' : '-'}
+                      {disbursement.status === 'original' ? 'Original' : disbursement.status === 'revised' ? 'Revised' : '—'}
                     </TableCell>
                     <TableCell className="py-3 px-4" style={{ width: '280px' }}>
                       <div className="flex items-center gap-2 min-w-0">
@@ -670,7 +653,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                       </span>
                     </TableCell>
                     <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '110px' }}>
-                      {safeFormatDate(disbursement.value_date, 'MMM d, yyyy', '-')}
+                      {safeFormatDate(disbursement.value_date, 'd MMM yyyy', '—')}
                     </TableCell>
                     <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                       {disbursement.usd_amount != null ? (
@@ -679,7 +662,7 @@ export function OrganizationPlannedDisbursementsTab({ organizationId, defaultCur
                           {disbursement.usd_amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">-</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
                   </TableRow>

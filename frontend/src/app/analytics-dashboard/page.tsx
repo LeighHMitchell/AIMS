@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format, startOfYear, endOfYear } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { AnalyticsDashboardSkeleton } from '@/components/skeletons'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 
@@ -604,7 +604,7 @@ export default function AnalyticsDashboardPage() {
           )}
 
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-                <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+                <PageTabsList>
                   {[
                     { value: 'overview', label: 'Overview' },
                     { value: 'aid-flow-map', label: 'Aid Flow Map' },
@@ -622,15 +622,15 @@ export default function AnalyticsDashboardPage() {
                     { value: 'rankings', label: 'Rankings' },
                     { value: 'outliers', label: 'Outliers' },
                   ].map((t) => (
-                    <TabsTrigger
+                    <PageTabsTrigger
                       key={t.value}
                       value={t.value}
-                      className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                    >
+                      
+>
                       {t.label}
-                    </TabsTrigger>
+                    </PageTabsTrigger>
                   ))}
-                </TabsList>
+                </PageTabsList>
 
                 {/* ==================== OVERVIEW TAB ==================== */}
                 {/* Audience: general public, journalists. Answers: how much aid? from whom? where? */}
@@ -658,8 +658,8 @@ export default function AnalyticsDashboardPage() {
 
                       <CompactChartCard
                         title="External Development Partners Financial Overview"
-                        shortDescription="External development partners ranked by the selected metric — defaults to actual disbursements"
-                        fullDescription="Ranks external development partners by the metric(s) selected — Total Budgets, Total Planned Disbursements, or any of the 13 IATI transaction types (defaults to actual disbursements). Excludes Myanmar government entities (recipient country) so domestic budget transfers and pass-through reporting do not appear as donor flows."
+                        shortDescription="External development partners ranked by the selected metric (defaults to actual disbursements)"
+                        fullDescription="Ranks external development partners by the metric(s) selected: Total Budgets, Total Planned Disbursements, or any of the 13 IATI transaction types (defaults to actual disbursements). Excludes Myanmar government entities (recipient country) so domestic budget transfers and pass-through reporting do not appear as donor flows."
                         mathTooltip="Aggregates totals per partner from the chosen view (budgets, planned disbursements, commitments, or actual disbursements), credited to the provider organisation on each transaction. Period-spanning budgets and planned disbursements are allocated proportionally by overlap days within the selected year window. Organisations whose country is Myanmar are excluded from this chart so recipient-government ministries (e.g. MOALI) don't appear as funders."
                         className="w-full"
                         compactHeight={300}
@@ -831,7 +831,7 @@ export default function AnalyticsDashboardPage() {
 
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Aid Classification</h2>
-                      <p className="text-muted-foreground mb-4">How aid breaks down by flow type, aid modality and tied status — disbursements (USD), with a "Not reported" slice for un-classified value</p>
+                      <p className="text-muted-foreground mb-4">How aid breaks down by flow type, aid modality and tied status: disbursements (USD), with a "Not reported" slice for un-classified value</p>
                       <ChartGrid>
                         <CompactChartCard
                           title="Flow Type (ODA vs OOF)"
@@ -860,7 +860,7 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           title="Tied Aid Status"
                           shortDescription="Untied vs partially-tied vs tied disbursements"
-                          fullDescription="Share of disbursements that are untied, partially tied or tied — a core aid-effectiveness (GPEDC/Paris) indicator. Untied aid lets the recipient procure freely; tied aid restricts procurement to the donor country."
+                          fullDescription="Share of disbursements that are untied, partially tied or tied, a core aid-effectiveness (GPEDC/Paris) indicator. Untied aid lets the recipient procure freely; tied aid restricts procurement to the donor country."
                           mathTooltip="Sums USD disbursements (transaction type 3) on published, non-deleted activities, grouped by tied status (5 Untied / 3 Partially tied / 4 Tied). Status is taken from the transaction, falling back to the activity's default_tied_status; transactions with neither fall into 'Not reported'. Internal/pooled-fund transfers are excluded."
                           exportData={tiedClassData}
                           inlineToolbar
@@ -872,7 +872,7 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           title="Collaboration Type"
                           shortDescription="Bilateral vs multilateral disbursements"
-                          fullDescription="Share of disbursements delivered through bilateral versus multilateral channels (and other IATI collaboration types) — how aid is routed between partners. Bilateral is donor-to-recipient directly; multilateral is pooled through institutions like the UN or World Bank."
+                          fullDescription="Share of disbursements delivered through bilateral versus multilateral channels (and other IATI collaboration types), showing how aid is routed between partners. Bilateral is donor-to-recipient directly; multilateral is pooled through institutions like the UN or World Bank."
                           mathTooltip="Sums USD disbursements (transaction type 3) on published, non-deleted activities, grouped by the activity's IATI collaboration type (1 Bilateral, 2/3 Multilateral, etc.). Collaboration type is an activity-level field, so every disbursement inherits its activity's value; activities with none fall into 'Not reported'. Internal/pooled-fund transfers are excluded."
                           exportData={collabClassData}
                           inlineToolbar
@@ -951,8 +951,8 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           title="Disbursement Timeliness by Partner"
                           shortDescription="Share of each partner's planned disbursements delivered by their planned date"
-                          fullDescription="For each funding partner, the share of its planned disbursement tranches that were actually delivered on or before the date they were planned for — did the money arrive when the partner said it would? Bars are coloured darker the more on-time the partner; hover for average lateness."
-                          mathTooltip="Each activity's planned disbursement schedule (planned_disbursements: a USD target due by a period-end date) is compared with its actual disbursement stream (transaction type 3). For each planned tranche, the cumulative planned target at its due date is matched against the earliest point the activity's cumulative actual disbursements reached it — the fulfilment date. On time = fulfilled on or before the planned due date; average delay averages the late tranches' lateness in days. Only past-due tranches are judged; internal/pooled-fund transfers excluded. Partners need ≥3 judged tranches; top 10 by on-time share."
+                          fullDescription="For each funding partner, the share of its planned disbursement tranches that were actually delivered on or before the date they were planned for. Did the money arrive when the partner said it would? Bars are coloured darker the more on-time the partner; hover for average lateness."
+                          mathTooltip="Each activity's planned disbursement schedule (planned_disbursements: a USD target due by a period-end date) is compared with its actual disbursement stream (transaction type 3). For each planned tranche, the cumulative planned target at its due date is matched against the earliest point the activity's cumulative actual disbursements reached it (the fulfilment date). On time = fulfilled on or before the planned due date; average delay averages the late tranches' lateness in days. Only past-due tranches are judged; internal/pooled-fund transfers excluded. Partners need ≥3 judged tranches; top 10 by on-time share."
                           exportData={timelinessData}
                           exportFilename="disbursement-timeliness"
                           compactHeight={300}
@@ -1095,7 +1095,7 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           title="Activities with Humanitarian Components"
                           shortDescription="Per-activity financials, split into humanitarian vs development"
-                          fullDescription="Every activity that has a humanitarian component, shown as a horizontal bar. View selected financial metrics (budgets, planned disbursements, transaction types) — stacked or grouped — or switch to the humanitarian-vs-development split of actual spend."
+                          fullDescription="Every activity that has a humanitarian component, shown as a horizontal bar. View selected financial metrics (budgets, planned disbursements, transaction types), stacked or grouped, or switch to the humanitarian-vs-development split of actual spend."
                           mathTooltip="Lists published activities flagged humanitarian (IATI humanitarian flag, emergency aid type 01/02/03, or any humanitarian-flagged transaction). 'By metric' sums the chosen metrics per activity over the selected window (budgets/PDs pro-rated by period overlap). 'Humanitarian split' divides actual spend (disbursements + expenditures) into humanitarian vs development by the transaction-level humanitarian flag."
                           compactHeight={300}
                           inlineToolbar
@@ -1162,12 +1162,12 @@ export default function AnalyticsDashboardPage() {
 
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Government Contribution</h2>
-                      <p className="text-muted-foreground mb-4">Recipient-government counterpart financing (RGC) vs external development-partner disbursements — cumulative, USD</p>
+                      <p className="text-muted-foreground mb-4">Recipient-government counterpart financing (RGC) vs external development-partner disbursements (cumulative, USD)</p>
                       <ChartGrid>
                         <CompactChartCard
                           title="Government vs External Financing"
                           shortDescription="Government counterpart contribution vs external disbursements"
-                          fullDescription="Compares recipient-government counterpart contributions — cash (financial) and in-kind/other (staff, facilities, tax exemptions) — against external development-partner disbursements, cumulatively to date."
+                          fullDescription="Compares recipient-government counterpart contributions (cash and in-kind/other, such as staff, facilities and tax exemptions) against external development-partner disbursements, cumulatively to date."
                           mathTooltip="External = USD disbursements (transaction type 3) on published activities, internal transfers excluded. Government financial = sum of RGC financial counterpart contributions (lump-sum or annual rows). Government in-kind/other = estimated USD value of in-kind and other contributions. Government figures are cumulative (no date window) as they lack a reliable per-period split."
                           exportData={govContribData}
                           inlineToolbar
@@ -1223,7 +1223,7 @@ export default function AnalyticsDashboardPage() {
 
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Modality, Flows & Funding Sources</h2>
-                      <p className="text-muted-foreground mb-4">How aid is delivered — by modality, finance type, and flow type</p>
+                      <p className="text-muted-foreground mb-4">How aid is delivered, by modality, finance type, and flow type</p>
                       <ChartGrid>
                         <CompactChartCard
                           title="Financial Flows by Finance Type"
@@ -1300,7 +1300,7 @@ export default function AnalyticsDashboardPage() {
                     </div>
 
                     <div>
-                      <h2 className="text-2xl font-bold text-foreground mb-2">Budget vs Spending — Detailed Cuts</h2>
+                      <h2 className="text-2xl font-bold text-foreground mb-2">Budget vs Spending: Detailed Cuts</h2>
                       <p className="text-muted-foreground mb-4">Compare budget allocations with actual spending across categories</p>
                       {/* items-start: cards size to their own content so a tall card
                           (e.g. an error/no-data state) doesn't stretch its row-mates
@@ -1339,8 +1339,8 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           className="bg-card border-border"
                           title="Budget vs. Spending by Aid Type"
-                          shortDescription="Analyze budget and spending patterns across different aid types"
-                          fullDescription="Analyze budget and spending patterns across different aid types"
+                          shortDescription="Analyse budget and spending patterns across different aid types"
+                          fullDescription="Analyse budget and spending patterns across different aid types"
                           mathTooltip="Groups budgets and actual spending (disbursements + expenditures) by IATI aid type (project-type, budget support, technical assistance, etc.). Each transaction's aid type comes from the activity default or transaction-level override; values are USD-converted."
                           exportData={aidTypeData}
                           inlineToolbar
@@ -1371,8 +1371,8 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           className="bg-card border-border"
                           title="Budget vs. Spending by Organisation Type"
-                          shortDescription="Analyze budget and spending patterns by organisation type (Government, NGO, Multilateral, etc.)"
-                          fullDescription="Analyze budget and spending patterns by organisation type (Government, NGO, Multilateral, etc.)"
+                          shortDescription="Analyse budget and spending patterns by organisation type (Government, NGO, Multilateral, etc.)"
+                          fullDescription="Analyse budget and spending patterns by organisation type (Government, NGO, Multilateral, etc.)"
                           mathTooltip="Groups budgets and actual spending by the IATI organisation type of the providing organisation (Government, NGO, Multilateral, Foundation, etc.). All values are USD-converted and aggregated per type."
                           exportData={orgTypeData}
                           inlineToolbar
@@ -1387,8 +1387,8 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           className="bg-card border-border"
                           title="Sector Analysis"
-                          shortDescription="Analyze activity distribution across different sectors with percentage allocations"
-                          fullDescription="Analyze activity distribution across different sectors with percentage allocations"
+                          shortDescription="Analyse activity distribution across different sectors with percentage allocations"
+                          fullDescription="Analyse activity distribution across different sectors with percentage allocations"
                           mathTooltip="For each DAC sector, counts distinct activities and sums the activity-level financial totals weighted by the declared sector percentage. Top N sectors are shown; the remainder is grouped into 'Others'."
                           exportData={sectorAnalysisData}
                           inlineToolbar
@@ -1459,7 +1459,7 @@ export default function AnalyticsDashboardPage() {
                           title="Program Fragmentation"
                           shortDescription="How development partners distribute aid across National Priorities"
                           fullDescription="How development partners distribute aid across National Priorities. Each cell shows the percentage of that category's total funding contributed by each development partner."
-                          mathTooltip="For each National Priority, shows the percentage of that category's total funding contributed by each development partner — a heatmap of concentration vs fragmentation. A larger share from a single partner means more concentrated support."
+                          mathTooltip="For each National Priority, shows the percentage of that category's total funding contributed by each development partner, a heatmap of concentration vs fragmentation. A larger share from a single partner means more concentrated support."
                           compactHeight={400}
                         >
                           <ProgramFragmentationChart />
@@ -1469,7 +1469,7 @@ export default function AnalyticsDashboardPage() {
                           title="Sector Fragmentation"
                           shortDescription="How development partners distribute aid across DAC Sectors"
                           fullDescription="How development partners distribute aid across DAC Sectors. Each cell shows the percentage of that sector's total funding contributed by each development partner."
-                          mathTooltip="For each DAC sector, shows the percentage of that sector's total funding contributed by each development partner — highlighting where support is concentrated in one partner versus spread across many."
+                          mathTooltip="For each DAC sector, shows the percentage of that sector's total funding contributed by each development partner, highlighting where support is concentrated in one partner versus spread across many."
                           compactHeight={400}
                         >
                           <SectorFragmentationChart />
@@ -1479,7 +1479,7 @@ export default function AnalyticsDashboardPage() {
                           title="Location Fragmentation"
                           shortDescription="How development partners distribute aid across geographic regions"
                           fullDescription="How development partners distribute aid across geographic regions. Each cell shows the percentage of that location's total funding contributed by each development partner."
-                          mathTooltip="For each geographic region, shows the percentage of that location's total funding contributed by each development partner — highlighting geographic concentration versus fragmentation of partner support."
+                          mathTooltip="For each geographic region, shows the percentage of that location's total funding contributed by each development partner, highlighting geographic concentration versus fragmentation of partner support."
                           compactHeight={400}
                         >
                           <LocationFragmentationChart />
@@ -1499,7 +1499,7 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           title="Activity Status Distribution"
                           shortDescription="Distribution of activities by publication & submission status"
-                          fullDescription="Analyze the distribution of activities by their status (activity, publication, and submission status)"
+                          fullDescription="Analyse the distribution of activities by their status (activity, publication, and submission status)"
                           mathTooltip="Counts distinct activities grouped by activity status (Pipeline, Implementation, Finalisation, Closed, Cancelled, Suspended) and publication/submission status. Each activity contributes once per category."
                           compactHeight={340}
                         >
@@ -1533,7 +1533,7 @@ export default function AnalyticsDashboardPage() {
                       <CompactChartCard
                         title="Completion vs Plan"
                         shortDescription="Activities by how their actual end date compares to the planned end date"
-                        fullDescription="Each published activity is bucketed by how its actual completion date compares to its planned end date — finished early, on time (within ±30 days), late, or very late — plus activities still in progress and those missing a planned end date. Expand the table to see each activity's planned vs actual end and the delay in days, and open it to investigate."
+                        fullDescription="Each published activity is bucketed by how its actual completion date compares to its planned end date (finished early, on time within ±30 days, late, or very late), plus activities still in progress and those missing a planned end date. Expand the table to see each activity's planned vs actual end and the delay in days, and open it to investigate."
                         mathTooltip="For every published, non-deleted activity, delay = actual_end_date − planned_end_date (in days). Buckets: Finished early (≤ −31d), On time (±30d), Late (31–180d), Very late (>180d), In progress (planned end set but no actual end), Missing planned end date. Counts are activities, not money."
                         exportData={activityTimelinessData}
                         exportFilename="activity-timeliness"
@@ -1560,7 +1560,7 @@ export default function AnalyticsDashboardPage() {
                         title="Transaction Activity Calendar"
                         shortDescription="Daily transaction activity coloured by transaction type"
                         fullDescription="Daily transaction activity coloured by transaction type. Hover over days for details."
-                        mathTooltip="Plots each day's transaction count as a calendar heatmap — colour intensity reflects the number of transactions on that day. Switch between heatmap, timeline, and monthly-summary views to spot reporting cycles and activity spikes."
+                        mathTooltip="Plots each day's transaction count as a calendar heatmap, where colour intensity reflects the number of transactions on that day. Switch between heatmap, timeline, and monthly-summary views to spot reporting cycles and activity spikes."
                         compactHeight={200}
                       >
                         <TransactionActivityCalendar
@@ -1604,7 +1604,7 @@ export default function AnalyticsDashboardPage() {
                           title="Most Viewed Activities"
                           shortDescription="Activities ranked by number of unique page views"
                           fullDescription="Top 10 activities ranked by the number of unique users who have viewed them"
-                          mathTooltip="Ranks published activities by unique_view_count — the number of distinct registered users who have opened the activity (one view counted per user). Activities with no views are excluded."
+                          mathTooltip="Ranks published activities by unique_view_count, the number of distinct registered users who have opened the activity (one view counted per user). Activities with no views are excluded."
                           className="bg-card border-border"
                           compactHeight={300}
                           exportData={topViewedActivitiesData}
@@ -1638,7 +1638,7 @@ export default function AnalyticsDashboardPage() {
                           title="Most Bookmarked Activities"
                           shortDescription="Activities ranked by number of user bookmarks"
                           fullDescription="Top 10 activities ranked by the number of users who have bookmarked them"
-                          mathTooltip="Ranks published activities by the count of rows in activity_bookmarks per activity — how many users have saved the activity for later. A signal of sustained interest beyond a single view."
+                          mathTooltip="Ranks published activities by the count of rows in activity_bookmarks per activity, that is, how many users have saved the activity for later. A signal of sustained interest beyond a single view."
                           className="bg-card border-border"
                           compactHeight={300}
                           exportData={topBookmarkedActivitiesData}
@@ -1671,7 +1671,7 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           title="Biggest Execution Gap"
                           shortDescription="Activities with the most committed-but-undelivered funding"
-                          fullDescription="Top 10 activities ranked by execution gap — value committed but not yet disbursed or spent"
+                          fullDescription="Top 10 activities ranked by execution gap: value committed but not yet disbursed or spent"
                           mathTooltip="For each published activity, committed = sum of outgoing commitments (transaction type 2); spent = sum of disbursements + expenditures (types 3 + 4); execution gap = committed − spent (clamped at 0). Ranked by largest gap. Each bar shows total commitment split into spent and the remaining gap."
                           className="bg-card border-border"
                           compactHeight={300}
@@ -1702,8 +1702,8 @@ export default function AnalyticsDashboardPage() {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                         <CompactChartCard
                           title="Transaction Value Distribution"
-                          shortDescription="USD value of every transaction, log scale — the far-right tail is where fat-fingered amounts hide"
-                          fullDescription="Histogram of every reportable transaction's USD-converted value on a log scale (financial data spans many orders of magnitude). Bars beyond the fence are flagged as likely data-entry errors — e.g. a missing decimal or wrong currency. Expand to see and open the flagged transactions."
+                          shortDescription="USD value of every transaction, log scale; the far-right tail is where fat-fingered amounts hide"
+                          fullDescription="Histogram of every reportable transaction's USD-converted value on a log scale (financial data spans many orders of magnitude). Bars beyond the fence are flagged as likely data-entry errors, e.g. a missing decimal or wrong currency. Expand to see and open the flagged transactions."
                           mathTooltip="Each reportable transaction's USD value (value_usd, or raw value when already USD) is log10-transformed and binned. Outliers are flagged with the modified z-score (median absolute deviation, |z| > 3.5) computed in log space, so the rule is robust to the heavy right tail. Published & non-deleted activities only; internal pooled-fund transfers excluded; zero/negative values shown separately, not on the log axis."
                           className="w-full"
                           compactHeight={300}
@@ -1722,7 +1722,7 @@ export default function AnalyticsDashboardPage() {
 
                         <CompactChartCard
                           title="Budget vs Spend Ratio"
-                          shortDescription="Disbursed + spent ÷ budget per activity — bumps at 0 (never started) and >1.2 (overspend)"
+                          shortDescription="Disbursed + spent ÷ budget per activity; bumps at 0 (never started) and >1.2 (overspend)"
                           fullDescription="For each activity with a budget, the ratio of actual spend (disbursements + expenditures) to total budget. A spike at 0 means activities that have a budget but no recorded spend; anything past 1.2 (120%) is an overspend or a likely data error. Expand to see both groups."
                           mathTooltip="Ratio = USD spend (transaction types 3 + 4) ÷ USD budget (activity_budgets.usd_value) per published activity. Only activities with a positive budget are included. Bins are linear and capped at 2.0× so a single large overspend doesn't flatten the chart. Flagging is a domain rule, not statistical: ratio = 0 (nothing spent) or ratio > 1.2 (overspend). Internal transfers excluded."
                           className="w-full"
@@ -1745,12 +1745,12 @@ export default function AnalyticsDashboardPage() {
                     <div>
                       <h2 className="text-2xl font-bold text-foreground mb-2">Analytical Insights</h2>
                       <p className="text-muted-foreground mb-4">
-                        The same distributions read the other way — records that genuinely stand out from their peers. Notable, not necessarily wrong.
+                        The same distributions read the other way: records that genuinely stand out from their peers. Notable, not necessarily wrong.
                       </p>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                         <CompactChartCard
                           title="Activity Size Distribution"
-                          shortDescription="Total disbursements per activity, log scale — find the giants and the empty shells"
+                          shortDescription="Total disbursements per activity, log scale; find the giants and the empty shells"
                           fullDescription="Histogram of total disbursements (USD) per published activity on a log scale. The right tail is the portfolio's largest activities; the flagged records list the standouts. Activities with zero disbursements are reported separately as potential empty shells."
                           mathTooltip="Sums actual disbursements (type 3, USD) per published activity, then log10-bins the positive totals. Outliers flagged via modified z-score (MAD, |z| > 3.5) in log space. Internal pooled-fund transfers excluded. Activities with $0 disbursements are counted separately and not placed on the log axis."
                           className="w-full"
@@ -1771,7 +1771,7 @@ export default function AnalyticsDashboardPage() {
                         <CompactChartCard
                           title="Funder Totals Distribution"
                           shortDescription="Commitments + disbursements per provider organisation, log scale"
-                          fullDescription="Histogram of total outgoing value (commitments + disbursements, USD) per provider organisation. The flagged tail highlights funders far above their peers — useful for spotting dominant donors or a mis-attributed mega-flow."
+                          fullDescription="Histogram of total outgoing value (commitments + disbursements, USD) per provider organisation. The flagged tail highlights funders far above their peers, useful for spotting dominant donors or a mis-attributed mega-flow."
                           mathTooltip="Sums USD commitments (type 2) + disbursements (type 3) credited to each provider organisation across published activities, then log10-bins the totals. Outliers via modified z-score (MAD, |z| > 3.5) in log space. Internal pooled-fund transfers excluded."
                           className="w-full"
                           compactHeight={300}
@@ -1790,7 +1790,7 @@ export default function AnalyticsDashboardPage() {
 
                         <CompactChartCard
                           title="Sector Funding Distribution"
-                          shortDescription="Disbursements allocated per DAC sector, log scale — over/under-funded sectors"
+                          shortDescription="Disbursements allocated per DAC sector, log scale; over/under-funded sectors"
                           fullDescription="Histogram of disbursements allocated to each DAC sector (using each activity's declared sector percentages) on a log scale. The flagged tail surfaces the sectors absorbing far more (or less) than the rest."
                           mathTooltip="Each activity's total disbursements (type 3, USD) are split across its declared DAC sectors using activity_sectors.percentage, then summed per sector code and log10-binned. Outliers via modified z-score (MAD, |z| > 3.5) in log space. Published & non-deleted activities only; internal transfers excluded."
                           className="w-full"

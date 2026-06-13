@@ -46,19 +46,10 @@ import {
   Briefcase,
   X,
 } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  getSortIcon,
-  sortableHeaderClasses,
-} from '@/components/ui/table';
 import { apiFetch } from '@/lib/api-fetch';
 import { formatCurrencyCompact, formatCurrencyPrecise, formatAxisCurrency } from '@/lib/format';
 import { exportChartToCSV } from '@/lib/chart-export';
+import { ChartDataTable } from '@/components/ui/chart-data-table';
 import { Download } from 'lucide-react';
 
 interface BudgetTrendPoint {
@@ -146,6 +137,19 @@ const CARD_DESCRIPTIONS = {
     "Top-level sector categories (DAC 3-digit) across your organisation's ongoing activities. Use the metric toggle to size bars by budget, planned disbursements, or number of activities. All financial figures are in USD.",
 } as const;
 
+// One-sentence explainers shown in the expanded modal header (below the title).
+// The longer CARD_DESCRIPTIONS above still back the collapsed help tooltip.
+const SHORT_DESCRIPTIONS = {
+  budgets:
+    "Total budget amounts (USD) across your organisation's activities, grouped by your organisation's default financial year.",
+  planned:
+    "Total planned disbursement amounts (USD) across your organisation's activities, grouped by your organisation's default financial year.",
+  transactions:
+    "Actual transaction values (USD) by IATI transaction type, grouped by your organisation's default financial year, for every transaction where your organisation is the reporter, provider, or receiver.",
+  sectors:
+    "Top-level sector categories (DAC 3-digit) across your organisation's activities, sized by the selected metric (USD).",
+} as const;
+
 // Transaction-type color resolves through the single source of truth in
 // @/lib/chart-colors. The legacy (typeCode, index) signature is preserved so
 // existing call sites are untouched; the index argument is now ignored — the
@@ -182,9 +186,8 @@ const transformDataForValueChart = (
   });
 };
 
-// Aggregate/headline values are USD-converted (see chart labels "(USD)").
-const formatCurrency = (value: number): string => formatCurrencyCompact(value);
-const formatCurrencyFull = (value: number): string => formatCurrencyPrecise(value);
+// Aggregate/headline values are USD-converted (see chart labels "(USD)") —
+// compact via formatCurrencyCompact, exact via formatCurrencyPrecise (@/lib/format).
 
 type ViewMode = 'bar' | 'line' | 'table';
 
@@ -206,7 +209,7 @@ const periodAmountTooltipContent = (expanded: boolean) =>
             <tbody>
               <tr>
                 <td className="px-3 py-1.5 text-muted-foreground">{point.label}</td>
-                <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyFull(point.amount)}</td>
+                <td className="px-3 py-1.5 text-right font-medium">{formatCurrencyPrecise(point.amount)}</td>
               </tr>
             </tbody>
           </table>
@@ -235,14 +238,6 @@ function TrendChart({
   expanded: boolean;
   emptyLabel: string;
 }) {
-  // Sort state for the table view (chronological by default).
-  const [sortField, setSortField] = useState<'label' | 'amount'>('label');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
-  const toggleSort = (field: 'label' | 'amount') => {
-    if (sortField === field) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-    else { setSortField(field); setSortDir('asc'); }
-  };
-
   if (!data || data.length === 0) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground text-body">
@@ -252,55 +247,54 @@ function TrendChart({
   }
 
   if (mode === 'table') {
-    const sorted = [...data].sort((a, b) => {
-      const cmp = sortField === 'amount'
-        ? (a.amount || 0) - (b.amount || 0)
-        : a.year - b.year; // chronological order backs the "Period" column
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
+    // Shared ChartDataTable → coloured header square + sortable + footer total,
+    // matching the Financial Totals table view.
     return (
       <div className="h-full overflow-y-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className={sortableHeaderClasses} onClick={() => toggleSort('label')}>
-                <span className="flex items-center gap-1">Period {getSortIcon('label', sortField, sortDir)}</span>
-              </TableHead>
-              <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => toggleSort('amount')}>
-                <span className="flex items-center gap-1 justify-end">Amount (USD) {getSortIcon('amount', sortField, sortDir)}</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sorted.map((point) => (
-              <TableRow key={point.year}>
-                <TableCell>{point.label}</TableCell>
-                <TableCell className="text-right">{formatCurrencyFull(point.amount)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <ChartDataTable
+          rows={data.map((p) => ({ Period: p.label, 'Amount (USD)': p.amount }))}
+          columns={[
+            { key: 'Period', label: 'Period' },
+            { key: 'Amount (USD)', label: 'Amount (USD)', numeric: true, color, currency: 'USD' },
+          ]}
+          currency="USD"
+          maxHeight={420}
+        />
       </div>
     );
   }
 
   const margin = expanded
     ? { top: 20, right: 30, left: 20, bottom: 20 }
-    : { top: 4, right: 4, left: 0, bottom: 0 };
+    : { top: 4, right: 16, left: 16, bottom: 0 }; // side room so edge FY labels (e.g. CY2023) aren't clipped
   const tooltip = <Tooltip content={periodAmountTooltipContent(expanded)} cursor={{ fill: 'rgba(15,23,42,0.04)' }} />;
+  // Fiscal-year category axis — shown in BOTH the collapsed sparkline and the
+  // expanded modal. Collapsed is compact (small, no axis/tick lines) and keeps
+  // the first + last FY labels (e.g. the latest, 2025) so the period is clear.
+  const xAxis = (
+    <XAxis
+      dataKey="label"
+      tick={{ fontSize: expanded ? 12 : 9, fill: '#64748b' }}
+      axisLine={expanded}
+      tickLine={expanded}
+      interval="preserveStartEnd"
+      tickMargin={4}
+      height={expanded ? 30 : 24}
+    />
+  );
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       {mode === 'line' ? (
         <LineChart data={data} margin={margin}>
-          {expanded && <XAxis dataKey="label" tick={{ fontSize: 12 }} />}
+          {xAxis}
           {expanded && <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />}
           {tooltip}
           <Line type="monotone" dataKey="amount" stroke={color} strokeWidth={2} dot={expanded ? { r: 4 } : false} name="Amount (USD)" />
         </LineChart>
       ) : (
         <BarChart data={data} margin={margin}>
-          {expanded && <XAxis dataKey="label" tick={{ fontSize: 12 }} />}
+          {xAxis}
           {expanded && <YAxis tickFormatter={(v) => formatAxisCurrency(v)} tick={{ fontSize: 12 }} />}
           {tooltip}
           <Bar dataKey="amount" radius={[4, 4, 0, 0]} fill={color} name="Amount (USD)" />
@@ -416,8 +410,12 @@ function ExpandedChartModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent chart className="max-w-[1100px] w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between gap-4">
-            <DialogTitle>{title}</DialogTitle>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <DialogTitle>{title}</DialogTitle>
+              {/* One-sentence explainer sits in the header, directly below the heading. */}
+              <DialogDescription className="mt-1">{description}</DialogDescription>
+            </div>
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:bg-muted flex-shrink-0" onClick={onClose} title="Close" aria-label="Close">
               <X className="h-4 w-4" />
             </Button>
@@ -431,7 +429,6 @@ function ExpandedChartModal({
           </div>
         )}
         <div className="h-[440px]">{children}</div>
-        <DialogDescription className="mt-1">{description}</DialogDescription>
       </DialogContent>
     </Dialog>
   );
@@ -445,14 +442,6 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
   const [budgetViewMode, setBudgetViewMode] = useState<ViewMode>('bar');
   const [plannedViewMode, setPlannedViewMode] = useState<ViewMode>('bar');
   const [transactionsViewMode, setTransactionsViewMode] = useState<ViewMode>('bar');
-  // Sort state for the expanded transactions table. Field is 'month', 'total',
-  // or 'type_<code>'; default chronological (month asc, mirroring the API order).
-  const [txTableSortField, setTxTableSortField] = useState<string>('month');
-  const [txTableSortDir, setTxTableSortDir] = useState<'asc' | 'desc'>('asc');
-  const toggleTxSort = (field: string) => {
-    if (txTableSortField === field) setTxTableSortDir(txTableSortDir === 'asc' ? 'desc' : 'asc');
-    else { setTxTableSortField(field); setTxTableSortDir('asc'); }
-  };
   const [sectorsMetric, setSectorsMetric] = useState<'budget' | 'planned' | 'activities'>('budget');
   const transactionChartRef = useRef<HTMLDivElement>(null);
 
@@ -518,7 +507,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
     : sectorsMetric === 'planned' ? s.totalPlannedDisbursements
     : s.activityCount;
   const formatSectorMetric = (value: number) =>
-    sectorsMetric === 'activities' ? `${value}` : formatCurrencyFull(value);
+    sectorsMetric === 'activities' ? `${value}` : formatCurrencyPrecise(value);
 
   // Collapsed transactions sparkline: stacked bars by type, no axes, with the
   // same cursor-anchored portal tooltip used previously.
@@ -538,11 +527,19 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
 
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-          {/* Hidden category axis: without a dataKey Recharts passes the row
-              INDEX as the tooltip `label`, breaking the month lookup below
-              (the cause of the all-$0 hover). `hide` keeps the sparkline clean. */}
-          <XAxis dataKey="month" hide />
+        <BarChart data={chartData} margin={{ top: 4, right: 16, left: 16, bottom: 0 }}>
+          {/* Fiscal-year category axis (compact). A dataKey is also required so
+              Recharts passes the FY label — not the row index — as the tooltip
+              `label`, which the month lookup below depends on. */}
+          <XAxis
+            dataKey="month"
+            tick={{ fontSize: 9, fill: '#64748b' }}
+            axisLine={false}
+            tickLine={false}
+            interval="preserveStartEnd"
+            tickMargin={4}
+            height={24}
+          />
           <Tooltip
             wrapperStyle={{ visibility: 'hidden' }}
             cursor={{ fill: 'rgba(15,23,42,0.04)' }}
@@ -564,7 +561,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                       <thead className="bg-surface-muted">
                         <tr className="bg-surface-muted">
                           <th className="px-3 py-1.5 text-left font-medium text-foreground whitespace-nowrap">{label}</th>
-                          <th className="px-3 py-1.5 text-right font-medium text-foreground whitespace-nowrap">{formatCurrency(dataPoint?.amount || 0)}</th>
+                          <th className="px-3 py-1.5 text-right font-medium text-foreground whitespace-nowrap">{formatCurrencyCompact(dataPoint?.amount || 0)}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -578,7 +575,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                                   {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
                                 </span>
                               </td>
-                              <td className="px-3 py-1 text-right font-medium whitespace-nowrap">{formatCurrency(amount)}</td>
+                              <td className="px-3 py-1 text-right font-medium whitespace-nowrap">{formatCurrencyCompact(amount)}</td>
                             </tr>
                           ))}
                       </tbody>
@@ -637,12 +634,12 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                               {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
                             </span>
                           </td>
-                          <td className="px-3 py-1 text-right font-medium">{formatCurrency(amount)}</td>
+                          <td className="px-3 py-1 text-right font-medium">{formatCurrencyCompact(amount)}</td>
                         </tr>
                       ))}
                     <tr className="border-t-2 border-input">
                       <td className="px-3 py-1.5 font-semibold">Total</td>
-                      <td className="px-3 py-1.5 text-right font-semibold">{formatCurrency(dataPoint?.amount || 0)}</td>
+                      <td className="px-3 py-1.5 text-right font-semibold">{formatCurrencyCompact(dataPoint?.amount || 0)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -655,52 +652,32 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
     );
 
     if (transactionsViewMode === 'table') {
-      const sortedRows = [...(data?.transactionTrend || [])].sort((a, b) => {
-        let cmp = 0;
-        if (txTableSortField === 'month') {
-          cmp = a.month.localeCompare(b.month);
-        } else if (txTableSortField === 'total') {
-          cmp = (a.amount || 0) - (b.amount || 0);
-        } else if (txTableSortField.startsWith('type_')) {
-          const type = txTableSortField.slice(5);
-          cmp = (a.typeAmounts?.[type] || 0) - (b.typeAmounts?.[type] || 0);
-        }
-        return txTableSortDir === 'asc' ? cmp : -cmp;
+      // Shared ChartDataTable: coloured header square + IATI code chip per type,
+      // sortable, with per-type footer totals. NO per-row Total column — summing
+      // across types (incoming + outgoing) in one period would mix directions.
+      const rows = (data?.transactionTrend || []).map((p) => {
+        const row: Record<string, any> = { Period: p.month };
+        uniqueTypes.forEach((t) => { row[`type_${t}`] = p.typeAmounts?.[t] || 0; });
+        return row;
       });
+      const columns = [
+        { key: 'Period', label: 'Period' },
+        ...uniqueTypes.map((type) => ({
+          key: `type_${type}`,
+          label: (
+            <span className="inline-flex items-center gap-1.5">
+              <CodeChip code={type} />
+              {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
+            </span>
+          ),
+          numeric: true,
+          color: getTransactionTypeColor(type, uniqueTypes.indexOf(type)),
+          currency: 'USD',
+        })),
+      ];
       return (
         <div className="h-full overflow-y-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className={sortableHeaderClasses} onClick={() => toggleTxSort('month')}>
-                  <span className="flex items-center gap-1">Period {getSortIcon('month', txTableSortField, txTableSortDir)}</span>
-                </TableHead>
-                {uniqueTypes.map(type => (
-                  <TableHead key={type} className={`text-right ${sortableHeaderClasses}`} onClick={() => toggleTxSort(`type_${type}`)}>
-                    <span className="flex items-center gap-1.5 justify-end">
-                      <CodeChip code={type} />
-                      {TRANSACTION_TYPE_LABELS[type] || `Type ${type}`}
-                      {getSortIcon(`type_${type}`, txTableSortField, txTableSortDir)}
-                    </span>
-                  </TableHead>
-                ))}
-                <TableHead className={`text-right ${sortableHeaderClasses}`} onClick={() => toggleTxSort('total')}>
-                  <span className="flex items-center gap-1 justify-end">Total {getSortIcon('total', txTableSortField, txTableSortDir)}</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedRows.map((point) => (
-                <TableRow key={point.month}>
-                  <TableCell>{point.month}</TableCell>
-                  {uniqueTypes.map(type => (
-                    <TableCell key={type} className="text-right">{formatCurrency(point.typeAmounts?.[type] || 0)}</TableCell>
-                  ))}
-                  <TableCell className="text-right font-medium">{formatCurrency(point.amount)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <ChartDataTable rows={rows} columns={columns} currency="USD" totalsColumn={false} maxHeight={420} />
         </div>
       );
     }
@@ -763,13 +740,13 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                   <div className="h-full cursor-default transition-opacity hover:opacity-80" style={{ width: `${pct}%`, backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }} />
                 </TooltipTrigger>
                 <TooltipContent side="top" className="p-0 overflow-hidden w-max max-w-[340px]">
-                  <div className="bg-white text-helper">
-                    <div className="px-3 py-1.5 bg-surface-muted font-semibold text-foreground border-b border-border flex items-start gap-1.5"><span className="inline-flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-mono rounded px-1.5 py-0.5 shrink-0">{sector.code}</span><span className="break-words">{sector.name}</span></div>
-                    <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Budget</span><span className="font-medium">{formatCurrency(sector.totalBudget)}</span></div>
-                    <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Planned Disbursements</span><span className="font-medium">{formatCurrency(sector.totalPlannedDisbursements)}</span></div>
-                    <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Disbursed</span><span className="font-medium">{formatCurrency(sector.totalDisbursements)}</span></div>
+                  <div className="bg-white text-helper divide-y divide-border">
+                    <div className="px-3 py-1.5 bg-surface-muted font-semibold text-foreground flex items-start gap-1.5"><span className="inline-flex items-center justify-center bg-muted text-muted-foreground text-[10px] font-mono rounded px-1.5 py-0.5 shrink-0">{sector.code}</span><span className="break-words">{sector.name}</span></div>
+                    <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Budget</span><span className="font-medium">{formatCurrencyCompact(sector.totalBudget)}</span></div>
+                    <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Planned Disbursements</span><span className="font-medium">{formatCurrencyCompact(sector.totalPlannedDisbursements)}</span></div>
+                    <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Disbursed</span><span className="font-medium">{formatCurrencyCompact(sector.totalDisbursements)}</span></div>
                     <div className="px-3 py-1 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Activities</span><span className="font-medium">{sector.activityCount}</span></div>
-                    <div className="px-3 py-1 pb-1.5 flex justify-between gap-4 border-t border-border"><span className="text-muted-foreground whitespace-nowrap">Share of Planned Disbursements</span><span className="font-medium">{sharePct.toFixed(1)}%</span></div>
+                    <div className="px-3 py-1 pb-1.5 flex justify-between gap-4"><span className="text-muted-foreground whitespace-nowrap">Share of Planned Disbursements</span><span className="font-medium">{sharePct.toFixed(1)}%</span></div>
                   </div>
                 </TooltipContent>
               </UITooltip>
@@ -806,12 +783,12 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Card 1: Total Budgets */}
         <HeroCardShell
-          title="Total Budgets"
+          title="Budgets"
           description={CARD_DESCRIPTIONS.budgets}
-          headline={formatCurrency(totalBudget)}
+          headline={formatCurrencyCompact(totalBudget)}
           onExpand={() => setExpandedChart('budgets')}
         >
-          <div className="h-14">
+          <div className="h-20">
             <TrendChart data={data?.budgetTrend || []} mode="bar" color={BUDGET_COLOR} expanded={false} emptyLabel="No budget data" />
           </div>
         </HeroCardShell>
@@ -820,10 +797,10 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
         <HeroCardShell
           title="Planned Disbursements"
           description={CARD_DESCRIPTIONS.planned}
-          headline={formatCurrency(totalPlanned)}
+          headline={formatCurrencyCompact(totalPlanned)}
           onExpand={() => setExpandedChart('planned')}
         >
-          <div className="h-14">
+          <div className="h-20">
             <TrendChart data={data?.plannedBudgetTrend || []} mode="bar" color={PLANNED_DISBURSEMENT_COLOR} expanded={false} emptyLabel="No planned data" />
           </div>
         </HeroCardShell>
@@ -832,10 +809,10 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
         <HeroCardShell
           title="Transactions by Type"
           description={CARD_DESCRIPTIONS.transactions}
-          headline={formatCurrency(totalTransactionValue)}
+          headline={formatCurrencyCompact(totalTransactionValue)}
           onExpand={() => setExpandedChart('transactions')}
         >
-          <div className="h-14" ref={transactionChartRef}>
+          <div className="h-20" ref={transactionChartRef}>
             {renderTransactionSparkline()}
           </div>
         </HeroCardShell>
@@ -852,7 +829,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
           }
           onExpand={() => setExpandedChart('sectors')}
         >
-          <div className="h-14 flex items-center">
+          <div className="h-20 flex items-center">
             <div className="w-full">{renderSectorBar(true)}</div>
           </div>
         </HeroCardShell>
@@ -862,12 +839,12 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
       <ExpandedChartModal
         open={expandedChart === 'budgets'}
         onClose={() => setExpandedChart(null)}
-        title="Total Budgets Over Time (USD)"
-        description={CARD_DESCRIPTIONS.budgets}
+        title="Budgets"
+        description={SHORT_DESCRIPTIONS.budgets}
         toolbar={
           <>
             <ChartViewToggle mode={budgetViewMode} setMode={setBudgetViewMode} />
-            <CsvButton onExport={() => data?.budgetTrend && exportChartToCSV(data.budgetTrend.map(p => ({ Period: p.label, 'Amount (USD)': p.amount })), 'Total Budgets')} />
+            <CsvButton onExport={() => data?.budgetTrend && exportChartToCSV(data.budgetTrend.map(p => ({ Period: p.label, 'Amount (USD)': p.amount })), 'Budgets')} />
           </>
         }
       >
@@ -877,8 +854,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
       <ExpandedChartModal
         open={expandedChart === 'planned'}
         onClose={() => setExpandedChart(null)}
-        title="Planned Disbursements Over Time (USD)"
-        description={CARD_DESCRIPTIONS.planned}
+        title="Planned Disbursements"
+        description={SHORT_DESCRIPTIONS.planned}
         toolbar={
           <>
             <ChartViewToggle mode={plannedViewMode} setMode={setPlannedViewMode} />
@@ -892,8 +869,8 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
       <ExpandedChartModal
         open={expandedChart === 'transactions'}
         onClose={() => setExpandedChart(null)}
-        title="Transaction Values by Type Over Time (USD)"
-        description={CARD_DESCRIPTIONS.transactions}
+        title="Transactions by Type"
+        description={SHORT_DESCRIPTIONS.transactions}
         toolbar={
           <>
             <ChartViewToggle mode={transactionsViewMode} setMode={setTransactionsViewMode} />
@@ -908,7 +885,7 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
         open={expandedChart === 'sectors'}
         onClose={() => setExpandedChart(null)}
         title="Sector Distribution"
-        description={CARD_DESCRIPTIONS.sectors}
+        description={SHORT_DESCRIPTIONS.sectors}
         toolbar={
           <>
             {sectorMetricToggle}
@@ -936,12 +913,14 @@ export function HeroVisualizationCards({ organizationId }: HeroVisualizationCard
                           <TooltipTrigger asChild>
                             <div className="h-full cursor-default" style={{ width: `${pct}%`, backgroundColor: SECTOR_COLORS[index % SECTOR_COLORS.length] }} />
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="p-0 overflow-hidden">
+                          {/* w-max + wider max-width so the financial rows aren't
+                              clipped by the tooltip's default max-w-[16rem]. */}
+                          <TooltipContent side="top" className="p-0 overflow-hidden w-max max-w-[420px]">
                             <div className="bg-white text-body">
                               <div className="px-3 py-2 bg-surface-muted font-semibold text-foreground border-b border-border">{sector.name} ({sector.code})</div>
-                              <div className="px-3 py-1.5 flex justify-between gap-6"><span className="text-muted-foreground">Budget (USD)</span><span className="font-medium">{formatCurrencyFull(sector.totalBudget)}</span></div>
-                              <div className="px-3 py-1.5 flex justify-between gap-6"><span className="text-muted-foreground">Planned Disbursements (USD)</span><span className="font-medium">{formatCurrencyFull(sector.totalPlannedDisbursements)}</span></div>
-                              <div className="px-3 py-1.5 flex justify-between gap-6"><span className="text-muted-foreground">Disbursements (USD)</span><span className="font-medium">{formatCurrencyFull(sector.totalDisbursements)}</span></div>
+                              <div className="px-3 py-1.5 flex justify-between gap-6"><span className="text-muted-foreground">Budget (USD)</span><span className="font-medium">{formatCurrencyPrecise(sector.totalBudget)}</span></div>
+                              <div className="px-3 py-1.5 flex justify-between gap-6"><span className="text-muted-foreground">Planned Disbursements (USD)</span><span className="font-medium">{formatCurrencyPrecise(sector.totalPlannedDisbursements)}</span></div>
+                              <div className="px-3 py-1.5 flex justify-between gap-6"><span className="text-muted-foreground">Disbursements (USD)</span><span className="font-medium">{formatCurrencyPrecise(sector.totalDisbursements)}</span></div>
                               <div className="px-3 py-1.5 pb-2 flex justify-between gap-6"><span className="text-muted-foreground">Activities</span><span className="font-medium">{sector.activityCount}</span></div>
                             </div>
                           </TooltipContent>

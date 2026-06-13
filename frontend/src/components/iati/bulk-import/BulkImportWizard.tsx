@@ -184,10 +184,10 @@ export default function BulkImportWizard() {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                     isActive
-                      ? 'bg-gray-900 text-white'
+                      ? 'bg-primary text-primary-foreground'
                       : isPast
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-gray-900 text-white opacity-40'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-primary text-primary-foreground opacity-40'
                   }`}
                 >
                   {isPast ? (

@@ -125,7 +125,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
       {/* Timeline fields */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Label>Construction Period <RequiredDot /> <HelpTooltip text="How long the construction or setup phase will take. Enter years and months freely — the total is calculated automatically." /></Label>
+          <Label>Construction Period <RequiredDot /> <HelpTooltip text="How long the construction or setup phase will take. Enter years and months freely, and the total is calculated automatically." /></Label>
           <div className="flex gap-2 items-center">
             <Input
               type="number"
@@ -191,7 +191,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
           </div>
         </div>
         <div>
-          <Label>Project Life <HelpTooltip text="Total project lifespan — auto-calculated from construction + operational periods." /></Label>
+          <Label>Project Life <HelpTooltip text="Total project lifespan, auto-calculated from construction + operational periods." /></Label>
           <div className="flex gap-2 items-center">
             <Input
               type="number"
@@ -476,7 +476,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               onCheckedChange={v => updateField('has_technical_design', v)}
               disabled={isLocked}
             />
-            <Label>Technical design exists <FieldCheck value={formData.has_technical_design} /> <HelpTooltip text="A technical design is a separate engineering document — such as drawings, specifications, or bills of quantities — that details how the project will be built. This is different from the feasibility study, which assesses whether the project is viable. Toggle this on if any level of technical design work has been completed." /></Label>
+            <Label>Technical design exists <FieldCheck value={formData.has_technical_design} /> <HelpTooltip text="A technical design is a separate engineering document (such as drawings, specifications, or bills of quantities) that details how the project will be built. This is different from the feasibility study, which assesses whether the project is viable. Toggle this on if any level of technical design work has been completed." /></Label>
           </div>
           {formData.has_technical_design && (
             <>
@@ -518,7 +518,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               onCheckedChange={v => updateField('has_revenue_component', v)}
               disabled={isLocked}
             />
-            <Label>Project has revenue-generating component <FieldCheck value={formData.has_revenue_component} /> <HelpTooltip text="A revenue-generating component is any part of the project that is expected to produce income — for example, user fees, tolls, lease payments, or sales of goods and services. If the project will generate any direct income (not just economic benefits), toggle this on." /></Label>
+            <Label>Project has revenue-generating component <FieldCheck value={formData.has_revenue_component} /> <HelpTooltip text="A revenue-generating component is any part of the project that is expected to produce income, for example user fees, tolls, lease payments, or sales of goods and services. If the project will generate any direct income (not just economic benefits), toggle this on." /></Label>
           </div>
 
           {formData.has_revenue_component && (
@@ -689,7 +689,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <Label className="mb-0">Land Acquisition Details <FieldCheck value={formData.land_acquisition_details} /> <HelpTooltip text="Provide further details on the land acquisition — location, current use, ownership, and any known issues. Minimum 200 characters recommended." /></Label>
+                  <Label className="mb-0">Land Acquisition Details <FieldCheck value={formData.land_acquisition_details} /> <HelpTooltip text="Provide further details on the land acquisition: location, current use, ownership, and any known issues. Minimum 200 characters recommended." /></Label>
                   <CharacterSuggestion value={formData.land_acquisition_details} />
                 </div>
                 <Textarea
@@ -716,7 +716,7 @@ export function StagePreliminaryFS({ wizard }: StagePreliminaryFSProps) {
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <Label className="mb-0">Resettlement Details <FieldCheck value={formData.resettlement_details} /> <HelpTooltip text="Provide further details on the resettlement — affected communities, proposed relocation sites, and compensation approach. Minimum 200 characters recommended." /></Label>
+                  <Label className="mb-0">Resettlement Details <FieldCheck value={formData.resettlement_details} /> <HelpTooltip text="Provide further details on the resettlement: affected communities, proposed relocation sites, and compensation approach. Minimum 200 characters recommended." /></Label>
                   <CharacterSuggestion value={formData.resettlement_details} />
                 </div>
                 <Textarea

@@ -35,25 +35,6 @@ import { formatTooltipCurrency, formatAxisCurrency, formatCurrencyPrecise } from
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { ChartDataTable } from '@/components/ui/chart-data-table'
 
-// Inline currency formatter to avoid initialization issues
-const formatCurrencyAbbreviated = (value: number): string => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${Math.round(absValue / 1000000000)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${Math.round(absValue / 1000000)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${Math.round(absValue / 1000)}k`
-  } else {
-    formatted = `$${Math.round(absValue)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
-}
-
 // Generate list of available years (from 2010 to current year + 10)
 const currentYear = new Date().getFullYear()
 const AVAILABLE_YEARS = Array.from(
@@ -542,18 +523,6 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayData, selectedMetrics])
 
-  const formatCurrency = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      return formatCurrencyAbbreviated(value)
-    } catch (error) {
-      console.error('[AllDonorsChart] Error formatting currency:', error, value)
-      return '$0'
-    }
-  }
-
   const formatPercentage = (value: number) => {
     if (total === 0) return '0%'
     return `${((value / total) * 100).toFixed(1)}%`
@@ -936,7 +905,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                           size="sm"
                           className="h-8 gap-1"
                           title={localDateRange?.from && localDateRange?.to
-                            ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                            ? `${format(localDateRange.from, 'd MMM yyyy')} – ${format(localDateRange.to, 'd MMM yyyy')}`
                             : undefined}
                         >
                           <CalendarIcon className="h-4 w-4" />
@@ -1249,7 +1218,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
                         size="sm"
                         className="h-8 gap-1"
                         title={localDateRange?.from && localDateRange?.to
-                          ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                          ? `${format(localDateRange.from, 'd MMM yyyy')} – ${format(localDateRange.to, 'd MMM yyyy')}`
                           : undefined}
                       >
                         <CalendarIcon className="h-4 w-4" />
@@ -1777,7 +1746,7 @@ export function AllDonorsHorizontalBarChart({ dateRange, refreshKey, onDataChang
       {/* Explanatory text */}
 
       <p className="text-body text-muted-foreground leading-relaxed">
-        This chart ranks external development partners by their financial contributions for the metric(s) you select. By default it shows actual disbursements, but you can switch to or layer in Total Budgets, Total Planned Disbursements, or any of the 13 IATI transaction types from the metrics dropdown — bar lengths reflect the sum across every metric selected.
+        This chart ranks external development partners by their financial contributions for the metric(s) you select. By default it shows actual disbursements, but you can switch to or layer in Total Budgets, Total Planned Disbursements, or any of the 13 IATI transaction types from the metrics dropdown; bar lengths reflect the sum across every metric selected.
         The stacked view groups partners by organisation type, with individual organisations shown as segments within each bar for quick identification of the largest contributors.
       </p>
     </div>

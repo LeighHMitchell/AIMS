@@ -682,43 +682,6 @@ export function SectorDisbursementOverTime({
   }, [aggregatedData.length, hasInitialized, selectedMetrics])
 
 
-  // Format currency for Y-axis (e.g., $27m)
-  const formatYAxisCurrency = (value: number) => {
-    if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(0)}b`
-    } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(0)}m`
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}k`
-    }
-    return `$${value.toFixed(0)}`
-  }
-
-  const formatCurrencyFull = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value)
-  }
-
-  // Format currency compact (e.g., $5.2m, $1.3b)
-  const formatCurrencyCompact = (value: number) => {
-    const absValue = Math.abs(value)
-    const sign = value < 0 ? '-' : ''
-
-    if (absValue >= 1000000000) {
-      return `${sign}$${(absValue / 1000000000).toFixed(1)}b`
-    } else if (absValue >= 1000000) {
-      return `${sign}$${(absValue / 1000000).toFixed(1)}m`
-    } else if (absValue >= 1000) {
-      return `${sign}$${(absValue / 1000).toFixed(1)}k`
-    } else {
-      return `${sign}$${absValue.toFixed(0)}`
-    }
-  }
-
   // Custom tooltip with hierarchical grouping. Sector-level entries surface
   // their sum across the selected metrics; when more than one metric is
   // selected we add a small per-metric breakdown line under each sector row.
@@ -844,7 +807,7 @@ export function SectorDisbursementOverTime({
     } else if (aggregationLevel === 'category') {
       sortedGroups.forEach((group) => {
         rows.push({
-          label: `${group.groupCode} · ${group.groupName} — ${formatTooltipCurrency(group.groupTotal, isExpanded)}`,
+          label: `${group.groupCode} · ${group.groupName}: ${formatTooltipCurrency(group.groupTotal, isExpanded)}`,
           value: '',
           isGroupHeader: true,
         })
@@ -863,7 +826,7 @@ export function SectorDisbursementOverTime({
     } else {
       sortedGroups.forEach((group) => {
         rows.push({
-          label: `${group.groupCode} · ${group.groupName} — ${formatTooltipCurrency(group.groupTotal, isExpanded)}`,
+          label: `${group.groupCode} · ${group.groupName}: ${formatTooltipCurrency(group.groupTotal, isExpanded)}`,
           value: '',
           isGroupHeader: true,
         })
@@ -1053,7 +1016,7 @@ export function SectorDisbursementOverTime({
                           className="h-8 gap-1"
                           title={localDateRange?.from && localDateRange?.to &&
                             !isNaN(localDateRange.from.getTime()) && !isNaN(localDateRange.to.getTime())
-                              ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                              ? `${format(localDateRange.from, 'd MMM yyyy')} – ${format(localDateRange.to, 'd MMM yyyy')}`
                               : undefined}
                         >
                           <CalendarIcon className="h-4 w-4" />
@@ -1476,7 +1439,7 @@ export function SectorDisbursementOverTime({
         {/* Explanatory text */}
 
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This chart shows how sector financial flows have changed over time. Pick any combination of the 15 IATI-aligned metrics — Total Budgets, Planned Disbursements, and the 13 transaction types — and view the result at Sector Category, Sector, or Sub-sector level.
+          This chart shows how sector financial flows have changed over time. Pick any combination of the 15 IATI-aligned metrics (Total Budgets, Planned Disbursements, and the 13 transaction types) and view the result at Sector Category, Sector, or Sub-sector level.
           Use the stacked area or bar chart to see cumulative totals across sectors, switch to line view to compare individual sector trends, or open the table for the underlying numbers.
         </p>
     </div>

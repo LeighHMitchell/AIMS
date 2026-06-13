@@ -289,7 +289,7 @@ function StepBasicInfo({
             <SelectContent>
               <SelectItem value="none">None</SelectItem>
               {ministries.map(m => (
-                <SelectItem key={m.id} value={m.id}>{m.code} — {m.name}</SelectItem>
+                <SelectItem key={m.id} value={m.id}>{m.code}: {m.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>

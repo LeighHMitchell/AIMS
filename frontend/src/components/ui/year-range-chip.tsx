@@ -304,9 +304,9 @@ export function YearRangeChip({
               className={`h-8 gap-1 ${buttonClassName ?? ''}`}
               title={
                 effectiveDateRange?.from && effectiveDateRange?.to
-                  ? `${format(effectiveDateRange.from, 'MMM d, yyyy')} – ${format(
+                  ? `${format(effectiveDateRange.from, 'd MMM yyyy')} – ${format(
                       effectiveDateRange.to,
-                      'MMM d, yyyy'
+                      'd MMM yyyy'
                     )}`
                   : undefined
               }

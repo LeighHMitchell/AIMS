@@ -14,25 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, Download } from 'lucide-react'
 import { SectorTimeSeriesData } from '@/types/sector-analytics'
-import { formatTooltipCurrency } from './sectorTimeSeriesQueries'
-// Inline currency formatter to avoid initialization issues
-const formatCurrencyAbbreviated = (value: number): string => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${(absValue / 1000000).toFixed(1)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${(absValue / 1000).toFixed(1)}k`
-  } else {
-    formatted = `$${absValue.toFixed(0)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
-}
+import { formatCurrencyCompact } from '@/lib/format'
 
 interface SectorTimeSeriesTableProps {
   data: SectorTimeSeriesData[]
@@ -145,8 +127,8 @@ export function SectorTimeSeriesTable({
     }
   }
 
-  // Use the module-level currency formatter
-  const formatCompactCurrency = formatCurrencyAbbreviated
+  // Canonical compact currency from the shared lib.
+  const formatCompactCurrency = formatCurrencyCompact
 
   const handleExportCSV = () => {
     const headers = [
@@ -296,8 +278,8 @@ export function SectorTimeSeriesTable({
                       {formatCompactCurrency(grandTotal)}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right text-muted-foreground">-</TableCell>
-                  <TableCell className="text-right text-muted-foreground">-</TableCell>
+                  <TableCell className="text-right text-muted-foreground">—</TableCell>
+                  <TableCell className="text-right text-muted-foreground">—</TableCell>
                 </TableRow>
               </>
             )}

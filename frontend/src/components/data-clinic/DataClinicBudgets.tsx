@@ -362,7 +362,7 @@ export function DataClinicBudgets() {
               BUDGET_TYPE_LABELS[String(value) as keyof typeof BUDGET_TYPE_LABELS] :
               field === 'status' && BUDGET_STATUS_LABELS[String(value) as keyof typeof BUDGET_STATUS_LABELS] ?
                 BUDGET_STATUS_LABELS[String(value) as keyof typeof BUDGET_STATUS_LABELS] :
-                (field.includes('date') || field === 'period_start' || field === 'period_end') && value ? formatDate(value) :
+                (field.includes('date') || field === 'period_start' || field === 'period_end') && value ? (formatClinicDate(value) || '—') :
                   field === 'value' || field === 'value_usd' ? renderMoney(Number(value), budget.currency) :
                     value
             }
@@ -380,8 +380,6 @@ export function DataClinicBudgets() {
       </div>
     );
   };
-
-  const formatDate = (dateString: string | null | undefined) => formatClinicDate(dateString) || '—';
 
   if (loading) {
     return (

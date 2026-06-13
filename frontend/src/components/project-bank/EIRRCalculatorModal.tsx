@@ -206,7 +206,7 @@ export function EIRRCalculatorModal({ open, onOpenChange, projectId, onSaved }: 
               </div>
               {eirrPercent != null && (
                 <Badge variant={eirrPercent >= 15 ? "success" : "destructive"} className="mt-1 text-[10px]">
-                  {eirrPercent >= 15 ? '≥ 15% — Economically Viable' : '< 15%'}
+                  {eirrPercent >= 15 ? '≥ 15%: Economically Viable' : '< 15%'}
                 </Badge>
               )}
             </div>

@@ -35,7 +35,7 @@ export function MobileGate({ children }: { children: React.ReactNode }) {
               Best on a bigger screen
             </p>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              This tool works best on a computer — some features may be hard to use here.
+              This tool works best on a computer, and some features may be hard to use here.
             </p>
           </div>
           <button

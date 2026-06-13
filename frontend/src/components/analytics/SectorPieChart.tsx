@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { CHART_RANKED_PALETTE } from '@/lib/chart-colors'
+import { CHART_RANKED_PALETTE, OTHERS_COLOR } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
@@ -159,27 +159,6 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
     }
   }
 
-  const formatCurrency = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      const safeValue = Number(value)
-      if (isNaN(safeValue) || !isFinite(safeValue)) {
-        return '$0'
-      }
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 1
-      }).format(safeValue)
-    } catch (error) {
-      console.error('[SectorPieChart] Error formatting currency:', error, value)
-      return '$0'
-    }
-  }
-
   const renderCustomizedLabel = (props: any) => {
     const { cx, cy, midAngle, innerRadius, outerRadius, percentage } = props
     
@@ -255,7 +234,7 @@ export function SectorPieChart({ dateRange, refreshKey, onDataChange }: SectorPi
             labelLine={false}
             label={renderCustomizedLabel}
             outerRadius={100}
-            fill="#8884d8"
+            fill={OTHERS_COLOR}
             dataKey="value"
           >
             {data.map((entry, index) => (

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/useUser";
 import { usePartners } from "@/hooks/usePartners";
 import { useOrganizations } from "@/hooks/use-organizations";
@@ -636,12 +636,12 @@ export default function UserManagement() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="p-1 h-auto bg-background gap-1 border mb-6">
-                <TabsTrigger value="users" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <PageTabsList>
+                <PageTabsTrigger value="users">
                   <Users className="h-4 w-4" />
                   Users
-                </TabsTrigger>
-              </TabsList>
+                </PageTabsTrigger>
+              </PageTabsList>
 
               <TabsContent value="users">
                 {/* User Filters */}
@@ -834,7 +834,7 @@ export default function UserManagement() {
                               <td className="p-4 text-body text-muted-foreground w-48">
                                 {user.lastLogin ? (
                                   <div>
-                                    <div className="truncate">{format(new Date(user.lastLogin), "MMM d, yyyy")}</div>
+                                    <div className="truncate">{format(new Date(user.lastLogin), "d MMM yyyy")}</div>
                                     <div className="truncate text-helper">{format(new Date(user.lastLogin), "h:mm a")}</div>
                                   </div>
                                 ) : (
@@ -1097,11 +1097,11 @@ function UserEditor({
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-          <TabsTrigger value="personal" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Personal Info</TabsTrigger>
-          <TabsTrigger value="contact" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">Contact & Address</TabsTrigger>
-          <TabsTrigger value="system" className="data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">System & Role</TabsTrigger>
-        </TabsList>
+        <PageTabsList>
+          <PageTabsTrigger value="personal">Personal Info</PageTabsTrigger>
+          <PageTabsTrigger value="contact">Contact & Address</PageTabsTrigger>
+          <PageTabsTrigger value="system">System & Role</PageTabsTrigger>
+        </PageTabsList>
 
         {/* Personal Information Tab */}
         <TabsContent value="personal" className="space-y-4">

@@ -693,7 +693,7 @@ export default function TransactionForm({
               <Label htmlFor="transaction_type" className="flex items-center gap-2">
                 Transaction Type <RequiredDot />
                 <HelpTextTooltip>
-                  What kind of financial movement this is — e.g. a commitment (money promised),
+                  What kind of financial movement this is, e.g. a commitment (money promised),
                   disbursement (money sent), expenditure (money spent), or incoming funds received.
                 </HelpTextTooltip>
               </Label>
@@ -1288,7 +1288,7 @@ export default function TransactionForm({
                   <Label htmlFor="flow_type" className="flex items-center gap-2">
                     Flow Type
                     <HelpTextTooltip>
-                      The broad category the money flows under — e.g. ODA (official
+                      The broad category the money flows under, e.g. ODA (official
                       development assistance), private flows, or other official flows.
                     </HelpTextTooltip>
                   </Label>
@@ -1321,7 +1321,7 @@ export default function TransactionForm({
                   <Label htmlFor="finance_type" className="flex items-center gap-2">
                     Finance Type
                     <HelpTextTooltip>
-                      How the money is provided — e.g. grant (no repayment), loan,
+                      How the money is provided, e.g. grant (no repayment), loan,
                       equity, or debt relief.
                     </HelpTextTooltip>
                   </Label>
@@ -1354,7 +1354,7 @@ export default function TransactionForm({
                   <Label htmlFor="aid_type" className="flex items-center gap-2">
                     Aid Type
                     <HelpTextTooltip>
-                      The delivery mechanism — e.g. budget support, project-type
+                      The delivery mechanism, e.g. budget support, project-type
                       intervention, technical assistance, or scholarships.
                     </HelpTextTooltip>
                   </Label>

@@ -183,7 +183,7 @@ function Histogram({
             return (
               <ChartTooltipCard
                 title={d.rangeLabel}
-                subtitle={d.isOutlier ? 'Flagged — beyond the fence' : undefined}
+                subtitle={d.isOutlier ? 'Flagged: beyond the fence' : undefined}
                 rows={[{ label: countLabel, value: d.count.toLocaleString(), color: d.isOutlier ? OUTLIER_COLOR : BUDGET_COLOR }]}
               />
             )
@@ -273,7 +273,7 @@ function StripPlot({
             return (
               <ChartTooltipCard
                 title={fmt(d.v, unit, true)}
-                subtitle={d.o ? 'Flagged — beyond the fence' : undefined}
+                subtitle={d.o ? 'Flagged: beyond the fence' : undefined}
                 rows={[{ label: countLabel.replace(/s$/, ''), value: d.o ? 'flagged' : 'within range', color: d.o ? OUTLIER_COLOR : BUDGET_COLOR }]}
               />
             )

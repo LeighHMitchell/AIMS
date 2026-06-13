@@ -8,6 +8,7 @@ import { GitBranch } from 'lucide-react';
 import { ResponsiveSankey } from '@nivo/sankey';
 import type { OrgSankeyData, SankeyTransactionFilter, SankeyTypeTotal } from '@/types/dashboard';
 import { apiFetch } from '@/lib/api-fetch';
+import { formatCurrencyCompact } from '@/lib/format';
 
 interface OrgSankeyFlowProps {
   organizationId: string;
@@ -19,17 +20,8 @@ const INCOMING_COLOR = '#22c55e'; // green-500
 const OUTGOING_COLOR = '#dc2626'; // red-600 (destructive)
 const SELF_COLOR = '#64748b'; // slate-500
 
-// Format currency (compact, e.g. $1.2M)
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value);
-}
-
 // Full USD format matching the Activity Editor transaction summary hero cards.
+// (Unique "US$" 0-decimal style the shared lib intentionally does not provide.)
 const formatUsdFull = (n: number): string =>
   `US$${(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
@@ -340,7 +332,7 @@ export function OrgSankeyFlow({
                     </div>
                     <div className="px-3 py-1.5 flex items-center justify-between gap-6">
                       <span className="text-muted-foreground">Total</span>
-                      <span className="font-medium text-foreground">{formatCurrency(node.value)}</span>
+                      <span className="font-medium text-foreground">{formatCurrencyCompact(node.value)}</span>
                     </div>
                   </div>
                 )}
@@ -353,7 +345,7 @@ export function OrgSankeyFlow({
                     </div>
                     <div className="px-3 py-1.5 flex items-center justify-between gap-6">
                       <span className="text-muted-foreground">Value</span>
-                      <span className="font-medium text-foreground">{formatCurrency(link.value)}</span>
+                      <span className="font-medium text-foreground">{formatCurrencyCompact(link.value)}</span>
                     </div>
                   </div>
                 )}

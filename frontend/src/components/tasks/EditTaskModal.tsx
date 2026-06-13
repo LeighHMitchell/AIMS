@@ -217,7 +217,7 @@ export function EditTaskModal({
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {deadline ? format(deadline, 'MMM d, yyyy') : 'Pick a date'}
+                      {deadline ? format(deadline, 'd MMM yyyy') : 'Pick a date'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[100]" align="start">

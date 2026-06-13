@@ -355,7 +355,7 @@ export function CreatedTasksTable({
                       isOverdue && 'text-[#DC2625] font-medium',
                       isDueSoon && !isOverdue && 'text-[#DC2625]'
                     )}>
-                      {format(deadline, 'MMM d, yyyy')}
+                      {format(deadline, 'd MMM yyyy')}
                       {daysUntil !== null && (
                         <div className="text-helper">
                           {isOverdue

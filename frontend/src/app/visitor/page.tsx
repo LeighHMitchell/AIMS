@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation"
 import { useUser } from "@/hooks/useUser"
 import { isVisitorUser, exitVisitorMode } from "@/lib/visitor"
 import { apiFetch } from "@/lib/api-fetch"
+import { formatCurrencyCompact } from "@/lib/format"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface VisitorStats {
@@ -68,13 +69,6 @@ export default function VisitorHomePage() {
     { label: "Analytics", href: "/analytics-dashboard", icon: BarChart3, description: "View analytics dashboards" },
     { label: "Sectors", href: "/sectors", icon: TrendingUp, description: "Browse by sector" },
   ]
-
-  const formatCurrency = (value: number) => {
-    if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`
-    if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`
-    if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`
-    return `$${value.toLocaleString()}`
-  }
 
   return (
     <MainLayout>
@@ -156,7 +150,7 @@ export default function VisitorHomePage() {
                   {loading ? (
                     <Skeleton className="h-7 w-24 mt-1" />
                   ) : (
-                    <p className="text-2xl font-bold">{stats?.totalTransactionValueUSD ? formatCurrency(stats.totalTransactionValueUSD) : "—"}</p>
+                    <p className="text-2xl font-bold">{stats?.totalTransactionValueUSD ? formatCurrencyCompact(stats.totalTransactionValueUSD) : "—"}</p>
                   )}
                 </div>
               </div>

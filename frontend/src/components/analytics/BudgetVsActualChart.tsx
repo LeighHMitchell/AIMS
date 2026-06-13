@@ -167,27 +167,6 @@ export function BudgetVsActualChart({ dateRange, filters, refreshKey, onDataChan
     })
   }, [data, selectedYears])
 
-  const formatCurrency = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      const safeValue = Number(value)
-      if (isNaN(safeValue) || !isFinite(safeValue)) {
-        return '$0'
-      }
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 0
-      }).format(safeValue)
-    } catch (error) {
-      console.error('[BudgetVsActualChart] Error formatting currency:', error, value)
-      return '$0'
-    }
-  }
-
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const rows = payload.map((entry: any) => ({

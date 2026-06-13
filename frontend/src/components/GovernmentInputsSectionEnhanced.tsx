@@ -238,7 +238,7 @@ function getDimensionHelp(key: string): string {
 function getRiskCategoryImportance(categoryId: string): string {
   const importance: Record<string, string> = {
     political:
-      "Political context — conflict, instability, or changes of government — can delay implementation, block approvals, or put staff and beneficiaries at risk. Capturing it lets teams sequence activities and build contingency plans.",
+      "Political context (conflict, instability, or changes of government) can delay implementation, block approvals, or put staff and beneficiaries at risk. Capturing it lets teams sequence activities and build contingency plans.",
     environmental:
       "Activities with environmental impact may trigger safeguard policies, require environmental assessments, or attract community opposition. Early identification lets project teams incorporate mitigation and avoid costly redesigns.",
     social:
@@ -282,7 +282,7 @@ function getDimensionDetail(key: string): string {
     onPlan:
       "Select ‘Yes’ if this activity appears by name or reference code in the country’s national development plan, sector strategy, or multi-year investment plan. Select ‘Partial’ where the sector is reflected but the specific activity is not named. Select ‘No’ if the activity falls outside current national planning instruments.",
     onBudget:
-      "Select ‘Yes’ if the activity’s funds — whether contributed by the development partner or the government — appear as a line item or identifiable reporting category in the formal national budget book approved by the legislature. ‘Partial’ applies where only a portion of the funds is reflected. ‘No’ means the funds are entirely off-budget.",
+      "Select ‘Yes’ if the activity’s funds (whether contributed by the development partner or the government) appear as a line item or identifiable reporting category in the formal national budget book approved by the legislature. ‘Partial’ applies where only a portion of the funds is reflected. ‘No’ means the funds are entirely off-budget.",
     onTreasury:
       "Select ‘Yes’ if activity funds flow through the government’s Treasury Single Account (TSA) or equivalent central treasury system, meaning the government executes payments. ‘Partial’ if some funds move through the TSA while others use parallel accounts. ‘No’ if all funds are disbursed directly by the development partner to implementers.",
     onParliament:
@@ -966,7 +966,7 @@ export function GovernmentInputsSectionEnhanced({
                       </div>
                     ) : (
                       <div className="relative w-full overflow-x-auto overflow-y-visible">
-                        <table className="w-full caption-bottom text-body border border-border dark:border-gray-700 rounded-lg">
+                        <table className="w-full caption-bottom text-body border border-border rounded-lg">
                           <thead className="bg-surface-muted">
                             <tr>
                               <th className="text-left p-2 font-medium text-helper w-28">Type</th>
@@ -1315,7 +1315,7 @@ export function GovernmentInputsSectionEnhanced({
               </div>
 
               <div className="relative w-full overflow-x-auto overflow-y-visible">
-                <table className="w-full caption-bottom text-body border border-border dark:border-gray-700 rounded-lg">
+                <table className="w-full caption-bottom text-body border border-border rounded-lg">
                   <thead className="bg-surface-muted">
                     <tr>
                       <th className="text-left p-2 font-medium text-helper">Category</th>
@@ -1609,7 +1609,7 @@ export function GovernmentInputsSectionEnhanced({
                     <AlertDialogTitle>Clear all evaluation answers?</AlertDialogTitle>
                     <AlertDialogDescription>
                       This will clear the Yes / No / Unsure responses and the national indicator reference.
-                      Any uploaded evaluation documents will be left in place — remove those from the document table if needed.
+                      Any uploaded evaluation documents will be left in place; remove those from the document table if needed.
                       This action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>

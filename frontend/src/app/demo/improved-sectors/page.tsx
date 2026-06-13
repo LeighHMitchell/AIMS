@@ -88,7 +88,7 @@ export default function ImprovedSectorsDemoPage() {
                   </div>
                   <div>
                     <p className="font-medium text-body">Grouped by Category</p>
-                    <p className="text-helper text-muted-foreground">Sectors organized under their DAC 3-digit categories</p>
+                    <p className="text-helper text-muted-foreground">Sectors organised under their DAC 3-digit categories</p>
                   </div>
                 </div>
                 
@@ -117,8 +117,8 @@ export default function ImprovedSectorsDemoPage() {
                     <span className="text-body font-bold text-amber-600">4</span>
                   </div>
                   <div>
-                    <p className="font-medium text-body">Color Coding</p>
-                    <p className="text-helper text-muted-foreground">Each category has a unique color</p>
+                    <p className="font-medium text-body">Colour Coding</p>
+                    <p className="text-helper text-muted-foreground">Each category has a unique colour</p>
                   </div>
                 </div>
                 

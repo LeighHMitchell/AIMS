@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -1255,7 +1256,7 @@ export function ExternalPublisherModal({
             <Card key={index} className="p-4">
               <div className="space-y-1">
                 <p className="font-medium text-body">{duplicate.existingTitle}</p>
-                <p className="text-xs font-mono text-muted-foreground">{duplicate.iatiIdentifier}</p>
+                <CopyableIdBadge value={duplicate.iatiIdentifier} label="IATI identifier" tooltip="Click to copy IATI identifier" />
               </div>
             </Card>
           ))}

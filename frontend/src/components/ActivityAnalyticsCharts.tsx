@@ -21,6 +21,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Calendar, CalendarDays, TrendingUp } from "lucide-react";
 import { format, parseISO, getYear, startOfYear, endOfYear } from "date-fns";
 import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
+import { formatAxisCurrency, formatCurrencyCompact } from "@/lib/format";
 import { getTransactionTypeColor, BUDGET_COLOR, TOTAL_SPENDING_COLOR } from "@/lib/chart-colors";
 
 // Canonical financial-series colors (single source of truth — see lib/chart-colors)
@@ -293,15 +294,6 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
   const calendarYearData = processCalendarYearData();
   const cumulativeData = processCumulativeData();
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`;
-    }
-    return `$${value.toFixed(0)}`;
-  };
-
   const renderSeriesTooltip = (
     valueFormatter: (v: number) => string
   ) => (props: any) => {
@@ -349,8 +341,8 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                 <ComposedChart data={fiscalYearData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="fiscalYear" />
-                  <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip content={renderSeriesTooltip(formatCurrency)} cursor={false} />
+                  <YAxis tickFormatter={(value) => formatAxisCurrency(value)} />
+                  <Tooltip content={renderSeriesTooltip(formatCurrencyCompact)} cursor={false} />
                   <Legend />
                   <Bar dataKey="plannedBudget" fill={SERIES_COLORS.budget} name="Planned Budget" />
                   <Bar dataKey="commitments" fill={SERIES_COLORS.commitments} name="Commitments" />
@@ -374,8 +366,8 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                 <ComposedChart data={calendarYearData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="year" />
-                  <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip content={renderSeriesTooltip(formatCurrency)} cursor={false} />
+                  <YAxis tickFormatter={(value) => formatAxisCurrency(value)} />
+                  <Tooltip content={renderSeriesTooltip(formatCurrencyCompact)} cursor={false} />
                   <Legend />
                   <Bar dataKey="plannedBudget" fill={SERIES_COLORS.budget} name="Planned Budget" />
                   <Bar dataKey="commitments" fill={SERIES_COLORS.commitments} name="Commitments" />
@@ -417,8 +409,8 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
-                  <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip content={renderSeriesTooltip(formatCurrency)} />
+                  <YAxis tickFormatter={(value) => formatAxisCurrency(value)} />
+                  <Tooltip content={renderSeriesTooltip(formatCurrencyCompact)} />
                   <Legend />
                   <Area
                     type="monotone"
@@ -514,8 +506,8 @@ export const ActivityAnalyticsCharts: React.FC<ActivityAnalyticsChartsProps> = (
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="category" />
-                <YAxis tickFormatter={formatCurrency} />
-                <Tooltip content={renderSeriesTooltip(formatCurrency)} cursor={false} />
+                <YAxis tickFormatter={(value) => formatAxisCurrency(value)} />
+                <Tooltip content={renderSeriesTooltip(formatCurrencyCompact)} cursor={false} />
                 <Legend />
                 <Bar dataKey="budget" fill={SERIES_COLORS.budget} name="Planned Budget" />
                 <Bar dataKey="actual" fill={SERIES_COLORS.disbursements} name="Actual Spending" />

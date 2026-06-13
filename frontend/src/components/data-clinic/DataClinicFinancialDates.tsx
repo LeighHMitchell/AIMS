@@ -331,7 +331,7 @@ export function DataClinicFinancialDates() {
     <p className="text-body text-muted-foreground leading-relaxed">
       The timeline plots the span of years over which each type of organisation has reported transactions,
       while the bar chart counts how many transactions fall in each calendar year. A short range or a gap means
-      an organisation type — or a whole year — has little or no recorded financial activity, which often
+      an organisation type (or a whole year) has little or no recorded financial activity, which often
       signals disbursements that are missing, reported late, or not yet entered. Use these views to spot
       reporters and periods with sparse or outdated coverage and follow up to fill the gaps, so the platform
       reflects spending closer to real time and your aid data stays complete and trustworthy.

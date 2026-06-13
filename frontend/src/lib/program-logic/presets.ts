@@ -135,7 +135,7 @@ export const FRAMEWORK_PRESETS: Record<FrameworkPreset, PresetDefinition> = {
     key: 'custom',
     label: 'Custom',
     description:
-      'Define your own ordered, named tiers. No tiers are seeded — add them yourself.',
+      'Define your own ordered, named tiers. No tiers are seeded, so add them yourself.',
     tiers: [],
   },
 };

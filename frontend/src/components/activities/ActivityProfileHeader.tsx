@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
+import { formatDate as formatDateCanonical } from "@/lib/format"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { SafeHtml } from "@/components/ui/safe-html"
@@ -15,7 +16,7 @@ import { AllDatesHistory } from "@/components/activities/AllDatesHistory"
 import { NormalizedOrgRef } from "@/components/ui/normalized-org-ref"
 import { CodelistTooltip } from "@/components/ui/codelist-tooltip"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
-import { getActivityStatusDisplay } from "@/lib/activity-status-utils"
+import { ActivityStatusRow } from "@/components/ui/status-row"
 import { apiFetch } from "@/lib/api-fetch"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -165,14 +166,8 @@ const TIED_STATUS_LABELS: Record<string, string> = {
 }
 
 function formatDate(dateString: string | undefined) {
-  if (!dateString) return "Not set"
-  try {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return "Not set"
-    return format(date, "dd MMM yyyy")
-  } catch {
-    return "Not set"
-  }
+  if (!dateString) return "—"
+  return formatDateCanonical(dateString) || "—"
 }
 
 function getActivityScopeLabel(code: string | undefined): string | null {
@@ -216,8 +211,6 @@ export function ActivityProfileHeader({
   const descriptionRef = useRef<HTMLDivElement>(null)
 
   const icon = activity.icon || localIcon
-  const { label: statusLabel, className: statusClassName } = getActivityStatusDisplay(activity.activityStatus)
-
   // Check if description needs truncation
   const description = activity.description || ""
   const objectives = activity.descriptionObjectives || ""
@@ -514,8 +507,8 @@ export function ActivityProfileHeader({
 
               {reportingOrg && <div className="h-3.5 w-px bg-border" />}
 
-              {/* Activity status — the one badge that always matters */}
-              <Badge className={cn(statusClassName, "text-helper")}>{statusLabel}</Badge>
+              {/* Activity status — code chip + label per design-system Rule A */}
+              <ActivityStatusRow status={activity.activityStatus} className="text-helper" />
 
               {/* Humanitarian — only shown when true; visually distinct for a reason */}
               {activity.humanitarian && (

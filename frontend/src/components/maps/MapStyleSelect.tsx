@@ -44,7 +44,7 @@ export function MapStyleSelect({
             </span>
           </SelectValue>
         </SelectTrigger>
-        <SelectContent className="z-[9999]">
+        <SelectContent>
           {keys.map((key) => {
             const style = MAP_STYLES[key];
             return (

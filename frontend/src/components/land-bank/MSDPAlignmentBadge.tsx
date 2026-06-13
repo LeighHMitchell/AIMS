@@ -14,7 +14,7 @@ export function MSDPAlignmentBadge({ goalName, goalCode, secondaryCount = 0 }: M
     <div className="flex items-center gap-1.5">
       <Badge variant="outline" className="gap-1">
         <Target className="h-3 w-3" />
-        {goalCode ? `${goalCode} — ` : ""}{goalName}
+        {goalCode ? `${goalCode}: ` : ""}{goalName}
       </Badge>
       {secondaryCount > 0 && (
         <span className="text-helper text-muted-foreground">+{secondaryCount} more</span>

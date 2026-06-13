@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import { Upload, FileSpreadsheet, AlertCircle, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +50,7 @@ export function ExcelImportModal({
     // Validate file type
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (ext !== 'xlsx') {
-      setError('Please upload an Excel file (.xlsx). CSV files are not supported — download the template for the correct format.');
+      setError('Please upload an Excel file (.xlsx). CSV files are not supported; download the template for the correct format.');
       return;
     }
 
@@ -158,6 +158,9 @@ export function ExcelImportModal({
               </Badge>
             </DialogTitle>
           </div>
+          <DialogDescription>
+            Upload a spreadsheet to bulk-fill this section, then review the matched, flagged and unmatched rows below before importing.
+          </DialogDescription>
 
           {/* Stats badges in preview mode */}
           {stats && (

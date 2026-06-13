@@ -19,30 +19,14 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
+import { EmptyOrgIndicator } from '@/components/ui/empty-org-indicator';
 import { exportToCSV } from '@/lib/exports';
 import { exportTransactionsCsv, type TransactionRow } from '@/lib/exports/entities/transactions';
 import { TRANSACTION_TYPE_LABELS } from '@/types/transaction';
 import { apiFetch } from '@/lib/api-fetch';
 import { FullPagination } from '@/components/ui/full-pagination';
 import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination';
-
-// Format currency with abbreviations (K, M, B)
-const formatCurrencyAbbreviated = (value: number) => {
-  const absValue = Math.abs(value);
-  let formattedValue: string;
-
-  if (absValue >= 1_000_000_000) {
-    formattedValue = (value / 1_000_000_000).toFixed(1) + 'B';
-  } else if (absValue >= 1_000_000) {
-    formattedValue = (value / 1_000_000).toFixed(1) + 'M';
-  } else if (absValue >= 1_000) {
-    formattedValue = (value / 1_000).toFixed(1) + 'K';
-  } else {
-    formattedValue = value.toFixed(0);
-  }
-
-  return '$' + formattedValue;
-};
+import { formatCurrencyCompact } from '@/lib/format';
 
 // Simple Hero Card Component
 interface HeroCardProps {
@@ -101,7 +85,7 @@ interface OrganizationTransactionsTabProps {
 }
 
 // Helper function to safely format dates
-const safeFormatDate = (dateStr: string | null | undefined, formatStr: string, fallback: string = '-'): string => {
+const safeFormatDate = (dateStr: string | null | undefined, formatStr: string, fallback: string = '—'): string => {
   if (!dateStr) return fallback;
   try {
     const parsed = parseISO(dateStr);
@@ -211,8 +195,47 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
         return org.acronym || org.name;
       }
     }
-    return fallbackName || '-';
+    return fallbackName || '—';
   };
+
+  // True when neither a linked org nor a free-text name exists for this side
+  const isOrgEmpty = (orgId: string | undefined, fallbackName?: string): boolean => {
+    if (orgId && organizations.find((o: any) => o.id === orgId)) return false;
+    return !fallbackName;
+  };
+
+  // Render the provider/receiver side of a transaction; shows an explanatory
+  // hover when nothing is recorded for that side.
+  const renderOrgSide = (
+    orgId: string | undefined,
+    fallbackName: string | undefined,
+    logo: string | null | undefined,
+    role: 'provider' | 'receiver'
+  ) => {
+    if (isOrgEmpty(orgId, fallbackName)) {
+      return <EmptyOrgIndicator role={role} />;
+    }
+    const label = getOrgAcronymOrName(orgId, fallbackName);
+    return (
+      <>
+        <OrganizationLogo logo={logo || undefined} name={label} size="sm" />
+        <span className="text-body">{label}</span>
+      </>
+    );
+  };
+
+  // Provider → Receiver flow cell, shared by the grouped transaction views
+  const renderOrgFlow = (transaction: any) => (
+    <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+        {renderOrgSide(transaction.provider_org_id, transaction.provider_org_name, getOrgLogo(transaction.provider_org_id) || transaction.provider_org_logo, 'provider')}
+      </div>
+      <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+      <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+        {renderOrgSide(transaction.receiver_org_id, transaction.receiver_org_name, getOrgLogo(transaction.receiver_org_id) || transaction.receiver_org_logo, 'receiver')}
+      </div>
+    </div>
+  );
 
   // Get unique transaction types for filter
   const transactionTypes = useMemo(() => {
@@ -412,7 +435,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
         <div className="flex gap-4 flex-wrap">
           <HeroCard
             title="Total Transactions"
-            value={formatCurrencyAbbreviated(totalUSD)}
+            value={formatCurrencyCompact(totalUSD)}
             subtitle={`${filteredTransactions.length} transaction${filteredTransactions.length !== 1 ? 's' : ''}`}
           />
           {/* Show top transaction types */}
@@ -423,7 +446,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
               <HeroCard
                 key={type}
                 title={getTransactionTypeLabelPlural(type)}
-                value={formatCurrencyAbbreviated(data.total)}
+                value={formatCurrencyCompact(data.total)}
                 subtitle={`${data.count} transaction${data.count !== 1 ? 's' : ''}`}
               />
             ))}
@@ -705,33 +728,11 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                           <TableRow key={transaction.uuid} className="border-b border-border/40 hover:bg-muted/30">
                             <TableCell className="py-3 px-4 pl-12" style={{ width: '180px' }}></TableCell>
                             <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
-                              {safeFormatDate(transaction.transaction_date, 'MMM d, yyyy', '-')}
+                              {safeFormatDate(transaction.transaction_date, 'd MMM yyyy', '—')}
                             </TableCell>
                             <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '160px' }}></TableCell>
                             <TableCell className="py-3 px-4" style={{ width: '280px' }}>
-                              <div className="flex items-center gap-2 min-w-0">
-                                <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
-                                  <OrganizationLogo
-                                    logo={getOrgLogo(transaction.provider_org_id) || transaction.provider_org_logo}
-                                    name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
-                                    size="sm"
-                                  />
-                                  <span className="text-body">
-                                    {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
-                                  </span>
-                                </div>
-                                <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                                <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
-                                  <OrganizationLogo
-                                    logo={getOrgLogo(transaction.receiver_org_id) || transaction.receiver_org_logo}
-                                    name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
-                                    size="sm"
-                                  />
-                                  <span className="text-body">
-                                    {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
-                                  </span>
-                                </div>
-                              </div>
+                              {renderOrgFlow(transaction)}
                             </TableCell>
                             <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                               <span className="font-medium">
@@ -740,7 +741,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                               </span>
                             </TableCell>
                             <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
-                              {safeFormatDate(transaction.value_date, 'MMM d, yyyy', '-')}
+                              {safeFormatDate(transaction.value_date, 'd MMM yyyy', '—')}
                             </TableCell>
                             <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                               {transaction.value_usd != null ? (
@@ -749,7 +750,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                                   {transaction.value_usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                 </span>
                               ) : (
-                                <span className="text-muted-foreground">-</span>
+                                <span className="text-muted-foreground">—</span>
                               )}
                             </TableCell>
                           </TableRow>
@@ -794,38 +795,14 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                           {/* Indented, no link since header has it */}
                         </TableCell>
                         <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
-                          {safeFormatDate(transaction.transaction_date, 'MMM d, yyyy', '-')}
+                          {safeFormatDate(transaction.transaction_date, 'd MMM yyyy', '—')}
                         </TableCell>
                         <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '160px' }}>
                           <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">{transaction.transaction_type}</code>
                           {getTransactionTypeLabel(transaction.transaction_type)}
                         </TableCell>
                         <TableCell className="py-3 px-4" style={{ width: '280px' }}>
-                          <div className="flex items-center gap-2 min-w-0">
-                            {/* Provider */}
-                            <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
-                              <OrganizationLogo
-                                logo={getOrgLogo(transaction.provider_org_id) || transaction.provider_org_logo}
-                                name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
-                                size="sm"
-                              />
-                              <span className="text-body">
-                                {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
-                              </span>
-                            </div>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                            {/* Receiver */}
-                            <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
-                              <OrganizationLogo
-                                logo={getOrgLogo(transaction.receiver_org_id) || transaction.receiver_org_logo}
-                                name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
-                                size="sm"
-                              />
-                              <span className="text-body">
-                                {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
-                              </span>
-                            </div>
-                          </div>
+                          {renderOrgFlow(transaction)}
                         </TableCell>
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                           <span className="font-medium">
@@ -834,7 +811,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                           </span>
                         </TableCell>
                         <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
-                          {safeFormatDate(transaction.value_date, 'MMM d, yyyy', '-')}
+                          {safeFormatDate(transaction.value_date, 'd MMM yyyy', '—')}
                         </TableCell>
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                           {transaction.value_usd != null ? (
@@ -843,7 +820,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                               {transaction.value_usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground">-</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
                       </TableRow>
@@ -887,35 +864,13 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                           </Link>
                         </TableCell>
                         <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
-                          {safeFormatDate(transaction.transaction_date, 'MMM d, yyyy', '-')}
+                          {safeFormatDate(transaction.transaction_date, 'd MMM yyyy', '—')}
                         </TableCell>
                         <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '160px' }}>
                           {/* Type column intentionally blank — header has it */}
                         </TableCell>
                         <TableCell className="py-3 px-4" style={{ width: '280px' }}>
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
-                              <OrganizationLogo
-                                logo={getOrgLogo(transaction.provider_org_id) || transaction.provider_org_logo}
-                                name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
-                                size="sm"
-                              />
-                              <span className="text-body">
-                                {getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name)}
-                              </span>
-                            </div>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                            <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
-                              <OrganizationLogo
-                                logo={getOrgLogo(transaction.receiver_org_id) || transaction.receiver_org_logo}
-                                name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
-                                size="sm"
-                              />
-                              <span className="text-body">
-                                {getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name)}
-                              </span>
-                            </div>
-                          </div>
+                          {renderOrgFlow(transaction)}
                         </TableCell>
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                           <span className="font-medium">
@@ -924,7 +879,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                           </span>
                         </TableCell>
                         <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
-                          {safeFormatDate(transaction.value_date, 'MMM d, yyyy', '-')}
+                          {safeFormatDate(transaction.value_date, 'd MMM yyyy', '—')}
                         </TableCell>
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                           {transaction.value_usd != null ? (
@@ -933,7 +888,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                               {transaction.value_usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground">-</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </TableCell>
                       </TableRow>
@@ -956,7 +911,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                       </Link>
                     </TableCell>
                     <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
-                      {safeFormatDate(transaction.transaction_date, 'MMM d, yyyy', '-')}
+                      {safeFormatDate(transaction.transaction_date, 'd MMM yyyy', '—')}
                     </TableCell>
                     <TableCell className="py-3 px-4 whitespace-nowrap text-body" style={{ width: '160px' }}>
                       <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded mr-1.5">{transaction.transaction_type}</code>
@@ -996,7 +951,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                       </span>
                     </TableCell>
                     <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '100px' }}>
-                      {safeFormatDate(transaction.value_date, 'MMM d, yyyy', '-')}
+                      {safeFormatDate(transaction.value_date, 'd MMM yyyy', '—')}
                     </TableCell>
                     <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '120px' }}>
                       {transaction.value_usd != null ? (
@@ -1005,7 +960,7 @@ export function OrganizationTransactionsTab({ organizationId, defaultCurrency = 
                           {transaction.value_usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">-</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
                   </TableRow>

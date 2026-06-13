@@ -56,7 +56,7 @@ export default function EnhancedCommentsDemo() {
             <CardContent className="p-6 text-center">
               <AtSign className="h-8 w-8 text-blue-600 mx-auto mb-2" />
               <h3 className="font-semibold mb-1">Mentions</h3>
-              <p className="text-body text-muted-foreground">@users #organizations</p>
+              <p className="text-body text-muted-foreground">@users #organisations</p>
             </CardContent>
           </Card>
           
@@ -72,7 +72,7 @@ export default function EnhancedCommentsDemo() {
             <CardContent className="p-6 text-center">
               <Archive className="h-8 w-8 text-orange-600 mx-auto mb-2" />
               <h3 className="font-semibent mb-1">Archive & Resolve</h3>
-              <p className="text-body text-muted-foreground">Organize comments</p>
+              <p className="text-body text-muted-foreground">Organise comments</p>
             </CardContent>
           </Card>
         </div>
@@ -112,8 +112,8 @@ export default function EnhancedCommentsDemo() {
                       <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
                         <AtSign className="h-5 w-5 text-blue-600 mt-0.5" />
                         <div>
-                          <h4 className="font-medium">Mention Users & Organizations</h4>
-                          <p className="text-body text-muted-foreground">Type @ for users or # for organizations with autocomplete</p>
+                          <h4 className="font-medium">Mention Users & Organisations</h4>
+                          <p className="text-body text-muted-foreground">Type @ for users or # for organisations with autocomplete</p>
                         </div>
                       </div>
                       
@@ -362,7 +362,7 @@ export default function EnhancedCommentsDemo() {
               <div>
                 <h4 className="font-semibold mb-3 text-blue-700">🎯 Smart Features</h4>
                 <ul className="text-body space-y-1 text-muted-foreground">
-                  <li>• @user and #organization mentions</li>
+                  <li>• @user and #organisation mentions</li>
                   <li>• File and image attachments</li>
                   <li>• Context linking to specific fields</li>
                   <li>• Advanced search and filtering</li>
@@ -370,7 +370,7 @@ export default function EnhancedCommentsDemo() {
               </div>
               
               <div>
-                <h4 className="font-semibold mb-3 text-purple-700">🔧 Organization Tools</h4>
+                <h4 className="font-semibold mb-3 text-purple-700">🔧 Organisation Tools</h4>
                 <ul className="text-body space-y-1 text-muted-foreground">
                   <li>• Comment resolution workflow</li>
                   <li>• Archive/unarchive functionality</li>

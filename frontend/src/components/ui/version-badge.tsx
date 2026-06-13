@@ -17,7 +17,7 @@ export function VersionBadge() {
   }
 
   // Format date nicely
-  const formattedDate = new Date(latestRelease.date).toLocaleDateString('en-US', {
+  const formattedDate = new Date(latestRelease.date).toLocaleDateString('en-GB', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'

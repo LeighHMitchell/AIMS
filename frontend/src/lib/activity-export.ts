@@ -232,7 +232,7 @@ async function fetchActivityExportData(activityId: string): Promise<ActivityExpo
 function formatDate(date: string | null | undefined): string {
   if (!date) return '—';
   try {
-    return format(new Date(date), 'MMM d, yyyy');
+    return format(new Date(date), 'd MMM yyyy');
   } catch {
     return String(date);
   }
@@ -256,7 +256,7 @@ function formatCurrency(value: number | null | undefined, currency: string = 'US
  */
 function getExportFooter(): string {
   const now = new Date();
-  const dateStr = format(now, 'MMM d, yyyy');
+  const dateStr = format(now, 'd MMM yyyy');
   const timeStr = format(now, 'h:mm a');
   return `Exported from the Aether DFMIS on ${dateStr} at ${timeStr}`;
 }
@@ -688,21 +688,21 @@ export async function exportActivityToExcel(
       ['Activity Identifier', 'Globally unique IATI identifier for this activity (IATI <iati-identifier>). Format: XX-AAA-NNNN-Project.', pick('iati_identifier', 'iatiIdentifier', 'iatiId')],
       ['System Generated ID', 'Internal AIMS database identifier (UUID). Not part of IATI.', pick('id', 'uuid') || activityId],
       ['Auto-Reference', 'AIMS-internal short reference assigned at creation (e.g. PD-####). Not part of IATI.', pick('auto_ref', 'autoRef')],
-      ['Other Identifier (Partner ID)', 'Single legacy partner-assigned identifier — kept for backward compatibility.', pick('other_identifier', 'otherIdentifier', 'partnerId')],
-      ['Other Identifier Types', 'IATI <other-identifier> list — alternate identifiers from other systems, with type code and owning organisation.', otherIdentifiersText],
+      ['Other Identifier (Partner ID)', 'Single legacy partner-assigned identifier, kept for backward compatibility.', pick('other_identifier', 'otherIdentifier', 'partnerId')],
+      ['Other Identifier Types', 'IATI <other-identifier> list: alternate identifiers from other systems, with type code and owning organisation.', otherIdentifiersText],
 
       // ── Description ──────────────────────────────────────────────────
-      ['General Description', 'IATI <description type="1"> — main descriptive narrative.', pick('description_narrative', 'description')],
-      ['Description: Objectives', 'IATI <description type="2"> — objectives or expected outcomes.', pick('description_objectives', 'descriptionObjectives')],
-      ['Description: Target Groups', 'IATI <description type="3"> — beneficiary groups the activity targets.', pick('description_target_groups', 'descriptionTargetGroups')],
-      ['Description: Other', 'IATI <description type="4"> — any other descriptive narrative.', pick('description_other', 'descriptionOther')],
+      ['General Description', 'IATI <description type="1">: main descriptive narrative.', pick('description_narrative', 'description')],
+      ['Description: Objectives', 'IATI <description type="2">: objectives or expected outcomes.', pick('description_objectives', 'descriptionObjectives')],
+      ['Description: Target Groups', 'IATI <description type="3">: beneficiary groups the activity targets.', pick('description_target_groups', 'descriptionTargetGroups')],
+      ['Description: Other', 'IATI <description type="4">: any other descriptive narrative.', pick('description_other', 'descriptionOther')],
 
       // ── Status & Lifecycle ───────────────────────────────────────────
-      ['Activity Status (code)', 'IATI <activity-status> code — lifecycle stage.', status.code],
+      ['Activity Status (code)', 'IATI <activity-status> code: lifecycle stage.', status.code],
       ['Activity Status (name)', 'Plain-language label for the activity status.', status.name],
-      ['Publication Status', 'AIMS-only — "draft" while in editor, "published" when made public.', pick('publication_status', 'publicationStatus')],
-      ['Submission Status', 'AIMS-only — workflow state: draft / submitted / validated / rejected / published.', pick('submission_status', 'submissionStatus')],
-      ['Hierarchy', 'IATI @hierarchy — 1 = parent, 2 = child, 3 = sub-child of a parent activity.', pick('hierarchy')],
+      ['Publication Status', 'AIMS-only: "draft" while in editor, "published" when made public.', pick('publication_status', 'publicationStatus')],
+      ['Submission Status', 'AIMS-only workflow state: draft / submitted / validated / rejected / published.', pick('submission_status', 'submissionStatus')],
+      ['Hierarchy', 'IATI @hierarchy: 1 = parent, 2 = child, 3 = sub-child of a parent activity.', pick('hierarchy')],
 
       // ── Reporting Org ────────────────────────────────────────────────
       ['Reporting Org ID', 'AIMS UUID for the organisation reporting this activity (IATI <reporting-org>).', pick('reporting_org_id', 'reportingOrgId')],
@@ -711,36 +711,36 @@ export async function exportActivityToExcel(
       ['Created By Organisation (acronym)', 'Acronym of the creating organisation.', pick('created_by_org_acronym')],
 
       // ── Default IATI fields ──────────────────────────────────────────
-      ['Collaboration Type (code)', 'IATI <collaboration-type> — bilateral, multilateral, triangular, etc.', collab.code],
+      ['Collaboration Type (code)', 'IATI <collaboration-type>: bilateral, multilateral, triangular, etc.', collab.code],
       ['Collaboration Type (name)', 'Plain-language label for the collaboration type.', collab.name],
-      ['Activity Scope (code)', 'IATI <activity-scope> — geographic reach: global, regional, national, sub-national.', scope.code],
+      ['Activity Scope (code)', 'IATI <activity-scope>: geographic reach: global, regional, national, sub-national.', scope.code],
       ['Activity Scope (name)', 'Plain-language label for the activity scope.', scope.name],
-      ['Default Currency (code)', 'IATI @default-currency — three-letter ISO 4217 code applied where transaction currency is unspecified.', currency.code],
+      ['Default Currency (code)', 'IATI @default-currency: three-letter ISO 4217 code applied where transaction currency is unspecified.', currency.code],
       ['Default Currency (name)', 'Plain-language name of the default currency.', currency.name],
-      ['Default Aid Type (code)', 'IATI <default-aid-type> code — modality (project-type, budget support, technical assistance, etc.).', aidType.code],
+      ['Default Aid Type (code)', 'IATI <default-aid-type> code: modality (project-type, budget support, technical assistance, etc.).', aidType.code],
       ['Default Aid Type (name)', 'Plain-language label for the default aid type.', aidType.name],
-      ['Default Flow Type (code)', 'IATI <default-flow-type> code — ODA, OOF, private flows, etc.', flowType.code],
+      ['Default Flow Type (code)', 'IATI <default-flow-type> code: ODA, OOF, private flows, etc.', flowType.code],
       ['Default Flow Type (name)', 'Plain-language label for the default flow type.', flowType.name],
-      ['Default Finance Type (code)', 'IATI <default-finance-type> code — standard grant, concessional loan, equity, etc.', financeType.code],
+      ['Default Finance Type (code)', 'IATI <default-finance-type> code: standard grant, concessional loan, equity, etc.', financeType.code],
       ['Default Finance Type (name)', 'Plain-language label for the default finance type.', financeType.name],
-      ['Default Tied Status (code)', 'IATI <default-tied-status> code — tied, partially tied, untied.', tiedStatus.code],
+      ['Default Tied Status (code)', 'IATI <default-tied-status> code: tied, partially tied, untied.', tiedStatus.code],
       ['Default Tied Status (name)', 'Plain-language label for the default tied status.', tiedStatus.name],
       ['Default Aid Modality', 'AIMS-only modality classification (not part of the IATI standard).', pick('default_aid_modality', 'defaultAidModality')],
-      ['Default Aid Modality Override', 'AIMS-only — whether transactions may override the activity-level modality.', bool(pick('default_aid_modality_override') as any)],
+      ['Default Aid Modality Override', 'AIMS-only: whether transactions may override the activity-level modality.', bool(pick('default_aid_modality_override') as any)],
 
       // ── Dates ────────────────────────────────────────────────────────
-      ['Planned Start Date', 'IATI <activity-date type="1"> — originally planned start date.', dateIso(pick('planned_start_date', 'plannedStartDate'))],
-      ['Planned End Date', 'IATI <activity-date type="3"> — originally planned end date.', dateIso(pick('planned_end_date', 'plannedEndDate'))],
-      ['Actual Start Date', 'IATI <activity-date type="2"> — date the activity actually started.', dateIso(pick('actual_start_date', 'actualStartDate'))],
-      ['Actual End Date', 'IATI <activity-date type="4"> — date the activity actually ended.', dateIso(pick('actual_end_date', 'actualEndDate'))],
+      ['Planned Start Date', 'IATI <activity-date type="1">: originally planned start date.', dateIso(pick('planned_start_date', 'plannedStartDate'))],
+      ['Planned End Date', 'IATI <activity-date type="3">: originally planned end date.', dateIso(pick('planned_end_date', 'plannedEndDate'))],
+      ['Actual Start Date', 'IATI <activity-date type="2">: date the activity actually started.', dateIso(pick('actual_start_date', 'actualStartDate'))],
+      ['Actual End Date', 'IATI <activity-date type="4">: date the activity actually ended.', dateIso(pick('actual_end_date', 'actualEndDate'))],
 
       // ── Other attributes ─────────────────────────────────────────────
-      ['Humanitarian', 'IATI @humanitarian flag — true if the activity addresses a humanitarian crisis.', bool(pick('humanitarian') as any)],
-      ['Capital Spend %', 'IATI <capital-spend> — percentage of commitment that is capital expenditure.', percentage(pick('capital_spend_percentage') as any)],
-      ['Budget Status', 'AIMS-only — whether the activity is "on-budget" in the recipient government\'s national budget.', pick('budget_status', 'budgetStatus')],
-      ['On-Budget %', 'AIMS-only — percentage of value reflected in the recipient government\'s budget.', percentage(pick('on_budget_percentage', 'onBudgetPercentage') as any)],
-      ['Linked Data URI', 'IATI @linked-data-uri — canonical URL for additional metadata about this activity.', pick('linked_data_uri', 'linkedDataUri')],
-      ['Language', 'IATI @xml:lang — default language of narrative fields (ISO 639-1).', pick('language')],
+      ['Humanitarian', 'IATI @humanitarian flag: true if the activity addresses a humanitarian crisis.', bool(pick('humanitarian') as any)],
+      ['Capital Spend %', 'IATI <capital-spend>: percentage of commitment that is capital expenditure.', percentage(pick('capital_spend_percentage') as any)],
+      ['Budget Status', 'AIMS-only: whether the activity is "on-budget" in the recipient government\'s national budget.', pick('budget_status', 'budgetStatus')],
+      ['On-Budget %', 'AIMS-only: percentage of value reflected in the recipient government\'s budget.', percentage(pick('on_budget_percentage', 'onBudgetPercentage') as any)],
+      ['Linked Data URI', 'IATI @linked-data-uri: canonical URL for additional metadata about this activity.', pick('linked_data_uri', 'linkedDataUri')],
+      ['Language', 'IATI @xml:lang: default language of narrative fields (ISO 639-1).', pick('language')],
 
       // ── System metadata ──────────────────────────────────────────────
       ['Created At', 'When the activity record was first created in AIMS.', dateIso(pick('created_at', 'createdAt'))],

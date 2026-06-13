@@ -630,7 +630,7 @@ export function TaskTrackingView({
                                 </TableCell>
                                 <TableCell className="text-body">
                                   {assignment.completed_at ? (
-                                    format(new Date(assignment.completed_at), 'MMM d, yyyy')
+                                    format(new Date(assignment.completed_at), 'd MMM yyyy')
                                   ) : assignment.declined_at ? (
                                     <span className="text-muted-foreground">
                                       Declined {format(new Date(assignment.declined_at), 'MMM d')}

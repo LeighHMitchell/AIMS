@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SDGImageGrid } from "@/components/ui/SDGImageGrid";
-import { getActivityStatusDisplay } from "@/lib/activity-status-utils";
+import { ActivityStatusRow } from "@/components/ui/status-row";
 import { cn } from "@/lib/utils";
 
 interface Financials {
@@ -157,7 +157,6 @@ export function ActivityOverviewTab({
   sdgMappings,
   onNavigate,
 }: Props) {
-  const status = getActivityStatusDisplay(activity?.activityStatus);
   const timeline = describeTimeline(activity);
 
   const sectors = (activity?.sectors ?? [])
@@ -235,9 +234,7 @@ export function ActivityOverviewTab({
               <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">
                 Status
               </div>
-              <Badge className={cn("text-body font-medium", status.className)}>
-                {status.label}
-              </Badge>
+              <ActivityStatusRow status={activity?.activityStatus} className="text-body font-medium" />
             </div>
             <div>
               <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">

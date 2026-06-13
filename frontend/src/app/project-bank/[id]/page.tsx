@@ -557,7 +557,7 @@ export default function ProjectDetailPage() {
                     <div>
                       <div className="text-helper text-muted-foreground mb-1">Documents</div>
                       <p className="text-body text-muted-foreground">
-                        {project.documents.length} document{project.documents.length !== 1 ? 's' : ''} uploaded — see the <button type="button" className="text-foreground underline underline-offset-2 hover:no-underline" onClick={() => { const el = document.querySelector('[data-value="documents"]') as HTMLButtonElement; el?.click(); }}>Documents tab</button> to view and download.
+                        {project.documents.length} document{project.documents.length !== 1 ? 's' : ''} uploaded. See the <button type="button" className="text-foreground underline underline-offset-2 hover:no-underline" onClick={() => { const el = document.querySelector('[data-value="documents"]') as HTMLButtonElement; el?.click(); }}>Documents tab</button> to view and download.
                       </p>
                     </div>
                   )}
@@ -593,7 +593,7 @@ export default function ProjectDetailPage() {
                           <div className="flex items-center gap-2">
                             <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                             <span className="text-helper">
-                              {[(project as any).contact_ministry, (project as any).contact_department].filter(Boolean).join(' — ')}
+                              {[(project as any).contact_ministry, (project as any).contact_department].filter(Boolean).join(', ')}
                             </span>
                           </div>
                         )}
@@ -738,7 +738,7 @@ export default function ProjectDetailPage() {
                         {ndpGoal && (
                           <div>
                             <div className="text-[10px] text-muted-foreground">NDP Goal</div>
-                            <div className="text-body">{ndpGoal.code} — {ndpGoal.name}</div>
+                            <div className="text-body">{ndpGoal.code}: {ndpGoal.name}</div>
                           </div>
                         )}
                         {project.secondary_ndp_goals && project.secondary_ndp_goals.length > 0 && (
@@ -903,7 +903,7 @@ export default function ProjectDetailPage() {
                               )}
                               {project.land_acquisition_required && <PFSField label="Land Acquisition" value="Required" />}
                               {project.resettlement_required && (
-                                <PFSField label="Resettlement" value={project.estimated_affected_households ? `Required — ~${project.estimated_affected_households} households` : 'Required'} />
+                                <PFSField label="Resettlement" value={project.estimated_affected_households ? `Required, ~${project.estimated_affected_households} households` : 'Required'} />
                               )}
                             </div>
                           </div>
@@ -1202,7 +1202,7 @@ export default function ProjectDetailPage() {
             {project.category_decision && (
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-body">Categorization</CardTitle>
+                  <CardTitle className="text-body">Categorisation</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2.5">
                   <div className="p-2.5 bg-surface-muted rounded-lg">

@@ -41,6 +41,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
+import { CurrencyValue } from "@/components/ui/currency-value"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
   Building2,
@@ -352,12 +353,6 @@ export default function PartnerSummaryPage() {
     return sortConfig.direction === 'asc' ? 
       <ChevronUp className="h-4 w-4 text-muted-foreground" /> : 
       <ChevronDown className="h-4 w-4 text-muted-foreground" />;
-  };
-
-  // Format currency with thousands separators
-  const formatCurrency = (amount: number): string => {
-    if (amount === 0) return '-';
-    return `$${amount.toLocaleString()}`;
   };
 
   // Create new group
@@ -721,32 +716,32 @@ export default function PartnerSummaryPage() {
                                   </TableCell>
                                   <TableCell className="text-right py-0.5">
                                     <div className="font-medium">
-                                      {formatCurrency(partner.financialData.year2022)}
+                                      {partner.financialData.year2022 ? <CurrencyValue amount={partner.financialData.year2022} variant="full" /> : <span className="text-muted-foreground">—</span>}
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-right py-0.5">
                                     <div className="font-medium">
-                                      {formatCurrency(partner.financialData.year2023)}
+                                      {partner.financialData.year2023 ? <CurrencyValue amount={partner.financialData.year2023} variant="full" /> : <span className="text-muted-foreground">—</span>}
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-right py-0.5">
                                     <div className="font-medium">
-                                      {formatCurrency(partner.financialData.year2024)}
+                                      {partner.financialData.year2024 ? <CurrencyValue amount={partner.financialData.year2024} variant="full" /> : <span className="text-muted-foreground">—</span>}
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-right py-0.5">
                                     <div className="font-medium">
-                                      {formatCurrency(partner.financialData.year2025)}
+                                      {partner.financialData.year2025 ? <CurrencyValue amount={partner.financialData.year2025} variant="full" /> : <span className="text-muted-foreground">—</span>}
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-right py-0.5">
                                     <div className="font-medium">
-                                      {formatCurrency(partner.financialData.year2026)}
+                                      {partner.financialData.year2026 ? <CurrencyValue amount={partner.financialData.year2026} variant="full" /> : <span className="text-muted-foreground">—</span>}
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-right py-0.5">
                                     <div className="font-medium">
-                                      {formatCurrency(partner.financialData.year2027)}
+                                      {partner.financialData.year2027 ? <CurrencyValue amount={partner.financialData.year2027} variant="full" /> : <span className="text-muted-foreground">—</span>}
                                     </div>
                                   </TableCell>
                                 </TableRow>

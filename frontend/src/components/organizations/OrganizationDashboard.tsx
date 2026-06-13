@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { safeUsd } from "@/lib/safe-usd";
+import { formatCurrencyCompact } from "@/lib/format";
 
 interface OrganizationData {
   id: string;
@@ -139,7 +140,7 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
     if (!organization.created_at) {
       return {
         yearsActive: 0,
-        establishedDate: 'Not available'
+        establishedDate: '—'
       };
     }
     
@@ -166,15 +167,6 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
   const geographic = calculateGeographicReach();
   const experience = calculateExperience();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const getRoleDisplayName = (role: string) => {
     const roleMap: Record<string, string> = {
       'reporting': 'Reporting',
@@ -199,13 +191,13 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
           <div>
             <p className="text-body text-blue-600 font-medium">Total Budgeted</p>
             <p className="text-2xl font-bold text-blue-900">
-              {formatCurrency(financials.totalBudget)}
+              {formatCurrencyCompact(financials.totalBudget)}
             </p>
           </div>
           <div>
             <p className="text-body text-blue-600 font-medium">Total Expenditure</p>
             <p className="text-xl font-semibold text-blue-800">
-              {formatCurrency(financials.totalExpenditure)}
+              {formatCurrencyCompact(financials.totalExpenditure)}
             </p>
           </div>
           <div>
@@ -313,9 +305,9 @@ export const OrganizationDashboard: React.FC<OrganizationDashboardProps> = ({
           <div>
             <p className="text-body text-orange-600 font-medium">Avg. Project Value</p>
             <p className="text-lg font-semibold text-orange-700">
-              {activityMetrics.total > 0 
-                ? formatCurrency(financials.totalBudget / activityMetrics.total)
-                : formatCurrency(0)
+              {activityMetrics.total > 0
+                ? formatCurrencyCompact(financials.totalBudget / activityMetrics.total)
+                : formatCurrencyCompact(0)
               }
             </p>
           </div>

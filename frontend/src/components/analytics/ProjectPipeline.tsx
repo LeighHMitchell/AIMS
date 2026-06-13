@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { LoadingText, ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { Badge } from '@/components/ui/badge'
+import { ActivityStatusRow } from '@/components/ui/status-row'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
-import { format } from 'date-fns'
+import { formatDate } from '@/lib/format'
+import { CurrencyValue } from '@/components/ui/currency-value'
 
 interface ProjectPipelineProps {
   dateRange: {
@@ -118,66 +119,6 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
     }
   }
 
-  const formatCurrency = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      const safeValue = Number(value)
-      if (isNaN(safeValue) || !isFinite(safeValue)) {
-        return '$0'
-      }
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 1
-      }).format(safeValue)
-    } catch (error) {
-      console.error('[ProjectPipeline] Error formatting currency:', error, value)
-      return '$0'
-    }
-  }
-
-  const getStatusLabel = (status: string) => {
-    // IATI Status Codes to Labels
-    const statusLabels: Record<string, string> = {
-      '1': 'Pipeline',
-      '2': 'Implementation', 
-      '3': 'Finalisation',
-      '4': 'Closed',
-      '5': 'Cancelled',
-      '6': 'Suspended'
-    }
-    return statusLabels[status] || status
-  }
-
-  const getStatusColor = (status: string) => {
-    // IATI Status Codes:
-    // 1 = Pipeline (planning)
-    // 2 = Implementation (active)
-    // 3 = Finalisation
-    // 4 = Closed (completed)
-    // 5 = Cancelled
-    // 6 = Suspended
-    switch (status) {
-      case '1':
-        return 'bg-blue-100 text-blue-800' // Pipeline
-      case '2':
-        return 'bg-green-100 text-green-800' // Implementation
-      case '3':
-        return 'bg-yellow-100 text-yellow-800' // Finalisation
-      case '4':
-        return 'bg-muted text-foreground' // Closed
-      case '5':
-        return 'bg-destructive/10 text-red-800' // Cancelled
-      case '6':
-        return 'bg-orange-100 text-orange-800' // Suspended
-      default:
-        return 'bg-muted text-foreground'
-    }
-  }
-
   const filteredData = data.filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.donor.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -220,9 +161,9 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
           </thead>
           <tbody>
             {filteredData.slice(0, 10).map((project, index) => (
-              <tr 
+              <tr
                 key={project.id}
-                className={index % 2 === 0 ? 'bg-card' : 'bg-muted'}
+                className="border-b last:border-0 hover:bg-muted/50 transition-colors"
               >
                 <td className="py-3 px-4 text-body text-foreground font-medium">
                   {project.name}
@@ -234,10 +175,10 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
                   {project.sector}
                 </td>
                 <td className="py-3 px-4 text-body text-foreground text-right">
-                  {formatCurrency(project.budget)}
+                  <CurrencyValue amount={project.budget} variant="short" />
                 </td>
                 <td className="py-3 px-4 text-body text-foreground text-right">
-                  {formatCurrency(project.disbursed)}
+                  <CurrencyValue amount={project.disbursed} variant="short" />
                   {project.budget > 0 && !isNaN(project.disbursed) && !isNaN(project.budget) && (
                     <span className="text-helper text-muted-foreground ml-1">
                       ({(() => {
@@ -248,15 +189,10 @@ export function ProjectPipeline({ dateRange, filters, refreshKey }: ProjectPipel
                   )}
                 </td>
                 <td className="py-3 px-4 text-center">
-                  <Badge 
-                    variant="secondary"
-                    className={getStatusColor(project.status)}
-                  >
-                    {getStatusLabel(project.status)}
-                  </Badge>
+                  <ActivityStatusRow status={project.status} />
                 </td>
                 <td className="py-3 px-4 text-body text-muted-foreground">
-                  {format(new Date(project.lastUpdated), 'MMM d, yyyy')}
+                  {formatDate(project.lastUpdated)}
                 </td>
               </tr>
             ))}

@@ -317,7 +317,7 @@ export function PageHelpManagement() {
                   {!loading && filteredRows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                        No help content for this page yet — click “New Question” to add one.
+                        No help content for this page yet. Click “New Question” to add one.
                       </TableCell>
                     </TableRow>
                   )}

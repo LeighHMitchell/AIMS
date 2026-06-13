@@ -48,7 +48,7 @@ const formatRelativeDate = (dateString: string | null | undefined): string => {
   if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
   if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months ago`
   
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 export default function ManageGroupsPage() {

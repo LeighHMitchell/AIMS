@@ -577,7 +577,7 @@ export function OrganizationFinancesPane({
             mathTooltip="Builds an even-spend baseline by spreading the organisation's total budget evenly across its activity life-cycle, then plots it against the actual cumulative disbursement curve over the same horizon. The gap between the two lines is the pace of execution against plan. All amounts are USD-converted."
             interpretation={
               <>
-                Cumulative actual disbursements over time, plotted against an even-spend baseline that assumes the budget is paid out at a constant rate across the activity life-cycle. Where the red line sits below the dashed baseline, this organisation is spending more slowly than planned — a flat or shallow line means delivery has stalled, while a line climbing faster than the baseline indicates accelerated execution. The gap is a quick read on delivery health: persistent under-spend can flag absorption problems, procurement bottlenecks, or context disruption, while a sudden jump usually marks a single large disbursement rather than steady-state delivery.
+                Cumulative actual disbursements over time, plotted against an even-spend baseline that assumes the budget is paid out at a constant rate across the activity life-cycle. Where the red line sits below the dashed baseline, this organisation is spending more slowly than planned. A flat or shallow line means delivery has stalled, while a line climbing faster than the baseline indicates accelerated execution. The gap is a quick read on delivery health: persistent under-spend can flag absorption problems, procurement bottlenecks, or context disruption, while a sudden jump usually marks a single large disbursement rather than steady-state delivery.
               </>
             }
           >
@@ -717,7 +717,7 @@ function FundingFlowsSankeyChart({
       mathTooltip="Sums USD-converted transaction values for each counterparty paired with this organisation: incoming flows (from upstream funders) sit on the left, outgoing flows (to downstream partners) on the right. Band width is proportional to the total USD for that pair and transaction type. Transactions with no stored USD conversion are excluded rather than counted as USD."
       interpretation={
         <>
-          Each band shows a flow of money between this organisation and a counterparty: incoming flows on the left come from upstream funders, outgoing flows on the right go to downstream partners. Band width is proportional to the total US-dollar value of the transactions for that pair, and the colour identifies the IATI transaction type. Use the transaction-type dropdown in the top-right of the expanded view to switch between actual money movement (Incoming Funds + Disbursement), commitments (Outgoing Commitments), or pledges; the same partner can appear with multiple bands if they participate across more than one type. Bands missing a stored USD conversion contribute nothing — non-USD transactions without an exchange rate are excluded rather than counted as USD.
+          Each band shows a flow of money between this organisation and a counterparty: incoming flows on the left come from upstream funders, outgoing flows on the right go to downstream partners. Band width is proportional to the total US-dollar value of the transactions for that pair, and the colour identifies the IATI transaction type. Use the transaction-type dropdown in the top-right of the expanded view to switch between actual money movement (Incoming Funds + Disbursement), commitments (Outgoing Commitments), or pledges; the same partner can appear with multiple bands if they participate across more than one type. Bands missing a stored USD conversion contribute nothing: non-USD transactions without an exchange rate are excluded rather than counted as USD.
         </>
       }
       className={className}
@@ -953,10 +953,10 @@ function FundingOverTimeChart({ envelopes }: { envelopes: any[] | null }) {
     <ChartCard
       title="Funding Over Time"
       description="Annual envelopes by status"
-      mathTooltip="For each year, sums the organisation's reported funding envelopes split by status — actual, current, and indicative. Multi-year envelopes are spread evenly across the years they cover (per-year amount = total ÷ number of years) before being added to each year's stacked bar. All amounts are USD-converted."
+      mathTooltip="For each year, sums the organisation's reported funding envelopes split by status: actual, current, and indicative. Multi-year envelopes are spread evenly across the years they cover (per-year amount = total ÷ number of years) before being added to each year's stacked bar. All amounts are USD-converted."
       interpretation={
         <>
-          Year-by-year funding envelopes declared by this organisation, stacked into three statuses — actual (past), current (this year) and indicative (forward). Comparing the heights across years places the organisation's commitment to country in absolute terms: tall red blocks signal a strong delivery track-record, while tall grey blocks at the right of the chart flag a forward pipeline that hasn't yet been confirmed. A pipeline that's mostly indicative deserves more cautious assumptions than one anchored in current-year actuals.
+          Year-by-year funding envelopes declared by this organisation, stacked into three statuses: actual (past), current (this year) and indicative (forward). Comparing the heights across years places the organisation's commitment to country in absolute terms: tall red blocks signal a strong delivery track-record, while tall grey blocks at the right of the chart flag a forward pipeline that hasn't yet been confirmed. A pipeline that's mostly indicative deserves more cautious assumptions than one anchored in current-year actuals.
         </>
       }
     >
@@ -1084,7 +1084,7 @@ function CommitmentsVsPlannedChart({ transactions }: { transactions: any[] | nul
       mathTooltip="For each year, sums USD-converted outgoing commitments (transaction type 2) and planned disbursements (type 11) separately, then plots the two series side-by-side. Transactions are bucketed by their transaction or value date."
       interpretation={
         <>
-          Annual outgoing commitments this organisation has made to others (paying out) set alongside the incoming commitments that fund its own work (the pipeline coming in). A wide gap between the two in the same year indicates a structural mismatch — either spending ahead of new funding, or sitting on undeployed pipeline. Healthy patterns show outgoing tracking close to incoming with a sustainable lag; volatile years suggest concentration risk in a few large agreements.
+          Annual outgoing commitments this organisation has made to others (paying out) set alongside the incoming commitments that fund its own work (the pipeline coming in). A wide gap between the two in the same year indicates a structural mismatch: either spending ahead of new funding, or sitting on undeployed pipeline. Healthy patterns show outgoing tracking close to incoming with a sustainable lag; volatile years suggest concentration risk in a few large agreements.
         </>
       }
     >
@@ -1192,7 +1192,7 @@ function AllTransactionTypesChart({ transactions }: { transactions: any[] | null
       mathTooltip="Sums USD-converted value across all of the organisation's transactions, grouped by IATI transaction type (Incoming Funds, Outgoing Commitment, Disbursement, Expenditure, etc.). Each bar is that type's total dollar value; types are ranked descending."
       interpretation={
         <>
-          Total USD value broken down by every IATI transaction type the organisation has reported — incoming funds, commitments, disbursements, expenditures, pledges and beyond — with bar length comparing dollar weight across the types. A long Disbursements bar with a short Commitments bar means most reported activity is delivery, while the inverse signals an organisation that promises more than it pays. The mix characterises the organisation's reporting style and financial role — whether it primarily funds others, receives funds, or operates as both donor and channel.
+          Total USD value broken down by every IATI transaction type the organisation has reported (incoming funds, commitments, disbursements, expenditures, pledges and beyond), with bar length comparing dollar weight across the types. A long Disbursements bar with a short Commitments bar means most reported activity is delivery, while the inverse signals an organisation that promises more than it pays. The mix characterises the organisation's reporting style and financial role: whether it primarily funds others, receives funds, or operates as both donor and channel.
         </>
       }
     >
@@ -1354,7 +1354,7 @@ function GrantsVsLoansChart({ transactions }: { transactions: any[] | null }) {
       mathTooltip="Groups the organisation's outgoing finance by IATI finance-type code (e.g. 110 Standard grant, 421 Standard loan) and sums USD-converted value. Each slice is that finance type's share of total outgoing USD, coloured by its modality group (grant / loan / equity / guarantee). The transaction-type filter re-scopes which transactions are counted."
       interpretation={
         <>
-          Outgoing finance grouped by IATI finance type — shown with its code and name (e.g. 110 Standard grant) and coloured by modality group (grants, loans, equity, guarantees) — with each slice sized by dollar share. A grant-heavy mix indicates concessional support, while a loan-heavy mix signals market or near-market financing terms. Understanding the mix matters because recipients of grants face no repayment burden, while loan recipients carry future debt-service obligations that change project economics.
+          Outgoing finance grouped by IATI finance type, shown with its code and name (e.g. 110 Standard grant) and coloured by modality group (grants, loans, equity, guarantees), with each slice sized by dollar share. A grant-heavy mix indicates concessional support, while a loan-heavy mix signals market or near-market financing terms. Understanding the mix matters because recipients of grants face no repayment burden, while loan recipients carry future debt-service obligations that change project economics.
         </>
       }
     >
@@ -1703,7 +1703,7 @@ function LargestActivitiesChart({
       mathTooltip={`Sums the selected metric (${modeLabel.toLowerCase()}) in USD per activity this organisation participates in, ranks them descending, and shows the top 10. Activities with no value for the chosen metric are excluded.`}
       interpretation={
         <>
-          The ten activities with the highest value for the selected basis, sorted longest-to-shortest. The dropdown switches between disbursements (actual money out), commitments (money pledged), expenditures, total outgoing (the sum of those three), or total budget — each mode reads from a single explicit data source, no silent substitution. A long-tail distribution (one or two large bars then a steep drop) signals concentration risk, and comparing across modes can surface mismatches — an activity with high commitments but low disbursements may be slow to deliver, while a high budget paired with low transactions could indicate a recently-started or paused programme.
+          The ten activities with the highest value for the selected basis, sorted longest-to-shortest. The dropdown switches between disbursements (actual money out), commitments (money pledged), expenditures, total outgoing (the sum of those three), or total budget. Each mode reads from a single explicit data source, no silent substitution. A long-tail distribution (one or two large bars then a steep drop) signals concentration risk, and comparing across modes can surface mismatches: an activity with high commitments but low disbursements may be slow to deliver, while a high budget paired with low transactions could indicate a recently-started or paused programme.
         </>
       }
     >

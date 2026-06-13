@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent, PageTabsList, PageTabsTrigger } from "@/components/ui/tabs";
 import {
   Search,
   LayoutGrid,
@@ -425,13 +425,13 @@ export default function LibraryPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="all" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+          <PageTabsList>
+            <PageTabsTrigger value="all">
               <LibraryIcon className="h-4 w-4" />
               All Documents
-            </TabsTrigger>
+            </PageTabsTrigger>
             {hasOrganization && (
-              <TabsTrigger value="reading_room" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <PageTabsTrigger value="reading_room">
                 <BookOpen className="h-4 w-4" />
                 Reading Room
                 {readingRoomBookmarks.length > 0 && (
@@ -439,9 +439,9 @@ export default function LibraryPage() {
                     {readingRoomBookmarks.length}
                   </Badge>
                 )}
-              </TabsTrigger>
+              </PageTabsTrigger>
             )}
-            <TabsTrigger value="personal" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            <PageTabsTrigger value="personal">
               <Bookmark className="h-4 w-4" />
               My Library
               {personalBookmarks.length > 0 && (
@@ -449,8 +449,8 @@ export default function LibraryPage() {
                   {personalBookmarks.length}
                 </Badge>
               )}
-            </TabsTrigger>
-          </TabsList>
+            </PageTabsTrigger>
+          </PageTabsList>
 
           {/* All Documents Tab */}
           <TabsContent value="all" className="border-0 p-0 mt-4">

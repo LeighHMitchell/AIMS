@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
           results.failed++;
           results.errors.push({
             id: disbursement.id,
-            error: usdFields.usd_convertible ? 'Future-dated — skipped' : 'Conversion failed',
+            error: usdFields.usd_convertible ? 'Future-dated: skipped' : 'Conversion failed',
             currency: disbursement.currency,
             amount: disbursement.amount,
             date: disbursement.value_date || disbursement.period_start,

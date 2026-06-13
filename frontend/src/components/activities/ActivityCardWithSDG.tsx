@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatActivityDate, formatDateRange, formatRelativeTime, calculateDuration } from '@/lib/date-utils';
+import { CurrencyValue } from '@/components/ui/currency-value';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
 import { SDGImageGrid } from '@/components/ui/SDGImageGrid';
 import { formatReportedBy } from '@/utils/format-helpers';
@@ -135,27 +136,6 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
   const cardRef = useRef<HTMLDivElement>(null);
   const { isBookmarked, toggleBookmark } = useBookmarks();
 
-
-  // Currency formatting utility with compact notation
-  const formatCurrency = (value: number) => {
-    let formattedValue: string;
-    if (value >= 1000000) {
-      // Format millions with 1 decimal place
-      const millions = value / 1000000;
-      formattedValue = `${millions.toFixed(1)}m`;
-    } else if (value >= 1000) {
-      // Format thousands with 1 decimal place
-      const thousands = value / 1000;
-      formattedValue = `${thousands.toFixed(1)}k`;
-    } else {
-      // Format regular numbers with no decimals
-      formattedValue = new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-    }
-    return <><span className="text-helper text-muted-foreground font-normal">USD</span> {formattedValue}</>;
-  };
 
 
   const statusColors = {
@@ -534,11 +514,11 @@ const ActivityCardWithSDG: React.FC<ActivityCardWithSDGProps> = ({
                 <>
                   <div className="flex justify-between items-center">
                     <div className="text-body font-medium text-foreground">Total Budgeted</div>
-                    <div className="text-body text-foreground">{formatCurrency(activity.totalBudget || 0)}</div>
+                    <div className="text-body text-foreground"><CurrencyValue amount={activity.totalBudget || 0} variant="short" /></div>
                   </div>
                   <div className="flex justify-between items-center pb-2 border-b border-border">
                     <div className="text-body font-medium text-foreground">Total Disbursed</div>
-                    <div className="text-body text-foreground">{formatCurrency(activity.totalDisbursed || 0)}</div>
+                    <div className="text-body text-foreground"><CurrencyValue amount={activity.totalDisbursed || 0} variant="short" /></div>
                   </div>
                 </>
               )}

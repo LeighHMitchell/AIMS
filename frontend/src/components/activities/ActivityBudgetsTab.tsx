@@ -64,24 +64,6 @@ import { InfoTooltipWithSaveIndicator, LabelWithInfoAndSave } from '@/components
 import { CopyableExchangeRate } from '@/components/ui/copyable-exchange-rate';
 import { TypeFilterPopover } from '@/components/ui/type-filter-popover';
 
-// Format currency with abbreviations (K, M, B)
-const formatCurrencyAbbreviated = (value: number) => {
-  const absValue = Math.abs(value);
-  let formattedValue: string;
-
-  if (absValue >= 1_000_000_000) {
-    formattedValue = (value / 1_000_000_000).toFixed(1) + 'B';
-  } else if (absValue >= 1_000_000) {
-    formattedValue = (value / 1_000_000).toFixed(1) + 'M';
-  } else if (absValue >= 1_000) {
-    formattedValue = (value / 1_000).toFixed(1) + 'K';
-  } else {
-    formattedValue = value.toFixed(0);
-  }
-
-  return '$' + formattedValue;
-};
-
 // Use the shared hero card so this section matches the Transactions hero cards.
 import { HeroCard } from '@/components/ui/hero-card';
 import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
@@ -941,9 +923,9 @@ export default function ActivityBudgetsTab({
     exportData.push(
       { label: 'Type', value: `${budget.type} - ${budget.type === 1 ? 'Original' : 'Revised'}` },
       { label: 'Status', value: `${budget.status} - ${budget.status === 1 ? 'Indicative' : 'Committed'}` },
-      { label: 'Period Start', value: periodStart ? format(periodStart, 'MMM d, yyyy') : 'Invalid Date' },
-      { label: 'Period End', value: periodEnd ? format(periodEnd, 'MMM d, yyyy') : 'Invalid Date' },
-      { label: 'Value Date', value: valueDate ? format(valueDate, 'MMM d, yyyy') : '—' },
+      { label: 'Period Start', value: periodStart ? format(periodStart, 'd MMM yyyy') : 'Invalid Date' },
+      { label: 'Period End', value: periodEnd ? format(periodEnd, 'd MMM yyyy') : 'Invalid Date' },
+      { label: 'Value Date', value: valueDate ? format(valueDate, 'd MMM yyyy') : '—' },
       { label: 'Original Value', value: `${budget.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${budget.currency}` },
       { label: 'USD Value', value: usdValue?.usd != null ? `USD ${usdValue.usd.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—' },
     );
@@ -2595,7 +2577,7 @@ export default function ActivityBudgetsTab({
               <div className="space-y-2">
                 <Label htmlFor="budget-description" className="flex items-center text-body font-medium">
                   Budget Description
-                  <HelpTextTooltip content="Optional internal notes for this budget period — e.g. purpose, assumptions, or why this revision was made. This is an AIMS-only field and is not part of the IATI 2.03 <budget> element, so it will not appear in IATI imports or exports." />
+                  <HelpTextTooltip content="Optional internal notes for this budget period, e.g. purpose, assumptions, or why this revision was made. This is an AIMS-only field and is not part of the IATI 2.03 <budget> element, so it will not appear in IATI imports or exports." />
                 </Label>
                 <Textarea
                   id="budget-description"

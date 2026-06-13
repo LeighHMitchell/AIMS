@@ -23,12 +23,12 @@ interface StageFIRRProps {
 }
 
 const SENSITIVITY_SCENARIOS = [
-  { label: 'Base Case', costMult: 1.0, revMult: 1.0, tooltip: 'No changes — uses your entered figures as-is.' },
+  { label: 'Base Case', costMult: 1.0, revMult: 1.0, tooltip: 'No changes; uses your entered figures as-is.' },
   { label: 'Revenue −10%', costMult: 1.0, revMult: 0.9, tooltip: 'Tests the impact if revenues come in 10% below projections.' },
   { label: 'Revenue −20%', costMult: 1.0, revMult: 0.8, tooltip: 'Tests the impact if revenues come in 20% below projections.' },
   { label: 'Costs +10%', costMult: 1.1, revMult: 1.0, tooltip: 'Tests the impact if all costs (CAPEX + OPEX) are 10% higher than projected.' },
   { label: 'Costs +20%', costMult: 1.2, revMult: 1.0, tooltip: 'Tests the impact if all costs (CAPEX + OPEX) are 20% higher than projected.' },
-  { label: 'Worst Case', costMult: 1.2, revMult: 0.8, tooltip: 'Combines 20% higher costs with 20% lower revenues — a stress test.' },
+  { label: 'Worst Case', costMult: 1.2, revMult: 0.8, tooltip: 'Combines 20% higher costs with 20% lower revenues as a stress test.' },
 ];
 
 function ComparisonTooltip({ active, payload, label }: any) {
@@ -167,8 +167,8 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
           <p className="font-medium text-foreground">How is the FIRR calculated?</p>
           <p>The FIRR is the discount rate at which the project's net present value (NPV) equals zero. For the calculation to work, your cash flows must include:</p>
           <ul className="list-disc ml-4 space-y-0.5">
-            <li><strong>Early years with net outflows</strong> — CAPEX + OPEX should exceed revenue during construction and early operation (this represents the initial investment).</li>
-            <li><strong>Later years with net inflows</strong> — revenue should exceed costs once the project is operational (this represents the return on investment).</li>
+            <li><strong>Early years with net outflows:</strong> CAPEX + OPEX should exceed revenue during construction and early operation (this represents the initial investment).</li>
+            <li><strong>Later years with net inflows:</strong> revenue should exceed costs once the project is operational (this represents the return on investment).</li>
           </ul>
           <p>If all years show a net surplus or all years show a net deficit, the FIRR cannot be determined. Most infrastructure projects have high upfront costs and generate returns over time.</p>
         </div>
@@ -178,7 +178,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
       {!refinedData.some(r => (r.revenue || 0) > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Projected Annual Revenue (USD) <HelpTooltip text="Expected annual revenue in USD once the project reaches full operation. This is a quick estimate — for detailed year-by-year projections, enter revenue directly in the Refined Cash Flow Table below." /></Label>
+            <Label>Projected Annual Revenue (USD) <HelpTooltip text="Expected annual revenue in USD once the project reaches full operation. This is a quick estimate; for detailed year-by-year projections, enter revenue directly in the Refined Cash Flow Table below." /></Label>
             <FormattedNumberInput
               value={formData.projected_annual_revenue ?? null}
               onChange={v => updateField('projected_annual_revenue', v)}
@@ -253,7 +253,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
       {firrResult && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="p-4 bg-muted/50 rounded-lg">
-            <div className="text-helper text-muted-foreground">FIRR <HelpTooltip text="Financial Internal Rate of Return — the discount rate at which NPV equals zero. Calculated from your refined figures." /></div>
+            <div className="text-helper text-muted-foreground">FIRR <HelpTooltip text="Financial Internal Rate of Return: the discount rate at which NPV equals zero. Calculated from your refined figures." /></div>
             <div className="text-xl font-bold tabular-nums mt-1 text-foreground">
               {firrResult.firr !== null ? `${firrResult.firr.toFixed(1)}%` : 'N/A'}
             </div>
@@ -262,7 +262,7 @@ export function StageFIRR({ wizard }: StageFIRRProps) {
             </div>
           </div>
           <div className="p-4 bg-muted/50 rounded-lg">
-            <div className="text-helper text-muted-foreground">NPV @ 10% <HelpTooltip text="Net Present Value discounted at 10% — positive means the project adds value." /></div>
+            <div className="text-helper text-muted-foreground">NPV @ 10% <HelpTooltip text="Net Present Value discounted at 10%; positive means the project adds value." /></div>
             <div className="text-xl font-bold tabular-nums mt-1 text-foreground">
               {formatCurrency(firrResult.npv_at_10)}
             </div>

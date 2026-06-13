@@ -53,7 +53,6 @@ import {
   Pencil,
   Trash2,
   FolderTree,
-  AlertCircle,
   Search,
 } from "lucide-react";
 import {
@@ -688,10 +687,7 @@ export function NationalPrioritiesManagement({ planId, levelLabels = DEFAULT_LEV
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-muted-foreground" />
-              Delete Priority
-            </AlertDialogTitle>
+            <AlertDialogTitle>Delete Priority</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete "{selectedPriority?.name}"?
               {selectedPriority?.children && selectedPriority.children.length > 0 && (

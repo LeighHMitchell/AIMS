@@ -1,6 +1,7 @@
 "use client";
 
 import { RequiredDot } from "@/components/ui/required-dot";
+import { formatDate as formatLibDate } from "@/lib/format";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
@@ -280,7 +281,7 @@ export function CountryEmergenciesManagement() {
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString();
+    return formatLibDate(dateStr) || "—";
   };
 
   if (loading) {

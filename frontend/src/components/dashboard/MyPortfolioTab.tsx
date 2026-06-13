@@ -4,13 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useMyPortfolioData } from "@/hooks/useMyPortfolioData"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
-  Activity,
-  DollarSign,
-  Calendar,
-  TrendingUp,
-  FileText,
   AlertCircle,
-  Clock,
   Maximize2,
   Pencil,
 } from "lucide-react"
@@ -181,7 +175,6 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
               <CardTitle className="text-body font-medium">Total Activities</CardTitle>
               <HelpTextTooltip size="sm" content="Total number of activities you have created in the system." />
             </div>
-            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.summary.totalActivities}</div>
@@ -197,7 +190,6 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
               <CardTitle className="text-body font-medium">Total Budgeted</CardTitle>
               <HelpTextTooltip size="sm" content="Combined budget across all your activities, converted to USD." />
             </div>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalBudget)}</div>
@@ -213,7 +205,6 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
               <CardTitle className="text-body font-medium">Planned Disbursements</CardTitle>
               <HelpTextTooltip size="sm" content="Total value of planned disbursement transactions across your activities, in USD." />
             </div>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalPlannedDisbursements)}</div>
@@ -229,7 +220,6 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
               <CardTitle className="text-body font-medium">Commitments</CardTitle>
               <HelpTextTooltip size="sm" content="Total value of commitment transactions across your activities, in USD." />
             </div>
-            <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalCommitments)}</div>
@@ -245,7 +235,6 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
               <CardTitle className="text-body font-medium">Disbursements</CardTitle>
               <HelpTextTooltip size="sm" content="Total value of disbursement transactions across your activities, in USD." />
             </div>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalDisbursements)}</div>
@@ -261,7 +250,6 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
               <CardTitle className="text-body font-medium">Expenditure</CardTitle>
               <HelpTextTooltip size="sm" content="Total value of expenditure transactions across your activities, in USD." />
             </div>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(data.summary.totalExpenditure)}</div>
@@ -547,7 +535,7 @@ export function MyPortfolioTab({ userId, organizationId }: MyPortfolioTabProps) 
         <CardHeader>
           <div className="flex items-center gap-1">
             <CardTitle>System Activity</CardTitle>
-            <HelpTextTooltip content="Your contribution activity over the past year — including activities created, transactions added, and budgets updated." />
+            <HelpTextTooltip content="Your contribution activity over the past year, including activities created, transactions added, and budgets updated." />
           </div>
           <CardDescription>Your contributions: activities created, transactions added, budgets updated, and more</CardDescription>
         </CardHeader>

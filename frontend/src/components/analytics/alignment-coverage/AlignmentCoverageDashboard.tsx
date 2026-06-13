@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,12 +60,7 @@ import {
   Legend,
 } from "recharts";
 import type * as XLSXType from "xlsx";
-
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
-  return `$${value.toFixed(0)}`;
-}
+import { formatCurrencyCompact } from "@/lib/format";
 
 // ============================================
 // COVERAGE TREE NODE (with click-to-drill)
@@ -157,7 +153,7 @@ function CoverageTreeNode({
         </span>
 
         <span className="flex-shrink-0 w-[100px] text-right text-body font-medium">
-          {node.totalFunding > 0 ? formatCurrency(node.totalFunding) : "—"}
+          {node.totalFunding > 0 ? formatCurrencyCompact(node.totalFunding) : "—"}
         </span>
       </div>
 
@@ -478,7 +474,7 @@ export function AlignmentCoverageDashboard() {
               <SelectItem value="all">All development partners</SelectItem>
               {donorOptions.map((o) => (
                 <SelectItem key={o.id} value={o.id}>
-                  {o.acronym ? `${o.acronym} — ${o.name}` : o.name}
+                  {o.acronym ? `${o.acronym}: ${o.name}` : o.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -559,7 +555,7 @@ export function AlignmentCoverageDashboard() {
                     <DollarSign className="h-5 w-5 text-foreground" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{formatCurrency(coverageData.alignedFunding)}</p>
+                    <p className="text-2xl font-bold">{formatCurrencyCompact(coverageData.alignedFunding)}</p>
                     <p className="text-helper text-muted-foreground">Funding aligned</p>
                   </div>
                 </div>
@@ -608,7 +604,7 @@ export function AlignmentCoverageDashboard() {
                               <p className="font-semibold mb-1">{d.fullName}</p>
                               <p className="text-foreground">Covered: {d.Covered}</p>
                               <p className="text-muted-foreground">Neglected: {d.Neglected}</p>
-                              <p className="text-muted-foreground mt-1">Funding: {formatCurrency(d.funding)}</p>
+                              <p className="text-muted-foreground mt-1">Funding: {formatCurrencyCompact(d.funding)}</p>
                             </div>
                           );
                         }}
@@ -693,7 +689,7 @@ export function AlignmentCoverageDashboard() {
                   Neglected Priority Areas
                 </CardTitle>
                 <CardDescription>
-                  Outcomes and interventions with no activities aligned — potential gaps in development partner coverage
+                  Outcomes and interventions with no activities aligned, indicating potential gaps in development partner coverage
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -740,7 +736,7 @@ export function AlignmentCoverageDashboard() {
             </DialogTitle>
             <DialogDescription>
               {drillNode?.activityCount || 0} {drillNode?.activityCount === 1 ? "activity" : "activities"} aligned •{" "}
-              Total funding {formatCurrency(drillNode?.totalFunding || 0)}
+              Total funding {formatCurrencyCompact(drillNode?.totalFunding || 0)}
             </DialogDescription>
           </DialogHeader>
 
@@ -760,11 +756,13 @@ export function AlignmentCoverageDashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="text-body font-medium truncate">{act.title}</p>
                       {act.iati_id && (
-                        <p className="text-xs text-muted-foreground font-mono truncate">{act.iati_id}</p>
+                        <div className="mt-0.5">
+                          <CopyableIdBadge value={act.iati_id} label="IATI identifier" tooltip="Click to copy IATI identifier" className="max-w-full" />
+                        </div>
                       )}
                     </div>
                     <span className="w-[120px] text-right text-body font-medium">
-                      {formatCurrency(act.funding)}
+                      {formatCurrencyCompact(act.funding)}
                     </span>
                     <a
                       href={`/activities/${act.id}`}

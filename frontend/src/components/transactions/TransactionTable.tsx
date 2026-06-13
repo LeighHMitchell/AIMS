@@ -47,6 +47,7 @@ import {
 import { TransactionValueDisplay } from "@/components/currency/TransactionValueDisplay";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
 import { OrganizationHoverCard } from "@/components/ui/organization-hover-card";
+import { EmptyOrgIndicator } from "@/components/ui/empty-org-indicator";
 import { TIED_STATUS_LABELS } from "@/types/transaction";
 import { TransactionColumnId } from "@/app/transactions/page";
 import { TransactionActionMenu } from "@/components/transactions/TransactionActionMenu";
@@ -79,6 +80,7 @@ import { LoadingText } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
 import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
 import { formatCurrencyPrecise, formatDate as formatDateCanonical } from "@/lib/format";
+import { CurrencyValue } from "@/components/ui/currency-value";
 import { codeAndName } from "@/lib/iati/codelist-resolver";
 
 // Transaction type to icon mapping (IATI Standard v2.03)
@@ -529,36 +531,6 @@ export function TransactionTable({
     }
   };
 
-  const formatCurrency = (value: number, currency: string = "USD") => {
-    // Ensure currency is a valid 3-letter code, fallback to USD
-    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase())
-      ? currency.toUpperCase()
-      : "USD";
-
-    try {
-      // Format number with commas
-      const formattedValue = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-
-      // Return as JSX with gray currency code
-      return <><span className="text-muted-foreground text-helper">{safeCurrency}</span> {formattedValue}</>;
-    } catch (error) {
-      console.warn(`[TransactionTable] Invalid currency "${currency}", using USD:`, error);
-      const formattedValue = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-      return <><span className="text-muted-foreground text-helper font-normal">USD</span> {formattedValue}</>;
-    }
-  };
-
-  // String version of formatCurrency for group headers
-  const formatCurrencyString = (value: number, currency: string = "USD") => {
-    return formatCurrencyPrecise(value, currency);
-  };
-
   const getTransactionIcon = (type: string) => {
     const Icon = TRANSACTION_TYPE_ICONS[type] || FileText;
     return <Icon className="h-4 w-4" />;
@@ -730,7 +702,7 @@ export function TransactionTable({
                           </span>
                         </div>
                         <span className="font-semibold text-body">
-                          {formatCurrencyString(groupTotal?.total || 0, 'USD')}
+                          {formatCurrencyPrecise(groupTotal?.total || 0, 'USD')}
                         </span>
                       </div>
                     </TableCell>
@@ -800,6 +772,9 @@ export function TransactionTable({
             const receiverName = receiver.name;
             const providerDisplay = provider.acronym;
             const receiverDisplay = receiver.acronym;
+            // Truly-empty case: nothing recorded for this org at all
+            const providerEmpty = !transaction.provider_org_id && !transaction.provider_org_name && !transaction.provider_org_ref && !transaction.provider_org_acronym;
+            const receiverEmpty = !transaction.receiver_org_id && !transaction.receiver_org_name && !transaction.receiver_org_ref && !transaction.receiver_org_acronym;
             const orgFlow = `${providerName} → ${receiverName}`;
             const transactionId = transaction.uuid || transaction.id;
             const isExpanded = expandedRows.has(transactionId);
@@ -939,7 +914,7 @@ export function TransactionTable({
                                 <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 w-4 h-4 rounded flex items-center justify-center cursor-help">D</span>
                               </TooltipTrigger>
                               <TooltipContent side="right">
-                                <p>Draft — saved but not yet finalised</p>
+                                <p>Draft: saved but not yet finalised</p>
                               </TooltipContent>
                             </Tooltip>
                           )}
@@ -987,9 +962,9 @@ export function TransactionTable({
                       <td key="organizations" className="py-3 px-4">
                         <div className="text-body">
                           <div className="flex items-start gap-2">
-                            <div className="flex-1 min-w-0"><OrganizationLogo logo={provider.logo || transaction.provider_org_logo} name={providerDisplay} size="sm" className="float-left mr-1.5 mt-0.5" /><OrganizationHoverCard organization={provider} side="top" align="start">{provider.id ? <Link href={`/organizations/${provider.id}`} className="text-body hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{providerDisplay}</Link> : <span className="text-body cursor-default">{providerDisplay}</span>}</OrganizationHoverCard></div>
+                            <div className="flex-1 min-w-0">{providerEmpty ? <EmptyOrgIndicator role="provider" /> : (<><OrganizationLogo logo={provider.logo || transaction.provider_org_logo} name={providerDisplay} size="sm" className="float-left mr-1.5 mt-0.5" /><OrganizationHoverCard organization={provider} side="top" align="start">{provider.id ? <Link href={`/organizations/${provider.id}`} className="text-body hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{providerDisplay}</Link> : <span className="text-body cursor-default">{providerDisplay}</span>}</OrganizationHoverCard></>)}</div>
                             <span className="text-muted-foreground mt-1">→</span>
-                            <div className="flex-1 min-w-0"><OrganizationLogo logo={receiver.logo || transaction.receiver_org_logo} name={receiverDisplay} size="sm" className="float-left mr-1.5 mt-0.5" /><OrganizationHoverCard organization={receiver} side="top" align="start">{receiver.id ? <Link href={`/organizations/${receiver.id}`} className="text-body hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{receiverDisplay}</Link> : <span className="text-body cursor-default">{receiverDisplay}</span>}</OrganizationHoverCard></div>
+                            <div className="flex-1 min-w-0">{receiverEmpty ? <EmptyOrgIndicator role="receiver" /> : (<><OrganizationLogo logo={receiver.logo || transaction.receiver_org_logo} name={receiverDisplay} size="sm" className="float-left mr-1.5 mt-0.5" /><OrganizationHoverCard organization={receiver} side="top" align="start">{receiver.id ? <Link href={`/organizations/${receiver.id}`} className="text-body hover:text-foreground transition-colors cursor-pointer" onClick={(e) => e.stopPropagation()}>{receiverDisplay}</Link> : <span className="text-body cursor-default">{receiverDisplay}</span>}</OrganizationHoverCard></>)}</div>
                           </div>
                         </div>
                       </td>
@@ -997,26 +972,26 @@ export function TransactionTable({
                     providerActivity: (
                       <td key="providerActivity" className="py-3 px-4" style={{ maxWidth: '260px' }}>
                         {paId || transaction.provider_org_activity_id ? (
-                          <Link href={`/activities/${paId || transaction.provider_org_activity_id}`} className="text-helper hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
-                            <div className="space-y-0.5">
+                          <div className="space-y-0.5">
+                            <Link href={`/activities/${paId || transaction.provider_org_activity_id}`} className="text-helper hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
                               {paDetails?.acronym && <div className="text-body">{paDetails.acronym}</div>}
                               {(paDetails?.title_narrative || paDetails?.title) && <div className="text-body">{paDetails.title_narrative || paDetails.title}</div>}
-                              <div className="whitespace-nowrap"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{paDetails?.iati_identifier || transaction.provider_org_activity_id}</span></div>
-                            </div>
-                          </Link>
+                            </Link>
+                            <div className="whitespace-nowrap"><CopyableIdBadge value={paDetails?.iati_identifier || transaction.provider_org_activity_id} label="IATI identifier" tooltip="Click to copy IATI identifier" /></div>
+                          </div>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
                     receiverActivity: (
                       <td key="receiverActivity" className="py-3 px-4" style={{ maxWidth: '260px' }}>
                         {raId || transaction.receiver_org_activity_id ? (
-                          <Link href={`/activities/${raId || transaction.receiver_org_activity_id}`} className="text-helper hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
-                            <div className="space-y-0.5">
+                          <div className="space-y-0.5">
+                            <Link href={`/activities/${raId || transaction.receiver_org_activity_id}`} className="text-helper hover:underline break-words block" onClick={(e) => e.stopPropagation()}>
                               {raDetails?.acronym && <div className="text-body">{raDetails.acronym}</div>}
                               {(raDetails?.title_narrative || raDetails?.title) && <div className="text-body">{raDetails.title_narrative || raDetails.title}</div>}
-                              <div className="whitespace-nowrap"><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{raDetails?.iati_identifier || transaction.receiver_org_activity_id}</span></div>
-                            </div>
-                          </Link>
+                            </Link>
+                            <div className="whitespace-nowrap"><CopyableIdBadge value={raDetails?.iati_identifier || transaction.receiver_org_activity_id} label="IATI identifier" tooltip="Click to copy IATI identifier" /></div>
+                          </div>
                         ) : <span className="text-muted-foreground">—</span>}
                       </td>
                     ),
@@ -1046,7 +1021,7 @@ export function TransactionTable({
                                     <PenLine className="h-3.5 w-3.5 text-orange-500" />
                                   )}
                                 </span>
-                                {formatCurrency(usdValues[transactionId].usd!, 'USD')}
+                                <CurrencyValue amount={usdValues[transactionId].usd!} currency="USD" />
                               </span>
                               {/* Value date shown under the USD figure (replaces the separate Value Date column). */}
                               {(() => {
@@ -1065,7 +1040,7 @@ export function TransactionTable({
                       return (
                         <td key="financeType" className="py-3 px-4 min-w-[200px] max-w-[230px]">
                           {code ? (
-                            <Tooltip><TooltipTrigger asChild><span className={`text-body cursor-help block ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded float-left mr-1.5 mt-0.5">{code}</span>{label && <span className={transaction.finance_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-helper">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${code} — ${label || 'Unknown'}`}</p></TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><span className={`text-body cursor-help block ${transaction.finance_type_inherited ? 'opacity-70' : ''}`}><span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded float-left mr-1.5 mt-0.5">{code}</span>{label && <span className={transaction.finance_type_inherited ? 'text-muted-foreground' : 'text-foreground'}>{label}</span>}</span></TooltipTrigger><TooltipContent side="right"><p className="text-helper">{transaction.finance_type_inherited ? 'Inherited from activity default' : `${code}: ${label || 'Unknown'}`}</p></TooltipContent></Tooltip>
                           ) : <span className="text-body font-normal text-muted-foreground">—</span>}
                         </td>
                       );
@@ -1182,7 +1157,7 @@ export function TransactionTable({
                               {TRANSACTION_TYPE_LABELS[transaction.transaction_type]}
                             </span>
                             <span className="text-body text-muted-foreground">
-                              — {format(new Date(transaction.transaction_date), 'dd MMM yyyy')}
+                              · {format(new Date(transaction.transaction_date), 'dd MMM yyyy')}
                             </span>
                           </div>
                           <Button variant="ghost" size="sm" className="gap-1">
@@ -1200,7 +1175,7 @@ export function TransactionTable({
                         
                         {/* Amount Display */}
                         <div className="text-2xl font-bold text-foreground mb-3">
-                          {formatCurrency(transaction.value, transaction.currency)}
+                          <CurrencyValue amount={transaction.value} currency={transaction.currency} />
                         </div>
                         
                         {/* Mini Badges */}

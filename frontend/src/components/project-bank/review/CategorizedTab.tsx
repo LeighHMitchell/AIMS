@@ -378,7 +378,7 @@ export function CategorizedTab() {
             },
           ]}
           onRowClick={() => {}}
-          emptyMessage="No categorized projects found"
+          emptyMessage="No categorised projects found"
         />
       )}
     </>

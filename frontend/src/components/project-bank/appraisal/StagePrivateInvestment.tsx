@@ -58,7 +58,7 @@ export function StagePrivateInvestment({ wizard }: StagePrivateInvestmentProps) 
       <div>
         <h3 className="text-lg font-semibold mb-1">Private Investment Structuring</h3>
         <p className="text-body text-muted-foreground">
-          Prepare this project for private sector investment — identify investors, procurement approach, and financial arrangements.
+          Prepare this project for private sector investment: identify investors, procurement approach, and financial arrangements.
         </p>
       </div>
 

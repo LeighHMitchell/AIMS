@@ -159,7 +159,7 @@ export function formatValueForDisplay(value: string, dataType: FieldStats['dataT
   if (dataType === 'date' && value.match(/^\d{4}-\d{2}-\d{2}/)) {
     try {
       const date = new Date(value)
-      return date.toLocaleDateString('en-US', { 
+      return date.toLocaleDateString('en-GB', { 
         year: 'numeric', 
         month: 'short', 
         day: 'numeric' 

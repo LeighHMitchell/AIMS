@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Send, Loader2, AlertCircle, Archive, ArchiveRestore, Trash2, ChevronsUpDown, Check, MessageCircle, HelpCircle } from 'lucide-react';
+import { Send, Loader2, AlertCircle, Archive, ArchiveRestore, Trash2, ChevronsUpDown, Check, MessageCircle, HelpCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -379,9 +380,12 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
     }
   };
 
-  const formatDate = (dateString: string) => {
+  // Timestamp (date + time-of-day). Date portion matches the canonical
+  // @/lib/format formatDate style ("18 May 2024"); lib formatDate is
+  // date-only, so the time suffix keeps living here via date-fns.
+  const formatDateTime = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'MMM d, yyyy h:mm a');
+      return format(new Date(dateString), 'd MMM yyyy h:mm a');
     } catch {
       return dateString;
     }
@@ -395,13 +399,15 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col p-0 gap-0">
           <DialogHeader className="px-6 py-4 mx-0 mt-0">
-            <DialogTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
+            <DialogTitle>
               Comments
               {comments.length > 0 && (
-                <span className="text-body text-muted-foreground font-normal">({comments.length})</span>
+                <span className="text-body text-muted-foreground font-normal"> ({comments.length})</span>
               )}
             </DialogTitle>
+            <DialogDescription>
+              Discuss this activity with your team: post comments, reply to others and archive threads once they’re resolved.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="flex items-center justify-end gap-2 px-6 py-2 border-b">
@@ -474,7 +480,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                     </div>
 
                     {/* Top Right: Date/Time */}
-                    <p className="text-helper text-muted-foreground whitespace-nowrap">{formatDate(comment.createdAt)}</p>
+                    <p className="text-helper text-muted-foreground whitespace-nowrap">{formatDateTime(comment.createdAt)}</p>
                   </div>
 
                   {/* User Info Section */}
@@ -502,7 +508,7 @@ export function CommentsDrawer({ activityId, isOpen, onClose }: CommentsDrawerPr
                       {comment.replies.map((reply) => (
                         <div key={reply.id} className="bg-muted p-2 rounded space-y-2">
                           <div className="flex items-start justify-between">
-                            <p className="text-helper text-muted-foreground">{formatDate(reply.createdAt)}</p>
+                            <p className="text-helper text-muted-foreground">{formatDateTime(reply.createdAt)}</p>
                           </div>
 
                           <div className="flex items-start gap-2">

@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { getActivityStatusByCode } from "@/data/activity-status-types";
 import { getValidationStatusLabel, isValidationKey, toValidationStatus } from "@/lib/validation-status";
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
+import { CHART_STRUCTURE_COLORS, OTHERS_COLOR } from '@/lib/chart-colors';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
 import Link from "next/link";
@@ -407,7 +407,7 @@ export const ActivityStatusChart: React.FC<ActivityStatusChartProps> = ({
                 label={renderPieLabel}
                 outerRadius={140}
                 innerRadius={70}
-                fill="#8884d8"
+                fill={OTHERS_COLOR}
                 dataKey={metricKey}
                 paddingAngle={2}
               >

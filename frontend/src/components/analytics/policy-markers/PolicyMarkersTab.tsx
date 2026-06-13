@@ -192,7 +192,7 @@ export function PolicyMarkersTab({ refreshKey = 0 }: PolicyMarkersTabProps) {
         title="Budget Value by Policy Marker"
         shortDescription="Total activity budget per marker, split by significance"
         fullDescription="Total activity budget (USD) for activities tagged with each policy marker, stacked by significance level."
-        mathTooltip="Sums total activity budget (USD) per policy marker and significance level. Budgets are not apportioned across markers — an activity's full budget is counted under each marker it carries. Activities without a budget are excluded."
+        mathTooltip="Sums total activity budget (USD) per policy marker and significance level. Budgets are not apportioned across markers; an activity's full budget is counted under each marker it carries. Activities without a budget are excluded."
         className="w-full"
         compactHeight={320}
       >

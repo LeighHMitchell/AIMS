@@ -8,6 +8,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge'
 // Tabs removed — all content shown on single page
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
@@ -846,14 +847,14 @@ export default function LocationProfileDetailPage() {
                     {paginatedActivities.map(activity => (
                       <TableRow key={activity.id}>
                         <TableCell>
-                          <Link href={`/activities/${activity.id}`} className="hover:underline">
-                            <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <Link href={`/activities/${activity.id}`} className="hover:underline min-w-0">
                               <p className="font-medium text-foreground truncate max-w-xs">{activity.title_narrative || 'Untitled'}</p>
-                              {activity.iati_identifier && (
-                                <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded flex-shrink-0">{activity.iati_identifier}</code>
-                              )}
-                            </div>
-                          </Link>
+                            </Link>
+                            {activity.iati_identifier && (
+                              <CopyableIdBadge value={activity.iati_identifier} label="IATI identifier" tooltip="Click to copy IATI identifier" className="flex-shrink-0" />
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-helper text-foreground">
                           {getStatusLabel(activity.activity_status)}

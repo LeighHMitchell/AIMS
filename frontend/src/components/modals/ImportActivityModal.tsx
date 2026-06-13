@@ -100,7 +100,7 @@ export function ImportActivityModal({ isOpen, onClose, user }: ImportActivityMod
               <ul className="mt-2 space-y-1 ml-4 list-disc">
                 <li className="flex items-center gap-2">
                   <Search className="h-3 w-3" />
-                  <span><strong>IATI Search</strong> - Search the IATI Registry by organization or activity</span>
+                  <span><strong>IATI Search</strong> - Search the IATI Registry by organisation or activity</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <FileCode className="h-3 w-3" />

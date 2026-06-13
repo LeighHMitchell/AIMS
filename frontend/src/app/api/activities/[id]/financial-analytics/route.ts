@@ -272,7 +272,7 @@ export async function GET(
       return {
         date: t.date, // Keep ISO date for filtering
         timestamp: t.dateObj.getTime(), // Add timestamp for proper time-based x-axis
-        displayDate: t.dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        displayDate: t.dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
         cumulative
       }
     })
@@ -310,7 +310,7 @@ export async function GET(
         return {
           date: budget.period_start,
           timestamp: dateObj.getTime(), // Add timestamp for proper time-based x-axis
-          displayDate: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          displayDate: dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
           cumulative
         }
       })
@@ -397,7 +397,7 @@ export async function GET(
           rawDisbursementData.push({
             date: pd.period_start,
             timestamp: dateObj.getTime(),
-            period: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            period: dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
             sortKey: `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`,
             planned: plannedUsd,
             actual: 0,
@@ -428,7 +428,7 @@ export async function GET(
           rawDisbursementData.push({
             date: transaction.transaction_date,
             timestamp: dateObj.getTime(),
-            period: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            period: dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
             sortKey: `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`,
             planned: 0,
             actual: usdValue,
@@ -448,7 +448,7 @@ export async function GET(
           rawDisbursementData.push({
             date: budget.period_start,
             timestamp: dateObj.getTime(),
-            period: dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            period: dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
             sortKey: `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`,
             planned: 0,
             actual: 0,

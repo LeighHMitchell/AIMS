@@ -226,7 +226,7 @@ export function AssignFocalPointModal({
                   <p className="text-helper text-muted-foreground px-2 py-1">
                     {query
                       ? `Found ${filteredResults.length} user${filteredResults.length !== 1 ? 's' : ''}`
-                      : `${filteredResults.length} user${filteredResults.length !== 1 ? 's' : ''} — type to filter`}
+                      : `${filteredResults.length} user${filteredResults.length !== 1 ? 's' : ''}, type to filter`}
                   </p>
                   {filteredResults.map((user) => (
                     <button

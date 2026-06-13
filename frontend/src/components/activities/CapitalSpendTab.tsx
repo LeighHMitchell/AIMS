@@ -260,7 +260,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                     Capital Spend Percentage
                     <HelpTextTooltip>
                       The share of the activity's total budget that pays for long-lived
-                      assets — buildings, roads, vehicles, equipment. The rest (the
+                      assets such as buildings, roads, vehicles and equipment. The rest (the
                       "recurrent" share) covers ongoing running costs like staff,
                       training, and supplies.
                     </HelpTextTooltip>
@@ -302,7 +302,7 @@ export function CapitalSpendTab({ activityId, readOnly = false, onCapitalSpendCh
                   <span className="inline-flex items-center gap-2">
                     Recurrent Spend Percentage
                     <HelpTextTooltip>
-                      The share that covers ongoing operating costs — salaries,
+                      The share that covers ongoing operating costs such as salaries,
                       training, consumables, running expenses. Calculated automatically
                       as 100% minus the capital spend percentage.
                     </HelpTextTooltip>

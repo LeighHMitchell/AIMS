@@ -8,7 +8,8 @@ import { BarChart3, PieChart, Table as TableIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
-import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { formatTooltipCurrency, formatAxisCurrency, formatCurrencyCompact } from '@/lib/format'
+import { CurrencyValue } from '@/components/ui/currency-value'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { Button } from '@/components/ui/button'
 import { ChartToolbarRow } from '@/components/ui/chart-toolbar-row'
@@ -121,27 +122,6 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
     }
   }
 
-  const formatCurrency = (value: number): string => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      
-      // Format in billions or millions
-      if (value >= 1_000_000_000) {
-        return `$${(value / 1_000_000_000).toFixed(2)} bn`
-      } else if (value >= 1_000_000) {
-        return `$${(value / 1_000_000).toFixed(2)} M`
-      } else if (value >= 1_000) {
-        return `$${(value / 1_000).toFixed(2)} K`
-      }
-      return `$${value.toFixed(2)}`
-    } catch (error) {
-      console.error('[HumanitarianShareChart] Error formatting currency:', error)
-      return '$0'
-    }
-  }
-
   // Compact mode renders just the chart without Card wrapper and filters
   if (compact) {
     if (loading) {
@@ -182,9 +162,9 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
           </svg>
         </div>
         <div className="text-helper text-muted-foreground text-center">
-          <span className="text-destructive font-medium">{formatCurrency(data.humanitarian)}</span>
+          <span className="text-destructive font-medium">{formatCurrencyCompact(data.humanitarian)}</span>
           {' / '}
-          <span>{formatCurrency(data.total)}</span>
+          <span>{formatCurrencyCompact(data.total)}</span>
         </div>
       </div>
     )
@@ -285,7 +265,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
             <div>
               <p className="font-semibold text-foreground">Development cooperation</p>
               <p className="text-muted-foreground">
-                {formatCurrency(data.development)} USD ({data.developmentPercent}%)
+                {formatCurrencyCompact(data.development)} ({data.developmentPercent}%)
               </p>
             </div>
           </div>
@@ -306,7 +286,7 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
             <div>
               <p className="font-semibold text-destructive">Humanitarian assistance</p>
               <p className="text-muted-foreground">
-                {formatCurrency(data.humanitarian)} USD ({data.humanitarianPercent}%)
+                {formatCurrencyCompact(data.humanitarian)} ({data.humanitarianPercent}%)
               </p>
             </div>
           </div>
@@ -376,17 +356,17 @@ export function HumanitarianShareChart({ dateRange, refreshKey, onDataChange, co
         <tbody>
           <tr className="border-b border-border">
             <td className="py-3 px-4 text-foreground">Development cooperation</td>
-            <td className="text-right py-3 px-4 text-muted-foreground">{formatCurrency(data.development)}</td>
+            <td className="text-right py-3 px-4 text-muted-foreground"><CurrencyValue amount={data.development} variant="short" /></td>
             <td className="text-right py-3 px-4 text-muted-foreground">{data.developmentPercent}%</td>
           </tr>
           <tr className="border-b border-border">
             <td className="py-3 px-4 text-destructive font-medium">Humanitarian assistance</td>
-            <td className="text-right py-3 px-4 text-muted-foreground">{formatCurrency(data.humanitarian)}</td>
+            <td className="text-right py-3 px-4 text-muted-foreground"><CurrencyValue amount={data.humanitarian} variant="short" /></td>
             <td className="text-right py-3 px-4 text-destructive font-medium">{data.humanitarianPercent}%</td>
           </tr>
           <tr className="bg-muted">
             <td className="py-3 px-4 font-semibold text-foreground">Total</td>
-            <td className="text-right py-3 px-4 font-semibold text-foreground">{formatCurrency(data.total)}</td>
+            <td className="text-right py-3 px-4 font-semibold text-foreground"><CurrencyValue amount={data.total} variant="short" /></td>
             <td className="text-right py-3 px-4 font-semibold text-foreground">100%</td>
           </tr>
         </tbody>

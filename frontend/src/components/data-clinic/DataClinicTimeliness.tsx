@@ -421,7 +421,7 @@ export function DataClinicTimeliness() {
               </Table>
             </div>
           )}
-          footer={<p className="text-body text-muted-foreground leading-relaxed">For each year, this compares how many activities recorded a planned versus an actual start date, and a planned versus an actual end date. Where the actual bars sit well below the planned ones — or a year has plans but few actuals — it usually means real start/end dates haven't been entered yet. Use it to find where date reporting is lagging and backfill the actual dates, so the activity timeline stays accurate.</p>}
+          footer={<p className="text-body text-muted-foreground leading-relaxed">For each year, this compares how many activities recorded a planned versus an actual start date, and a planned versus an actual end date. Where the actual bars sit well below the planned ones (or a year has plans but few actuals), it usually means real start/end dates haven't been entered yet. Use it to find where date reporting is lagging and backfill the actual dates, so the activity timeline stays accurate.</p>}
         />
 
         {/* Activities with Actual End Dates by Year */}
@@ -497,7 +497,7 @@ export function DataClinicTimeliness() {
               </Table>
             </div>
           )}
-          footer={<p className="text-body text-muted-foreground leading-relaxed">Activities still in the finalisation stage shouldn't yet carry an actual end date. This counts, by year, those that do — a likely mismatch between an activity's status and its dates. Use it to reconcile each activity's status with its recorded dates so the two stay consistent.</p>}
+          footer={<p className="text-body text-muted-foreground leading-relaxed">Activities still in the finalisation stage shouldn't yet carry an actual end date. This counts, by year, those that do, a likely mismatch between an activity's status and its dates. Use it to reconcile each activity's status with its recorded dates so the two stay consistent.</p>}
         />
 
         {/* Closed Activities with Only Planned End Dates */}

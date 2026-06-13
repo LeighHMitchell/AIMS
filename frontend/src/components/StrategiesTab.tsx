@@ -139,14 +139,16 @@ const StrategiesTab: React.FC<StrategiesTabProps> = ({
     }
   };
 
+  // Publication-axis statuses use the semantic feedback set only:
+  // published/active = success, pending-ish = warning, draft/completed = muted.
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'Published': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]';
-      case 'Active': return 'bg-blue-100 text-blue-800';
+      case 'Active': return 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]';
       case 'Completed': return 'bg-muted text-foreground';
-      case 'Draft – Internal Only': return 'bg-yellow-100 text-yellow-800';
-      case 'Under Government Consultation': return 'bg-orange-100 text-orange-800';
-      case 'Pending Publication / Approval': return 'bg-purple-100 text-purple-800';
+      case 'Draft – Internal Only': return 'bg-muted text-foreground';
+      case 'Under Government Consultation': return 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))]';
+      case 'Pending Publication / Approval': return 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))]';
       default: return 'bg-muted text-foreground';
     }
   };

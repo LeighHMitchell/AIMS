@@ -152,7 +152,7 @@ export function TaskCard({
     if (daysUntil === 0) return 'Due today';
     if (daysUntil === 1) return 'Due tomorrow';
     if (isDueSoon) return `Due in ${daysUntil} days`;
-    return `Due ${format(deadline, 'MMM d, yyyy')}`;
+    return `Due ${format(deadline, 'd MMM yyyy')}`;
   };
 
   const creatorName = getTaskUserDisplayName(task.creator);

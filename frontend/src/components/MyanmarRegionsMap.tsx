@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { HelpTextTooltip } from "@/components/ui/help-text-tooltip"
 import { toast } from "sonner"
+import { formatCurrencyCompact } from '@/lib/format'
 
 interface ActivityInfo {
   id: string
@@ -94,18 +95,6 @@ export default function MyanmarRegionsMap({
     if (percentage <= 70) return '#4c5568'  // Blue Slate
     if (percentage <= 90) return '#3d4555'  // Darker Blue Slate
     return '#dc2625'  // Primary Scarlet for >90%
-  }
-
-  // Format currency helper
-  const formatCurrency = (value: number): string => {
-    if (value >= 1_000_000_000) {
-      return `$${(value / 1_000_000_000).toFixed(1)}B`
-    } else if (value >= 1_000_000) {
-      return `$${(value / 1_000_000).toFixed(1)}M`
-    } else if (value >= 1_000) {
-      return `$${(value / 1_000).toFixed(0)}K`
-    }
-    return `$${value.toFixed(0)}`
   }
 
   // Get hovered region data
@@ -379,7 +368,7 @@ export default function MyanmarRegionsMap({
                         <tr className="border-b border-border">
                           <td className="py-1 text-muted-foreground">Value</td>
                           <td className="py-1 text-right font-medium text-foreground">
-                            {formatCurrency(regionData.value)}
+                            {formatCurrencyCompact(regionData.value)}
                           </td>
                         </tr>
                       )}
@@ -500,13 +489,13 @@ export default function MyanmarRegionsMap({
                         {/* Value row */}
                         <text x="0.2" y="1.45" style={{ fontSize: '0.28px' }} fill="#64748b">Value</text>
                         <text x={boxWidth - 0.2} y="1.45" style={{ fontSize: '0.28px', fontWeight: 500 }} fill="#1e293b" textAnchor="end">
-                          {regionData?.value ? formatCurrency(regionData.value) : '-'}
+                          {regionData?.value ? formatCurrencyCompact(regionData.value) : '—'}
                         </text>
 
                         {/* Activities row */}
                         <text x="0.2" y="1.9" style={{ fontSize: '0.28px' }} fill="#64748b">Activities</text>
                         <text x={boxWidth - 0.2} y="1.9" style={{ fontSize: '0.28px', fontWeight: 500 }} fill="#1e293b" textAnchor="end">
-                          {regionData?.activityCount ?? '-'}
+                          {regionData?.activityCount ?? '—'}
                         </text>
                       </>
                     ) : (

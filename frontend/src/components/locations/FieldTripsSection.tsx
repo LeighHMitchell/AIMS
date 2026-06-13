@@ -183,7 +183,7 @@ export const FieldTripsSection: React.FC<FieldTripsSectionProps> = ({
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <h3 className="text-lg font-semibold">Field Trips</h3>
-        <HelpTextTooltip content="One-off events — workshops, visits, M&E missions. Each carries its own location and shows as an amber pin on the map, separate from activity sites." />
+        <HelpTextTooltip content="One-off events such as workshops, visits, and M&E missions. Each carries its own location and shows as an amber pin on the map, separate from activity sites." />
       </div>
 
       {loading ? (
@@ -200,7 +200,7 @@ export const FieldTripsSection: React.FC<FieldTripsSectionProps> = ({
           />
           <div className="text-body font-medium">No field trips yet</div>
           <p className="max-w-md text-helper text-muted-foreground">
-            Log a workshop, site visit, or community consultation — where it happened, what happened,
+            Log a workshop, site visit, or community consultation: where it happened, what happened,
             and any photos or documents. Use the “Add Field Trip” button above the locations table.
           </p>
         </Card>

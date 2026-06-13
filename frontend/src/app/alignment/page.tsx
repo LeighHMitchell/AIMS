@@ -13,7 +13,7 @@ export default function AlignmentPage() {
             Plan Alignment
           </h1>
           <p className="text-muted-foreground mt-2 max-w-2xl">
-            Which priority areas of Myanmar's national plans are covered by aid activities — and which aren't.
+            Which priority areas of Myanmar's national plans are covered by aid activities, and which aren't.
           </p>
         </div>
 

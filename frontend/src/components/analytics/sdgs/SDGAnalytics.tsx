@@ -52,7 +52,7 @@ export function SDGAnalytics({ dateRange, onDateRangeChange, refreshKey }: SDGAn
           title="SDG Concentration"
           shortDescription="SDG trends over time"
           fullDescription="Assess whether activities are becoming more concentrated or dispersed across SDGs over time"
-          mathTooltip="Tracks how concentrated or dispersed activities are across the SDGs over time — whether the portfolio is spreading across more goals or focusing on fewer. Computed per period from the share of activities (or financial value) mapped to each goal."
+          mathTooltip="Tracks how concentrated or dispersed activities are across the SDGs over time, whether the portfolio is spreading across more goals or focusing on fewer. Computed per period from the share of activities (or financial value) mapped to each goal."
         >
           <SDGConcentrationChart
             organizationId={organizationId}

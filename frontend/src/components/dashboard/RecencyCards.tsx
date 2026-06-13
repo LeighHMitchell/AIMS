@@ -8,12 +8,33 @@ import { useOrgDashboardStats } from '@/hooks/useOrgDashboardStats';
 import { useUser } from '@/hooks/useUser';
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
 import { formatDistanceToNow, format } from 'date-fns';
-import { Plus, Pencil, CheckCircle, XCircle, HelpCircle, FileText, ExternalLink, MoreVertical, Trash2 } from 'lucide-react';
+import { Pencil, CheckCircle, XCircle, HelpCircle, FileText, ExternalLink, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ValidationEventType } from '@/types/dashboard';
 import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
 import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
+
+/** Card heading matching the hero cards above: muted label + a (?) help icon
+ *  (no leading icon). */
+function RecencyHeading({ title, help }: { title: string; help: string }) {
+  return (
+    <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-1.5">
+      {title}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <p className="text-body">{help}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </CardTitle>
+  );
+}
 
 interface RecencyCardsProps {
   organizationId: string;
@@ -57,7 +78,7 @@ function formatTimestamp(timestamp: string): { relative: string; absolute: strin
   const date = new Date(timestamp);
   return {
     relative: formatDistanceToNow(date, { addSuffix: true }),
-    absolute: format(date, 'MMM d, yyyy h:mm a'),
+    absolute: format(date, 'd MMM yyyy h:mm a'),
   };
 }
 
@@ -143,23 +164,21 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       <StaggerItem>
         <Card className="bg-white transition-all h-full group">
           <CardHeader className="pb-2">
-            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <Plus className="h-4 w-4 text-muted-foreground" />
-              Last Activity Created
-            </CardTitle>
+            <RecencyHeading title="Last Activity Created" help="The activity your organisation most recently created." />
           </CardHeader>
           <CardContent>
             {lastCreated ? (
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <a href={`/activities/new?id=${lastCreated.id}`} className="block font-medium text-body text-foreground leading-snug hover:text-primary truncate" title={lastCreated.title}>
-                      {lastCreated.title}
-                    </a>
+                  {/* ID first, then Title (Acronym) — all inline, wrapping. */}
+                  <p className="min-w-0 flex-1 font-medium text-body text-foreground leading-snug">
                     {lastCreated.iatiIdentifier && (
-                      <CopyableIdBadge value={lastCreated.iatiIdentifier} label="Activity ID" className="mt-1" />
+                      <CopyableIdBadge value={lastCreated.iatiIdentifier} label="Activity ID" className="mr-1.5 align-middle" />
                     )}
-                  </div>
+                    <a href={`/activities/new?id=${lastCreated.id}`} className="text-foreground hover:text-primary" title={lastCreated.title}>
+                      {lastCreated.title}{lastCreated.acronym ? ` (${lastCreated.acronym})` : ''}
+                    </a>
+                  </p>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                       <Button
@@ -214,23 +233,21 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       <StaggerItem>
         <Card className="bg-white transition-all h-full group">
           <CardHeader className="pb-2">
-            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <Pencil className="h-4 w-4 text-muted-foreground" />
-              Last Activity Edited
-            </CardTitle>
+            <RecencyHeading title="Last Activity Edited" help="The activity in your organisation's portfolio that was most recently edited, and by whom." />
           </CardHeader>
           <CardContent>
             {lastEdited ? (
               <>
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <a href={`/activities/new?id=${lastEdited.id}`} className="block font-medium text-body text-foreground leading-snug hover:text-primary truncate" title={lastEdited.title}>
-                      {lastEdited.title}
-                    </a>
+                  {/* ID first, then Title (Acronym) — all inline, wrapping. */}
+                  <p className="min-w-0 flex-1 font-medium text-body text-foreground leading-snug">
                     {lastEdited.iatiIdentifier && (
-                      <CopyableIdBadge value={lastEdited.iatiIdentifier} label="Activity ID" className="mt-1" />
+                      <CopyableIdBadge value={lastEdited.iatiIdentifier} label="Activity ID" className="mr-1.5 align-middle" />
                     )}
-                  </div>
+                    <a href={`/activities/new?id=${lastEdited.id}`} className="text-foreground hover:text-primary" title={lastEdited.title}>
+                      {lastEdited.title}{lastEdited.acronym ? ` (${lastEdited.acronym})` : ''}
+                    </a>
+                  </p>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                       <Button
@@ -292,18 +309,21 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
       <StaggerItem>
         <Card className="bg-white transition-all h-full group">
           <CardHeader className="pb-2">
-            <CardTitle className="text-body font-medium text-muted-foreground flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              Last Activity Validated
-            </CardTitle>
+            <RecencyHeading title="Last Activity Validated" help="The most recent government validation decision (validated, rejected, or more-info-requested) on one of your organisation's activities." />
           </CardHeader>
           <CardContent>
             {lastValidation ? (
               <>
                 <div className="flex items-start gap-2">
-                  <a href={`/activities/new?id=${lastValidation.activityId}&section=government-endorsement`} className="font-medium text-body text-foreground leading-snug flex-1 hover:text-primary truncate" title={lastValidation.activityTitle}>
-                    {lastValidation.activityTitle}
-                  </a>
+                  {/* ID first, then Title (Acronym) — all inline, wrapping. */}
+                  <p className="min-w-0 flex-1 font-medium text-body text-foreground leading-snug">
+                    {lastValidation.iatiIdentifier && (
+                      <CopyableIdBadge value={lastValidation.iatiIdentifier} label="Activity ID" className="mr-1.5 align-middle" />
+                    )}
+                    <a href={`/activities/new?id=${lastValidation.activityId}&section=government-endorsement`} className="text-foreground hover:text-primary" title={lastValidation.activityTitle}>
+                      {lastValidation.activityTitle}{lastValidation.acronym ? ` (${lastValidation.acronym})` : ''}
+                    </a>
+                  </p>
                   <div className="flex items-center gap-1 shrink-0">
                     {(() => {
                       const config = VALIDATION_EVENT_CONFIG[lastValidation.eventType];
@@ -339,11 +359,6 @@ export function RecencyCards({ organizationId }: RecencyCardsProps) {
                     </DropdownMenu>
                   </div>
                 </div>
-                {lastValidation.iatiIdentifier && (
-                  <div className="mt-1">
-                    <CopyableIdBadge value={lastValidation.iatiIdentifier} label="Activity ID" />
-                  </div>
-                )}
                 {lastValidation.validatorName && (
                   <p className="text-helper text-muted-foreground mt-1.5">
                     by <span>{lastValidation.validatorName}</span>

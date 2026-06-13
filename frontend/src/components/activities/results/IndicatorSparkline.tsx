@@ -142,8 +142,8 @@ function formatPeriodLabel(start: string, end: string): string {
   const startDate = new Date(start);
   const endDate = new Date(end);
   
-  const startMonth = startDate.toLocaleDateString('en-US', { month: 'short' });
-  const endMonth = endDate.toLocaleDateString('en-US', { month: 'short' });
+  const startMonth = startDate.toLocaleDateString('en-GB', { month: 'short' });
+  const endMonth = endDate.toLocaleDateString('en-GB', { month: 'short' });
   const year = endDate.getFullYear();
   
   return `${startMonth}-${endMonth} ${year}`;

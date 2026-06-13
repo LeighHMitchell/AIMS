@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { DollarSign, ListTodo, Wallet, Banknote } from 'lucide-react';
@@ -21,7 +21,7 @@ interface OrgFinancialTabsProps {
 
 const OVERVIEW_FILTER: TableFilterConfig = {
   allowedFilters: ['all', 'my_org', 'other_orgs'],
-  defaultFilter: 'all',
+  defaultFilter: 'my_org',
   filterLabels: {
     all: 'All',
     my_org: 'Reported by my organisation',
@@ -76,24 +76,24 @@ export function OrgFinancialTabs({ organizationId, userId, context = 'overview' 
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex items-end justify-between gap-4 mb-4">
-            <TabsList className="p-1 h-auto bg-background gap-1 border flex flex-wrap">
-              <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            <PageTabsList className="mb-0">
+              <PageTabsTrigger value="activities">
                 <ListTodo className="h-4 w-4" />
                 Activities
-              </TabsTrigger>
-              <TabsTrigger value="budgets" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="budgets">
                 <Wallet className="h-4 w-4" />
                 Budgets
-              </TabsTrigger>
-              <TabsTrigger value="planned-disbursements" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="planned-disbursements">
                 <Banknote className="h-4 w-4" />
                 Planned Disbursements
-              </TabsTrigger>
-              <TabsTrigger value="transactions" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="transactions">
                 <DollarSign className="h-4 w-4" />
                 Transactions
-              </TabsTrigger>
-            </TabsList>
+              </PageTabsTrigger>
+            </PageTabsList>
 
             {showFilter && (
               <div className="space-y-1">

@@ -166,8 +166,7 @@ export function FinanceTable({
             <TableRow 
               key={index} 
               className={cn(
-                "hover:bg-muted/10 transition-colors",
-                index % 2 === 1 && "bg-muted/5",
+                "hover:bg-muted/50 transition-colors",
                 onRowClick && "cursor-pointer",
                 rowClassName?.(row, index)
               )}

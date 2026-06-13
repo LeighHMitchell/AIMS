@@ -1757,7 +1757,7 @@ export function OrganizationFormContent({
                 type="email"
                 value={formData.email || ''}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="contact@organization.org"
+                placeholder="contact@organisation.org"
               />
             </div>
 
@@ -1792,7 +1792,7 @@ export function OrganizationFormContent({
                 type="url"
                 value={formData.website || ''}
                 onChange={(e) => handleInputChange('website', e.target.value)}
-                placeholder="https://www.organization.org"
+                placeholder="https://www.organisation.org"
               />
             </div>
 
@@ -2345,10 +2345,7 @@ export function OrganizationFormContent({
     <AlertDialog open={showMergeConfirm} onOpenChange={setShowMergeConfirm}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            Confirm Organization Merge
-          </AlertDialogTitle>
+          <AlertDialogTitle>Confirm Organisation Merge</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 text-left">
               <p>
@@ -2483,7 +2480,7 @@ export function OrganizationFormContent({
           </div>
 
           {/* Footer with Save Button - Fixed at bottom */}
-          <footer className="fixed bottom-0 right-0 left-72 bg-card/60 dark:bg-gray-900/60 backdrop-blur-md py-4 px-8 z-[60]">
+          <footer className="fixed bottom-0 right-0 left-72 bg-card/60 backdrop-blur-md py-4 px-8 z-[60]">
             {renderButtons()}
           </footer>
         </div>
@@ -2495,6 +2492,9 @@ export function OrganizationFormContent({
             <DialogContent className="max-w-3xl min-h-[60vh] max-h-[95vh] flex flex-col">
               <DialogHeader>
                 <DialogTitle>Comments</DialogTitle>
+                <DialogDescription>
+                  Discuss this organisation with your team: post comments and reply to others.
+                </DialogDescription>
               </DialogHeader>
               <div className="flex-1 min-h-0 overflow-hidden">
                 <OrganizationComments

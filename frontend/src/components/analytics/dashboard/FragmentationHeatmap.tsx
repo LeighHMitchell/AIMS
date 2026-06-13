@@ -16,22 +16,12 @@ import {
 } from "@/components/ui/tooltip";
 import { useChartExpansion } from "@/lib/chart-expansion-context";
 import { formatTooltipCurrency } from "@/lib/format";
+import { CurrencyValue } from "@/components/ui/currency-value";
 
 interface FragmentationHeatmapProps {
   data: FragmentationData;
   swapAxes?: boolean;
   viewMode?: 'chart' | 'table';
-}
-
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  } else if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`;
-  } else if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
-  }
-  return `$${value.toFixed(0)}`;
 }
 
 function formatPercent(value: number): string {
@@ -103,12 +93,12 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                           : cellMap.get(`${row.id}-${col.id}`);
                         return (
                           <td key={col.id} className="text-right p-2 border-b border-border tabular-nums">
-                            {cell && cell.value > 0 ? formatCurrency(cell.value) : '-'}
+                            {cell && cell.value > 0 ? <CurrencyValue amount={cell.value} variant="short" /> : <span className="text-muted-foreground">—</span>}
                           </td>
                         );
                       })}
                       <td className="text-right p-2 border-b border-border font-medium tabular-nums">
-                        {formatCurrency(row.total)}
+                        <CurrencyValue amount={row.total} variant="short" />
                       </td>
                     </tr>
                   );
@@ -117,11 +107,11 @@ export function FragmentationHeatmap({ data, swapAxes = false, viewMode = 'chart
                   <td className="p-2 border-t border-border">Total</td>
                   {columns.map((col: any) => (
                     <td key={col.id} className="text-right p-2 border-t border-border tabular-nums">
-                      {formatCurrency(col.total)}
+                      <CurrencyValue amount={col.total} variant="short" />
                     </td>
                   ))}
                   <td className="text-right p-2 border-t border-border tabular-nums">
-                    {formatCurrency(data.grandTotal)}
+                    <CurrencyValue amount={data.grandTotal} variant="short" />
                   </td>
                 </tr>
               </tbody>

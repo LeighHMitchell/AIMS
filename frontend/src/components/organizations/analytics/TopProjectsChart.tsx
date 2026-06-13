@@ -12,7 +12,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { formatAxisCurrency } from '@/lib/format';
+import { formatAxisCurrency, formatCurrencyCompact } from '@/lib/format';
 import { BUDGET_COLOR, getTransactionTypeColor } from '@/lib/chart-colors';
 
 interface ProjectData {
@@ -31,15 +31,6 @@ interface TopProjectsChartProps {
 
 export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChartProps) {
   const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(new Set());
-
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`;
-    }
-    return `$${value.toFixed(0)}`;
-  };
 
   const chartData = projects.slice(0, 10).map(project => ({
     name: project.title.length > 30 ? project.title.substring(0, 30) + '...' : project.title,
@@ -61,7 +52,7 @@ export function TopProjectsChart({ projects, currency = 'USD' }: TopProjectsChar
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex justify-between gap-4 text-helper">
               <span style={{ color: entry.color }}>{entry.name}:</span>
-              <span className="font-medium">{formatCurrency(entry.value)}</span>
+              <span className="font-medium">{formatCurrencyCompact(entry.value, currency)}</span>
             </div>
           ))}
         </div>

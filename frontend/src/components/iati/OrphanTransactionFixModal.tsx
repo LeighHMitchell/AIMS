@@ -33,6 +33,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { formatCurrency, formatDate } from '@/lib/format';
 
 interface OrphanedTransaction {
   index: number;
@@ -178,13 +179,6 @@ export function OrphanTransactionFixModal({
 
   const transaction = orphanedTransaction.transaction;
 
-  const formatCurrency = (value: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD'
-    }).format(value);
-  };
-
   const getTransactionTypeLabel = (type: string) => {
     // IATI Standard v2.03 transaction type labels
     const typeMap: Record<string, string> = {
@@ -241,7 +235,7 @@ export function OrphanTransactionFixModal({
             <div className="grid grid-cols-2 gap-4 text-body">
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>{new Date(transaction.transaction_date).toLocaleDateString()}</span>
+                <span>{formatDate(transaction.transaction_date)}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4 text-muted-foreground" />

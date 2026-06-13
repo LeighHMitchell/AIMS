@@ -98,7 +98,7 @@ export function StagePPPStructuring({ wizard }: StagePPPStructuringProps) {
 
       {/* VGF Estimation */}
       <div className="p-4 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-3">
-        <Label className="text-body font-medium text-foreground">VGF Estimation <HelpTooltip text="Viability Gap Funding — the government subsidy needed to make the project commercially viable at the target FIRR." /></Label>
+        <Label className="text-body font-medium text-foreground">VGF Estimation <HelpTooltip text="Viability Gap Funding: the government subsidy needed to make the project commercially viable at the target FIRR." /></Label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="text-helper text-muted-foreground">Target FIRR (%) <HelpTooltip text="The minimum financial return needed to attract private investment." /></label>

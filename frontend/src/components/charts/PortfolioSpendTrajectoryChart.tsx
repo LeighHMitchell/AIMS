@@ -32,7 +32,7 @@ import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, PLANNED_DISBURSEMENT_COLOR, PERFECT_SPEND_COLOR, getTransactionTypeColor } from '@/lib/chart-colors';
-import { formatAxisCurrency } from '@/lib/format';
+import { formatAxisCurrency, formatCurrencyCompact } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { safeUsd } from '@/lib/safe-usd';
 
@@ -130,24 +130,6 @@ interface Commitment {
 interface PortfolioSpendTrajectoryChartProps {
   refreshKey?: number
   compact?: boolean
-}
-
-// Format currency with k/m suffixes
-const formatCurrencyCompact = (value: number): string => {
-  const absValue = Math.abs(value)
-  if (absValue >= 1000000000) return `$${(value / 1000000000).toFixed(0)}b`
-  if (absValue >= 1000000) return `$${(value / 1000000).toFixed(0)}m`
-  if (absValue >= 1000) return `$${(value / 1000).toFixed(0)}k`
-  return `$${value.toFixed(0)}`
-}
-
-// Format for tooltip - slightly more precise
-const formatTooltipCurrency = (value: number): string => {
-  const absValue = Math.abs(value)
-  if (absValue >= 1000000000) return `$${(value / 1000000000).toFixed(1)}b`
-  if (absValue >= 1000000) return `$${(value / 1000000).toFixed(1)}m`
-  if (absValue >= 1000) return `$${(value / 1000).toFixed(1)}k`
-  return `$${value.toFixed(0)}`
 }
 
 /**
@@ -704,7 +686,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
       for (const def of SERIES_DEFS) {
         if (!visibleSeries.has(def.key)) continue
         const value = def.key === 'perfectSpend' ? perfectSpend : (dataPoint?.[def.key] || 0)
-        rows.push({ label: def.label, value: formatTooltipCurrency(value), color: def.color })
+        rows.push({ label: def.label, value: formatCurrencyCompact(value), color: def.color })
       }
 
       // Gap-to-baseline row only when a single cumulative series is compared.
@@ -719,7 +701,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
             <span style={{ color: varianceColor }}>
               {Math.abs(variance) < 1
                 ? '—'
-                : `${variance >= 0 ? '+' : '-'}${formatTooltipCurrency(Math.abs(variance))}`}
+                : `${variance >= 0 ? '+' : '-'}${formatCurrencyCompact(Math.abs(variance))}`}
             </span>
           ),
         })
@@ -920,7 +902,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
                         size="sm"
                         className="h-8 gap-1"
                         title={effectiveDateRange?.from && effectiveDateRange?.to
-                          ? `${format(effectiveDateRange.from, 'MMM d, yyyy')} – ${format(effectiveDateRange.to, 'MMM d, yyyy')}`
+                          ? `${format(effectiveDateRange.from, 'd MMM yyyy')} – ${format(effectiveDateRange.to, 'd MMM yyyy')}`
                           : undefined}
                       >
                         <CalendarIcon className="h-4 w-4" />
@@ -1273,7 +1255,7 @@ export function PortfolioSpendTrajectoryChart({ refreshKey, compact = false }: P
         <p>
           The striped area highlights the gap between the baseline and selected comparison series. When the selected line is
           above the baseline, execution is ahead of the even-spend model; when below, it is behind. Note that many aid activities
-          have legitimate front-loaded procurement, back-loaded infrastructure works, or seasonal disbursement patterns—so
+          have legitimate front-loaded procurement, back-loaded infrastructure works, or seasonal disbursement patterns, so
           deviation from the baseline does not necessarily indicate poor performance.
         </p>
         <p className="italic">

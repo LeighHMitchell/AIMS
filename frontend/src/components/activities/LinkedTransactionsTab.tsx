@@ -233,7 +233,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
           </div>
           <button
             onClick={exportToCSV}
-            className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center justify-center h-9 w-9 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             title="Export CSV"
             aria-label="Export CSV"
           >
@@ -256,7 +256,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
           <select
             value={selectedCurrency}
             onChange={(e) => setSelectedCurrency(e.target.value)}
-            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="all">All Currencies</option>
             {currencies.map(currency => (
@@ -267,7 +267,7 @@ const LinkedTransactionsTab: React.FC<LinkedTransactionsTabProps> = ({ activityI
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="all">All Transaction Types</option>
             {transactionTypes.map(type => (

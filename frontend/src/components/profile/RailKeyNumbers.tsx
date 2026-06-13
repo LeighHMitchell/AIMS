@@ -23,7 +23,7 @@ interface RailKeyNumbersProps {
 }
 
 const DEFAULT_KEY_NUMBERS_HELP =
-  "Headline financials for this activity — total budget, planned disbursements, the share of the budget planned for disbursement, and the share already disbursed against the budget."
+  "Headline financials for this activity: total budget, planned disbursements, the share of the budget planned for disbursement, and the share already disbursed against the budget."
 
 export function RailKeyNumbers({
   label = "Key Numbers",

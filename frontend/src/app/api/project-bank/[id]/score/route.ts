@@ -87,7 +87,7 @@ export async function POST(
     }
 
     if (results.length === 0) {
-      return NextResponse.json({ error: 'Failed to calculate scores — check rubric configuration' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to calculate scores; check rubric configuration' }, { status: 500 });
     }
 
     return NextResponse.json(results, { status: 201 });
@@ -95,7 +95,7 @@ export async function POST(
 
   const score = await calculateAndStoreScore(supabase!, id, stage, user!.id, 'manual');
   if (!score) {
-    return NextResponse.json({ error: 'Failed to calculate score — check rubric configuration' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to calculate score; check rubric configuration' }, { status: 500 });
   }
 
   return NextResponse.json(score, { status: 201 });

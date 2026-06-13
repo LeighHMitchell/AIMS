@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useUser } from "@/hooks/useUser"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Shield, Layers, FolderTree, Plus, Trash2, GripVertical, Pencil, Check, X, ChevronDown, ChevronRight, Save } from "lucide-react"
@@ -375,16 +375,16 @@ export default function ProjectBankAdminPage() {
         </div>
 
         <Tabs defaultValue="project-types" className="space-y-6">
-          <TabsList className="p-1 h-auto bg-background gap-1 border">
-            <TabsTrigger value="project-types" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+          <PageTabsList>
+            <PageTabsTrigger value="project-types">
               <Layers className="h-4 w-4" />
               Project Types
-            </TabsTrigger>
-            <TabsTrigger value="sectors" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="sectors">
               <FolderTree className="h-4 w-4" />
               Sectors
-            </TabsTrigger>
-          </TabsList>
+            </PageTabsTrigger>
+          </PageTabsList>
 
           <TabsContent value="project-types">
             <ProjectTypesTab />

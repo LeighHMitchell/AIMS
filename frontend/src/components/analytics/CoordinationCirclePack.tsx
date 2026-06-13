@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import * as d3 from "d3";
 import { getSectorColor } from "@/lib/chart-colors";
 import { useChartExpansion } from "@/lib/chart-expansion-context";
-import { formatTooltipCurrency } from "@/lib/format";
+import { formatCurrencyCompact, formatTooltipCurrency } from "@/lib/format";
 import type {
   CoordinationView,
   CoordinationHierarchy,
@@ -83,13 +83,6 @@ function isCountMeasure(measure: CoordinationMeasure | undefined): boolean {
 
 function formatCount(value: number): string {
   return new Intl.NumberFormat('en-US').format(Math.round(value));
-}
-
-function formatCurrencyCompact(value: number): string {
-  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-  if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
-  if (value >= 1e3) return `$${(value / 1e3).toFixed(1)}K`;
-  return `$${value.toFixed(0)}`;
 }
 
 export function CoordinationCirclePack({

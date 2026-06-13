@@ -3,8 +3,9 @@
 import { useState, useCallback, useEffect } from 'react'
 import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -484,7 +485,7 @@ function HistoryTab() {
                               >
                                 <div className="min-w-0">
                                   <p className="text-body truncate">{item.activityTitle || item.iatiIdentifier}</p>
-                                  <span className="text-xs font-mono bg-card px-1.5 py-0.5 rounded text-muted-foreground border">{item.iatiIdentifier}</span>
+                                  <CopyableIdBadge value={item.iatiIdentifier} label="IATI identifier" tooltip="Click to copy IATI identifier" className="bg-card border" />
                                   {item.errorMessage && (
                                     <p className="text-helper text-destructive mt-0.5">{item.errorMessage}</p>
                                   )}
@@ -1110,16 +1111,16 @@ export default function IATIImportPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap" data-tour="import-tabs">
-            <TabsTrigger value="bulk-import" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+          <PageTabsList data-tour="import-tabs">
+            <PageTabsTrigger value="bulk-import">
               <Database className="h-4 w-4" />
               Bulk Import
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="history">
               <History className="h-4 w-4" />
               History
-            </TabsTrigger>
-          </TabsList>
+            </PageTabsTrigger>
+          </PageTabsList>
 
           <TabsContent value="import" className="space-y-6">
             {/* Progress Steps */}
@@ -1144,8 +1145,8 @@ export default function IATIImportPage() {
                     `}>
                       <div className={`
                         w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium mb-2
-                        ${isActive ? 'bg-blue-600 text-white' : 
-                          isPast ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}
+                        ${isActive ? 'bg-primary text-primary-foreground' :
+                          isPast ? 'bg-primary/70 text-primary-foreground' : 'bg-muted text-muted-foreground'}
                       `}>
                         {isPast ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                       </div>
@@ -1751,8 +1752,8 @@ export default function IATIImportPage() {
                               />
                               <div className="flex-1">
                                 <p className="font-medium">{activity.title}</p>
-                                <p className="text-body text-muted-foreground">
-                                  ID: <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-xs">{activity.iatiIdentifier}</span> • Status: {activity.status}
+                                <p className="text-body text-muted-foreground inline-flex items-center gap-1.5 flex-wrap">
+                                  ID: <CopyableIdBadge value={activity.iatiIdentifier} label="IATI identifier" tooltip="Click to copy IATI identifier" /> • Status: {activity.status}
                                 </p>
                                 {activity.description && (
                                   <p className="text-body text-muted-foreground mt-1 line-clamp-2">
@@ -2013,7 +2014,7 @@ export default function IATIImportPage() {
                           <p className="font-medium text-yellow-800 mb-2">Some items had errors:</p>
                           <ul className="text-body text-yellow-700 space-y-1">
                             {importState.organizations.errors.map((err, i) => (
-                              <li key={`org-err-${i}`}>• Organization: {err}</li>
+                              <li key={`org-err-${i}`}>• Organisation: {err}</li>
                             ))}
                             {importState.activities.errors.map((err, i) => (
                               <li key={`act-err-${i}`}>• Activity: {err}</li>

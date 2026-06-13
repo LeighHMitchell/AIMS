@@ -142,7 +142,7 @@ export function FieldPreviewTooltip({
       role="tooltip"
       aria-label={`Field preview for ${stats.fieldName}`}
       className={cn(
-        "fixed z-[9999] w-[280px] bg-popover border border-border rounded-lg shadow-lg",
+        "fixed z-[10010] w-[280px] bg-popover border border-border rounded-lg shadow-lg",
         "animate-in fade-in-0 zoom-in-95 duration-150"
       )}
       style={{

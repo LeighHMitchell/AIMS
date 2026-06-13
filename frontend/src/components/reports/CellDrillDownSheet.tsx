@@ -25,6 +25,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { exportTableToCSV } from '@/lib/exports'
 import { PivotFilterState } from './PivotFilters'
+import { formatCurrencyCompact, formatDate } from '@/lib/format'
 
 interface DrillDownTransaction {
   activity_id: string
@@ -58,35 +59,6 @@ interface CellDrillDownSheetProps {
   onOpenChange: (open: boolean) => void
   context: DrillDownContext | null
   filters: PivotFilterState
-}
-
-// Format currency
-function formatCurrency(value: number | null): string {
-  if (value === null || value === undefined) return '-'
-  if (Math.abs(value) >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(2)}B`
-  }
-  if (Math.abs(value) >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(2)}M`
-  }
-  if (Math.abs(value) >= 1_000) {
-    return `$${(value / 1_000).toFixed(2)}K`
-  }
-  return `$${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
-}
-
-// Format date
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '-'
-  try {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  } catch {
-    return dateStr
-  }
 }
 
 // Sorting types
@@ -278,7 +250,7 @@ export function CellDrillDownSheet({
                 <div className="text-helper text-muted-foreground">Total Amount</div>
                 <div className="text-lg font-semibold flex items-center gap-1">
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  {formatCurrency(summary.totalAmount)}
+                  {formatCurrencyCompact(summary.totalAmount)}
                 </div>
               </div>
               <div className="bg-muted/50 rounded-lg p-3">
@@ -294,7 +266,7 @@ export function CellDrillDownSheet({
           <div className="flex items-center justify-between">
             <div className="text-body text-muted-foreground">
               {summary?.truncated && (
-                <span className="text-yellow-600 dark:text-yellow-500">
+                <span className="text-yellow-600">
                   Results limited to 100 transactions
                 </span>
               )}
@@ -403,20 +375,20 @@ export function CellDrillDownSheet({
                               {row.transaction_type}
                             </Badge>
                           ) : (
-                            <span className="text-muted-foreground">-</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </td>
                         <td className="p-2 text-muted-foreground">
                           <span className="line-clamp-1" title={row.reporting_org_name || undefined}>
-                            {row.reporting_org_name || '-'}
+                            {row.reporting_org_name || '—'}
                           </span>
                         </td>
                         <td className="p-2 text-right font-mono">
-                          {formatCurrency(row.transaction_value_usd)}
+                          {row.transaction_value_usd != null ? formatCurrencyCompact(row.transaction_value_usd) : '—'}
                         </td>
                         <td className="p-2 text-right text-muted-foreground">
                           <div className="flex items-center justify-end gap-2">
-                            <span>{formatDate(row.effective_date)}</span>
+                            <span>{row.effective_date ? formatDate(row.effective_date) : '—'}</span>
                             <Link 
                               href={`/activities/${row.activity_id}`}
                               target="_blank"

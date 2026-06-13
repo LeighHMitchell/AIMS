@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { EnhancedImageUpload } from '@/components/ui/enhanced-image-upload'
 import { apiFetch } from '@/lib/api-fetch'
 import { cn } from '@/lib/utils'
@@ -130,6 +130,9 @@ export function ProfileBannerUpload({ profileType, profileId, onBannerChange, ca
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Profile Banner</DialogTitle>
+            <DialogDescription>
+              Upload and position a banner image (recommended 1200×300px) shown across the top of this profile.
+            </DialogDescription>
           </DialogHeader>
           <EnhancedImageUpload
             value={bannerData.banner || ''}

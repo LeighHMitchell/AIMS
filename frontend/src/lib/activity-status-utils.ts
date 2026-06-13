@@ -1,9 +1,12 @@
-// Centralized activity status display: label + badge className
-// Ensures consistent status colors across all pages and components.
+// Centralized activity status display: label + badge className.
+// Design-system Rule A: lifecycle statuses are NEVER colored pills — they
+// render as a mono code chip + plain label (use <ActivityStatusRow> from
+// @/components/ui/status-row). The classNames below are kept only for
+// legacy callers and are intentionally neutral.
 
-const GRAY_CLASS = 'bg-gray-100 text-gray-700 hover:bg-gray-200';
-const GREEN_CLASS = 'bg-[#3C6255] text-white hover:bg-[#3C6255]/90';
-const RED_CLASS = 'bg-[#dc2625]/10 text-[#dc2625] hover:bg-[#dc2625]/20';
+const GRAY_CLASS = 'bg-muted text-foreground';
+const GREEN_CLASS = GRAY_CLASS;
+const RED_CLASS = GRAY_CLASS;
 
 export function getActivityStatusDisplay(status: string | null | undefined): { label: string; className: string } {
   if (!status) return { label: 'Pipeline', className: GRAY_CLASS };

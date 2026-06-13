@@ -24,24 +24,7 @@ import { exportBudgetsCsv, type BudgetRow } from '@/lib/exports/entities/budgets
 import { apiFetch } from '@/lib/api-fetch';
 import { FullPagination } from '@/components/ui/full-pagination';
 import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination';
-
-// Format currency with abbreviations (K, M, B)
-const formatCurrencyAbbreviated = (value: number) => {
-  const absValue = Math.abs(value);
-  let formattedValue: string;
-
-  if (absValue >= 1_000_000_000) {
-    formattedValue = (value / 1_000_000_000).toFixed(1) + 'B';
-  } else if (absValue >= 1_000_000) {
-    formattedValue = (value / 1_000_000).toFixed(1) + 'M';
-  } else if (absValue >= 1_000) {
-    formattedValue = (value / 1_000).toFixed(1) + 'K';
-  } else {
-    formattedValue = value.toFixed(0);
-  }
-
-  return '$' + formattedValue;
-};
+import { formatCurrencyCompact } from '@/lib/format';
 
 // Simple Hero Card Component
 interface HeroCardProps {
@@ -88,7 +71,7 @@ interface OrganizationBudgetsTabProps {
 }
 
 // Helper function to safely format dates
-const safeFormatDate = (dateStr: string | null | undefined, formatStr: string, fallback: string = '-'): string => {
+const safeFormatDate = (dateStr: string | null | undefined, formatStr: string, fallback: string = '—'): string => {
   if (!dateStr) return fallback;
   try {
     const parsed = parseISO(dateStr);
@@ -270,7 +253,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
         <div className="flex gap-4 flex-wrap">
           <HeroCard
             title="Total Budgets"
-            value={formatCurrencyAbbreviated(totalUSD)}
+            value={formatCurrencyCompact(totalUSD)}
             subtitle={`${filteredBudgets.length} budget${filteredBudgets.length !== 1 ? 's' : ''}`}
             icon={<DollarSign className="h-5 w-5" />}
           />
@@ -561,7 +544,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                           </span>
                         </TableCell>
                         <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '120px' }}>
-                          {safeFormatDate(budget.value_date, 'MMM d, yyyy', '-')}
+                          {safeFormatDate(budget.value_date, 'd MMM yyyy', '—')}
                         </TableCell>
                         <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '130px' }}>
                           {budget.usd_value != null ? (
@@ -612,7 +595,7 @@ export function OrganizationBudgetsTab({ organizationId, defaultCurrency = 'USD'
                       </span>
                     </TableCell>
                     <TableCell className="py-3 px-4 whitespace-nowrap" style={{ width: '120px' }}>
-                      {safeFormatDate(budget.value_date, 'MMM d, yyyy', '-')}
+                      {safeFormatDate(budget.value_date, 'd MMM yyyy', '—')}
                     </TableCell>
                     <TableCell className="py-3 px-4 text-right whitespace-nowrap" style={{ width: '130px' }}>
                       {budget.usd_value != null ? (

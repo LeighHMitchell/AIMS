@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatAxisCurrency } from '@/lib/format';
+import { formatAxisCurrency, formatCurrencyCompact } from '@/lib/format';
 import { getTransactionTypeColor, BUDGET_COLOR, TOTAL_SPENDING_COLOR } from '@/lib/chart-colors';
 
 interface TimeSeriesData {
@@ -34,15 +34,6 @@ interface AidOverTimeChartProps {
 export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartProps) {
   const [viewMode, setViewMode] = useState<'detailed' | 'comparison'>('detailed');
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`;
-    }
-    return `$${value.toFixed(0)}`;
-  };
-
   const comparisonData = data.map(item => ({
     year: item.year,
     'Budget': item.budget,
@@ -57,7 +48,7 @@ export function AidOverTimeChart({ data, currency = 'USD' }: AidOverTimeChartPro
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex justify-between gap-4 text-body">
               <span style={{ color: entry.color }}>{entry.name}:</span>
-              <span className="font-medium">{formatCurrency(entry.value)}</span>
+              <span className="font-medium">{formatCurrencyCompact(entry.value, currency)}</span>
             </div>
           ))}
         </div>

@@ -24,6 +24,7 @@ import { PerformanceMetrics } from "@/components/optimization/OptimizedActivityL
 import { MainLayout } from "@/components/layout/main-layout";
 import { ActivityList } from "@/components/activities/ActivityList";
 import { FullPagination } from "@/components/ui/full-pagination";
+import { CurrencyValue } from "@/components/ui/currency-value";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 import { ActivityActionMenu } from "@/components/activities/ActivityActionMenu";
 import { SectorMiniBar } from "@/components/activities/SectorMiniBar";
@@ -123,6 +124,7 @@ import { SortableTableHeader } from "@/components/ui/sortable-table-header";
 import { useColumnOrder } from "@/hooks/use-column-order";
 import { apiFetch } from '@/lib/api-fetch';
 import { getActivityStatusLabel } from '@/lib/activity-status-utils';
+import { ActivityStatusRow } from '@/components/ui/status-row';
 
 // Dynamically import SectorHierarchyFilter to avoid hydration issues
 const SectorHierarchyFilter = dynamic(
@@ -382,25 +384,6 @@ type SortOrder = 'asc' | 'desc';
 
 
 
-// Helper function to format currency
-const formatCurrency = (amount: number): string => {
-  if (amount >= 1000000) {
-    // Format millions with 1 decimal place
-    const millions = amount / 1000000;
-    return `${millions.toFixed(1)}m`;
-  } else if (amount >= 1000) {
-    // Format thousands with 1 decimal place
-    const thousands = amount / 1000;
-    return `${thousands.toFixed(1)}k`;
-  } else {
-    // Format regular numbers with no decimals
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  }
-};
-
 // Helper function to format organisation list for display
 // Shows condensed view: "Name 1, Name 2 + X more" if more than 2
 const formatOrganisationList = (orgs: string[]): { display: string; full: string[] } => {
@@ -493,7 +476,7 @@ const calculateBudgetSpentPercent = (activity: Activity): number | null => {
 
 // Helper function to format date as "1 January 2021"
 const formatDateLong = (dateString: string | null | undefined): string => {
-  if (!dateString) return 'N/A';
+  if (!dateString) return '—';
   try {
     return format(new Date(dateString), 'd MMMM yyyy');
   } catch {
@@ -2828,7 +2811,7 @@ const router = useRouter();
                           ),
                           activityStatus: (
 <td key="activityStatus" className="px-4 py-2 text-body text-foreground text-left">
-                        {getActivityStatusLabel(activityStatus)}
+                        <ActivityStatusRow status={activityStatus} />
                       </td>
                           ),
                           publicationStatus: (
@@ -2945,7 +2928,7 @@ const router = useRouter();
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="cursor-pointer"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</span>
+                              <span className="cursor-pointer"><CurrencyValue amount={(activity as any).totalBudget || 0} variant="short" /></span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                               <p className="text-body text-muted-foreground font-normal">
@@ -2961,7 +2944,7 @@ const router = useRouter();
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <span className="cursor-pointer"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}</span>
+                              <span className="cursor-pointer"><CurrencyValue amount={(activity as any).totalPlannedDisbursementsUSD || 0} variant="short" /></span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left whitespace-normal">
                               <p className="text-body text-muted-foreground font-normal">
@@ -3138,117 +3121,117 @@ const router = useRouter();
                           ),
                           totalIncomingCommitments: (
 <td key="totalIncomingCommitments" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingCommitments || 0)}
+                          <CurrencyValue amount={activity.incomingCommitments || 0} variant="short" />
                         </td>
                           ),
                           totalCommitments: (
 <td key="totalCommitments" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitments || 0)}
+                          <CurrencyValue amount={activity.commitments || 0} variant="short" />
                         </td>
                           ),
                           totalDisbursements: (
 <td key="totalDisbursements" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.disbursements || 0)}
+                          <CurrencyValue amount={activity.disbursements || 0} variant="short" />
                         </td>
                           ),
                           totalExpenditures: (
 <td key="totalExpenditures" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.expenditures || 0)}
+                          <CurrencyValue amount={activity.expenditures || 0} variant="short" />
                         </td>
                           ),
                           totalInterestRepayment: (
 <td key="totalInterestRepayment" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.interestRepayment || 0)}
+                          <CurrencyValue amount={activity.interestRepayment || 0} variant="short" />
                         </td>
                           ),
                           totalLoanRepayment: (
 <td key="totalLoanRepayment" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.loanRepayment || 0)}
+                          <CurrencyValue amount={activity.loanRepayment || 0} variant="short" />
                         </td>
                           ),
                           totalReimbursement: (
 <td key="totalReimbursement" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.reimbursement || 0)}
+                          <CurrencyValue amount={activity.reimbursement || 0} variant="short" />
                         </td>
                           ),
                           totalPurchaseOfEquity: (
 <td key="totalPurchaseOfEquity" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.purchaseOfEquity || 0)}
+                          <CurrencyValue amount={activity.purchaseOfEquity || 0} variant="short" />
                         </td>
                           ),
                           totalSaleOfEquity: (
 <td key="totalSaleOfEquity" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.saleOfEquity || 0)}
+                          <CurrencyValue amount={activity.saleOfEquity || 0} variant="short" />
                         </td>
                           ),
                           totalCreditGuarantee: (
 <td key="totalCreditGuarantee" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.creditGuarantee || 0)}
+                          <CurrencyValue amount={activity.creditGuarantee || 0} variant="short" />
                         </td>
                           ),
                           totalIncomingFunds: (
 <td key="totalIncomingFunds" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingFunds || 0)}
+                          <CurrencyValue amount={activity.incomingFunds || 0} variant="short" />
                         </td>
                           ),
                           totalOutgoingPledge: (
 <td key="totalOutgoingPledge" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.outgoingPledge || 0)}
+                          <CurrencyValue amount={activity.outgoingPledge || 0} variant="short" />
                         </td>
                           ),
                           totalIncomingPledge: (
 <td key="totalIncomingPledge" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.incomingPledge || 0)}
+                          <CurrencyValue amount={activity.incomingPledge || 0} variant="short" />
                         </td>
                           ),
                           flowTypeODATotal: (
 <td key="flowTypeODATotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeODA || 0)}
+                          <CurrencyValue amount={activity.flowTypeODA || 0} variant="short" />
                         </td>
                           ),
                           flowTypeOOFTotal: (
 <td key="flowTypeOOFTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOOF || 0)}
+                          <CurrencyValue amount={activity.flowTypeOOF || 0} variant="short" />
                         </td>
                           ),
                           flowTypeNonExportOOFTotal: (
 <td key="flowTypeNonExportOOFTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeNonExportOOF || 0)}
+                          <CurrencyValue amount={activity.flowTypeNonExportOOF || 0} variant="short" />
                         </td>
                           ),
                           flowTypeExportCreditsTotal: (
 <td key="flowTypeExportCreditsTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeExportCredits || 0)}
+                          <CurrencyValue amount={activity.flowTypeExportCredits || 0} variant="short" />
                         </td>
                           ),
                           flowTypePrivateGrantsTotal: (
 <td key="flowTypePrivateGrantsTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateGrants || 0)}
+                          <CurrencyValue amount={activity.flowTypePrivateGrants || 0} variant="short" />
                         </td>
                           ),
                           flowTypePrivateMarketTotal: (
 <td key="flowTypePrivateMarketTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateMarket || 0)}
+                          <CurrencyValue amount={activity.flowTypePrivateMarket || 0} variant="short" />
                         </td>
                           ),
                           flowTypePrivateFDITotal: (
 <td key="flowTypePrivateFDITotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypePrivateFDI || 0)}
+                          <CurrencyValue amount={activity.flowTypePrivateFDI || 0} variant="short" />
                         </td>
                           ),
                           flowTypeOtherPrivateTotal: (
 <td key="flowTypeOtherPrivateTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOtherPrivate || 0)}
+                          <CurrencyValue amount={activity.flowTypeOtherPrivate || 0} variant="short" />
                         </td>
                           ),
                           flowTypeNonFlowTotal: (
 <td key="flowTypeNonFlowTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeNonFlow || 0)}
+                          <CurrencyValue amount={activity.flowTypeNonFlow || 0} variant="short" />
                         </td>
                           ),
                           flowTypeOtherTotal: (
 <td key="flowTypeOtherTotal" className="px-4 py-2 text-body text-foreground text-right whitespace-nowrap">
-                          <span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.flowTypeOther || 0)}
+                          <CurrencyValue amount={activity.flowTypeOther || 0} variant="short" />
                         </td>
                           ),
                           isPublished: (
@@ -3360,7 +3343,7 @@ const router = useRouter();
                           importedFromIrt: (
 <td key="importedFromIrt" className="px-4 py-2 text-body text-foreground text-center">
                           {activity.createdVia === 'import' ? (
-                            <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800">
+                            <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200">
                               <DatabaseZap className="h-3 w-3 mr-1" />
                               IRT Import
                             </Badge>
@@ -3466,7 +3449,7 @@ const router = useRouter();
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(((activity as any).totalBudget || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><CurrencyValue amount={((activity as any).totalBudget || 0) * (activity.capitalSpendPercentage / 100)} variant="short" /></>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
@@ -3487,7 +3470,7 @@ const router = useRouter();
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(((activity as any).totalPlannedDisbursementsUSD || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><CurrencyValue amount={((activity as any).totalPlannedDisbursementsUSD || 0) * (activity.capitalSpendPercentage / 100)} variant="short" /></>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
@@ -3508,7 +3491,7 @@ const router = useRouter();
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity.commitments || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><CurrencyValue amount={(activity.commitments || 0) * (activity.capitalSpendPercentage / 100)} variant="short" /></>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
@@ -3529,7 +3512,7 @@ const router = useRouter();
                               <TooltipTrigger asChild>
                                 <span className="cursor-pointer">
                                   {activity.capitalSpendPercentage != null 
-                                    ? <><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) * (activity.capitalSpendPercentage / 100))}</>
+                                    ? <><CurrencyValue amount={(activity.disbursements || 0) * (activity.capitalSpendPercentage / 100)} variant="short" /></>
                                     : <span className="text-muted-foreground">—</span>
                                   }
                                 </span>
@@ -3731,11 +3714,11 @@ const router = useRouter();
                                       <tbody>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Committed</td>
-                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency(activity.commitments || 0)}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><CurrencyValue amount={activity.commitments || 0} variant="short" /></td>
                                         </tr>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Spent</td>
-                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><CurrencyValue amount={(activity.disbursements || 0) + (activity.expenditures || 0)} variant="short" /></td>
                                         </tr>
                                         <tr>
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Usage</td>
@@ -3772,11 +3755,11 @@ const router = useRouter();
                                       <tbody>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Budget</td>
-                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity as any).totalBudget || 0)}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><CurrencyValue amount={(activity as any).totalBudget || 0} variant="short" /></td>
                                         </tr>
                                         <tr className="border-b">
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Spent</td>
-                                          <td className="px-3 py-1.5 font-medium text-right"><span className="text-helper text-muted-foreground font-normal">USD</span> {formatCurrency((activity.disbursements || 0) + (activity.expenditures || 0))}</td>
+                                          <td className="px-3 py-1.5 font-medium text-right"><CurrencyValue amount={(activity.disbursements || 0) + (activity.expenditures || 0)} variant="short" /></td>
                                         </tr>
                                         <tr>
                                           <td className="px-3 py-1.5 text-muted-foreground text-left">Usage</td>
@@ -3805,8 +3788,8 @@ const router = useRouter();
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-body text-muted-foreground font-normal">
-                                  Activity budget: USD {formatCurrency((activity as any).totalBudget || 0)}<br/>
-                                  System total: USD {formatCurrency(systemTotals?.totalBudget || 0)}
+                                  Activity budget: <CurrencyValue amount={(activity as any).totalBudget || 0} variant="short" /><br/>
+                                  System total: <CurrencyValue amount={systemTotals?.totalBudget || 0} variant="short" />
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -3827,8 +3810,8 @@ const router = useRouter();
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-body text-muted-foreground font-normal">
-                                  Activity planned disbursements: USD {formatCurrency((activity as any).totalPlannedDisbursementsUSD || 0)}<br/>
-                                  System total: USD {formatCurrency(systemTotals?.totalPlannedDisbursements || 0)}
+                                  Activity planned disbursements: <CurrencyValue amount={(activity as any).totalPlannedDisbursementsUSD || 0} variant="short" /><br/>
+                                  System total: <CurrencyValue amount={systemTotals?.totalPlannedDisbursements || 0} variant="short" />
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -3849,8 +3832,8 @@ const router = useRouter();
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-body text-muted-foreground font-normal">
-                                  Activity commitments: USD {formatCurrency(activity.commitments || 0)}<br/>
-                                  System total: USD {formatCurrency(systemTotals?.totalCommitments || 0)}
+                                  Activity commitments: <CurrencyValue amount={activity.commitments || 0} variant="short" /><br/>
+                                  System total: <CurrencyValue amount={systemTotals?.totalCommitments || 0} variant="short" />
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -3871,8 +3854,8 @@ const router = useRouter();
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs border border-border bg-white shadow-lg text-left">
                                 <p className="text-body text-muted-foreground font-normal">
-                                  Activity disbursements: USD {formatCurrency(activity.disbursements || 0)}<br/>
-                                  System total: USD {formatCurrency(systemTotals?.totalDisbursements || 0)}
+                                  Activity disbursements: <CurrencyValue amount={activity.disbursements || 0} variant="short" /><br/>
+                                  System total: <CurrencyValue amount={systemTotals?.totalDisbursements || 0} variant="short" />
                                 </p>
                               </TooltipContent>
                             </Tooltip>

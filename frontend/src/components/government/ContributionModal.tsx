@@ -714,7 +714,7 @@ function FinancialForm({
       {/* Row 3: USD Value (top-level). In Annual mode, this is the sum of per-year rows. */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <FieldLabel help="Value converted to USD using the value-date exchange rate. Computed automatically — no manual entry.">USD Value</FieldLabel>
+          <FieldLabel help="Value converted to USD using the value-date exchange rate. Computed automatically, with no manual entry.">USD Value</FieldLabel>
           <div className="h-10 px-3 py-2 border rounded-md bg-muted flex items-center text-foreground">
             {isAnnual ? (
               annualTotalUSD > 0
@@ -735,7 +735,7 @@ function FinancialForm({
 
       {/* Row 4: Description */}
       <div className="space-y-2">
-        <FieldLabel help="What the contribution is for — the purpose, not the source. Name the activity component or output the money pays for." required>Description</FieldLabel>
+        <FieldLabel help="What the contribution is for: the purpose, not the source. Name the activity component or output the money pays for." required>Description</FieldLabel>
         <Textarea
           placeholder="e.g., Counterpart funding for Phase 1 feasibility studies"
           value={value.description ?? ''}
@@ -958,7 +958,7 @@ function FinancialForm({
       )}
 
       <div className="space-y-2">
-        <FieldLabel help="The appropriation, vote, or budget-line reference the money is drawn from. Auditors use this to trace the commitment back to an official source — not a description of what the money is for.">Government Budget Line</FieldLabel>
+        <FieldLabel help="The appropriation, vote, or budget-line reference the money is drawn from. Auditors use this to trace the commitment back to an official source, rather than a description of what the money is for.">Government Budget Line</FieldLabel>
         <Textarea
           placeholder="e.g., MoF-GA/INFRA/2026-037 · MoPF Vote 4, Sub-head 2.1"
           value={value.sourceOfFunding ?? ''}
@@ -1001,15 +1001,15 @@ function InKindForm({
       placeholder: 'e.g., Senior engineer seconded 50% FTE for 12 months',
     },
     facilities: {
-      help: 'Describe the space provided — building, floor, area, location, exclusivity. Estimate value using prevailing commercial rental rates for comparable space in the area.',
+      help: 'Describe the space provided: building, floor, area, location, exclusivity. Estimate value using prevailing commercial rental rates for comparable space in the area.',
       placeholder: 'e.g., 200 sqm office space in the Ministry of Finance HQ',
     },
     land: {
-      help: 'Describe the parcel — location, area (ha/sqm), tenure (freehold / long lease), and use. Estimate value at market land price or the equivalent lease value for the activity period.',
+      help: 'Describe the parcel: location, area (ha/sqm), tenure (freehold / long lease), and use. Estimate value at market land price or the equivalent lease value for the activity period.',
       placeholder: 'e.g., 2 ha of government land in Yangon, 30-year lease',
     },
     equipment: {
-      help: 'Describe the equipment — make, model, quantity, age/condition, and whether it is loaned or transferred. Estimate value at replacement cost or residual book value.',
+      help: 'Describe the equipment: make, model, quantity, age/condition, and whether it is loaned or transferred. Estimate value at replacement cost or residual book value.',
       placeholder: 'e.g., 3 × Toyota Hilux pick-ups (2023), transferred to the project',
     },
     utilities: {
@@ -1370,7 +1370,7 @@ function OtherForm({
           />
         </div>
         <div className="space-y-2">
-          <FieldLabel help="Estimated fiscal value of the waiver or concession (e.g., amount of duty or tax forgone). Optional — leave blank if not quantifiable.">Value</FieldLabel>
+          <FieldLabel help="Estimated fiscal value of the waiver or concession (e.g., amount of duty or tax forgone). Optional, so leave blank if not quantifiable.">Value</FieldLabel>
           <Input
             type="text"
             placeholder="0.00"

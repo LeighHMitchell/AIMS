@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import type { ProjectBankProject } from '@/types/project-bank';
 import { CardShell, CardShellRipLine, CardShellBottomSection } from '@/components/ui/card-shell';
+import { formatCurrencyCompact } from '@/lib/format';
 
 const STATUS_LABELS: Record<string, string> = {
   nominated: 'Nominated',
@@ -34,18 +35,6 @@ const PATHWAY_LABELS: Record<string, string> = {
   private_supported: 'Private (Supported)',
   private_unsupported: 'Private',
   domestic_budget: 'Domestic Budget',
-};
-
-const formatCurrency = (value: number | null | undefined) => {
-  if (!value) return '$0';
-  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}m`;
-  if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
 };
 
 // Brand palette from CSS variables
@@ -144,7 +133,7 @@ const ProjectCardModern: React.FC<ProjectCardModernProps> = ({
             </p>
             <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
               <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
-              <span>{formatCurrency(project.estimated_cost)}</span>
+              <span>{formatCurrencyCompact(project.estimated_cost ?? 0)}</span>
             </div>
           </div>
           <div className="space-y-1">
@@ -153,7 +142,7 @@ const ProjectCardModern: React.FC<ProjectCardModernProps> = ({
             </p>
             <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
               <TrendingUp className="w-4 h-4" style={{ color: colors.coolSteel }} />
-              <span>{formatCurrency(project.funding_gap)}</span>
+              <span>{formatCurrencyCompact(project.funding_gap ?? 0)}</span>
             </div>
           </div>
         </div>

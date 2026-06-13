@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -657,9 +658,9 @@ export function EditOrganizationModal({
               <DialogTitle className="text-xl font-semibold">
                 {isCreating ? 'Add New Organisation' : 'Edit Organisation Profile'}
               </DialogTitle>
-              <p className="text-body text-muted-foreground">
-                {isCreating ? 'Create a new organisation profile' : 'Update organisation information and details'}
-              </p>
+              <DialogDescription className="text-body text-muted-foreground">
+                {isCreating ? 'Create a new organisation profile with its identifiers, contact details and classifications.' : 'Update this organisation’s information, identifiers and contact details.'}
+              </DialogDescription>
             </div>
             {isCreating && (
               <TooltipProvider>
@@ -1331,7 +1332,7 @@ export function EditOrganizationModal({
                     type="email"
                     value={formData.email || ''}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="contact@organization.org"
+                    placeholder="contact@organisation.org"
                   />
                 </div>
 
@@ -1358,7 +1359,7 @@ export function EditOrganizationModal({
                     type="url"
                     value={formData.website || ''}
                     onChange={(e) => handleInputChange('website', e.target.value)}
-                    placeholder="https://www.organization.org"
+                    placeholder="https://www.organisation.org"
                   />
                 </div>
 
@@ -1671,10 +1672,7 @@ export function EditOrganizationModal({
     <AlertDialog open={showMergeConfirm} onOpenChange={setShowMergeConfirm}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            Confirm Organisation Merge
-          </AlertDialogTitle>
+          <AlertDialogTitle>Confirm Organisation Merge</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 text-left">
               <p>

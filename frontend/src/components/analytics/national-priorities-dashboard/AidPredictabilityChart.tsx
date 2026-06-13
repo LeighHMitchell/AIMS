@@ -55,17 +55,6 @@ const CHART_COLORS = {
   actual: "#7b95a7",     // Cool Steel - lighter for actual
 };
 
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `$${Math.round(value / 1_000_000_000)}B`;
-  } else if (value >= 1_000_000) {
-    return `$${Math.round(value / 1_000_000)}M`;
-  } else if (value >= 1_000) {
-    return `$${Math.round(value / 1_000)}K`;
-  }
-  return `$${Math.round(value)}`;
-}
-
 interface AidPredictabilityChartProps {
   organizationId?: string;
   compact?: boolean;

@@ -28,6 +28,7 @@ import {
 } from '@/types/results';
 import { Progress } from '@/components/ui/progress';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
+import { formatCurrency } from '@/lib/format';
 
 interface PeriodRowEnhancedProps {
   period: IndicatorPeriod;
@@ -82,7 +83,7 @@ export function PeriodRowEnhanced({
       case 'percentage':
         return `${value}%`;
       case 'currency':
-        return `$${value.toLocaleString()}`;
+        return formatCurrency(value);
       case 'unit':
         return value.toLocaleString();
       default:
@@ -145,11 +146,11 @@ export function PeriodRowEnhanced({
 
   // Format date range
   const formatDateRange = () => {
-    const start = new Date(period.period_start).toLocaleDateString('en-US', { 
+    const start = new Date(period.period_start).toLocaleDateString('en-GB', { 
       month: 'short', 
       year: '2-digit' 
     });
-    const end = new Date(period.period_end).toLocaleDateString('en-US', { 
+    const end = new Date(period.period_end).toLocaleDateString('en-GB', { 
       month: 'short', 
       year: '2-digit' 
     });

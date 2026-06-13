@@ -291,13 +291,13 @@ export default function ParcelDetailPage() {
                             {parcel.controlling_ministry && (
                               <div className="col-span-2">
                                 <dt className="text-muted-foreground mb-1">Controlling Ministry</dt>
-                                <dd>{parcel.controlling_ministry.code} — {parcel.controlling_ministry.name}</dd>
+                                <dd>{parcel.controlling_ministry.code}: {parcel.controlling_ministry.name}</dd>
                               </div>
                             )}
                             {parcel.ndp_goal && (
                               <div className="col-span-2">
                                 <dt className="text-muted-foreground mb-1">Primary NDP Goal</dt>
-                                <dd>{parcel.ndp_goal.code} — {parcel.ndp_goal.name}</dd>
+                                <dd>{parcel.ndp_goal.code}: {parcel.ndp_goal.name}</dd>
                               </div>
                             )}
                             {(parcel.submitter_first_name || parcel.submitter_last_name || parcel.submitter_organization) && (
@@ -306,7 +306,7 @@ export default function ParcelDetailPage() {
                                 <dd>
                                   {[parcel.submitter_first_name, parcel.submitter_last_name].filter(Boolean).join(" ")}
                                   {parcel.submitter_organization && (
-                                    <span className="text-muted-foreground"> — {parcel.submitter_organization}</span>
+                                    <span className="text-muted-foreground">, {parcel.submitter_organization}</span>
                                   )}
                                 </dd>
                               </div>

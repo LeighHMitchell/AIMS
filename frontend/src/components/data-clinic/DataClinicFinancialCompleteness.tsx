@@ -252,12 +252,12 @@ export function DataClinicFinancialCompleteness() {
   const completenessFooter = (
     <p className="text-body text-muted-foreground leading-relaxed">
       These charts surface multi-year activities (running 365 days or more) that have fewer than two budget
-      periods yet have already disbursed more than was budgeted — a pattern that usually means the budget side
+      periods yet have already disbursed more than was budgeted: a pattern that usually means the budget side
       of the activity is incomplete rather than that spending is genuinely out of control. Longer, darker bars
       represent larger or more severe overspends, and the companion chart rolls the same overspend up by
       reporting organisation so you can see which reporters account for most of it. Use the list to find the
       activities and organisations whose budgets need attention, then add or correct their missing budget
-      periods so the recorded budgets reflect what is actually being spent — which keeps the financial picture
+      periods so the recorded budgets reflect what is actually being spent, which keeps the financial picture
       in your aid data accurate, complete and easier to trust.
     </p>
   );

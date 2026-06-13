@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 import { toast } from 'sonner';
+import { formatCurrencyCompact } from '@/lib/format';
 import {
   type ViewLevel,
   type AllocationLevel,
@@ -151,18 +152,6 @@ function interpolateColor(color1: string, color2: string, t: number): string {
   const b = Math.round(b1 + (b2 - b1) * t);
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-// Format currency for display
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  } else if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`;
-  } else if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(0)}K`;
-  }
-  return `$${value.toFixed(0)}`;
 }
 
 // Get the system name from GeoJSON feature properties
@@ -664,7 +653,7 @@ function MapTooltip({
               <tr>
                 <td className="py-1 text-muted-foreground">Value</td>
                 <td className="py-1 text-right font-medium text-foreground">
-                  {formatCurrency(tooltipData.value)}
+                  {formatCurrencyCompact(tooltipData.value)}
                 </td>
               </tr>
             )}
@@ -1017,7 +1006,7 @@ function SubnationalChoroplethMapComponent({
                 size="sm"
                 className="h-9 rounded-r-none text-sm"
                 onClick={() => onViewLevelChange('region')}
-                title="ADM1 — states and regions"
+                title="ADM1: states and regions"
               >
                 <Layers className="h-3 w-3 mr-1" />
                 ADM1
@@ -1027,7 +1016,7 @@ function SubnationalChoroplethMapComponent({
                 size="sm"
                 className="h-9 rounded-l-none text-sm"
                 onClick={() => onViewLevelChange('township')}
-                title="ADM3 — townships"
+                title="ADM3: townships"
               >
                 <Layers className="h-3 w-3 mr-1" />
                 ADM3

@@ -16,7 +16,7 @@ import {
 import SectorSunburstVisualization from '@/components/charts/SectorSunburstVisualization';
 import SectorSankeyVisualization from '@/components/charts/SectorSankeyVisualization';
 import { PieChart, BarChart3, GitBranch } from 'lucide-react';
-import { formatAxisCurrency } from '@/lib/format';
+import { formatAxisCurrency, formatCurrencyCompact } from '@/lib/format';
 import { getTransactionTypeColor } from '@/lib/chart-colors';
 
 interface SectorData {
@@ -35,15 +35,6 @@ interface TopSectorsChartProps {
 
 export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps) {
   const [activeTab, setActiveTab] = useState('bar');
-
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`;
-    }
-    return `$${value.toFixed(0)}`;
-  };
 
   // Sort and take top 10 sectors
   const topSectors = [...data]
@@ -78,7 +69,7 @@ export function TopSectorsChart({ data, currency = 'USD' }: TopSectorsChartProps
             <div key={index} className="flex justify-between gap-4 text-helper">
               <span style={{ color: entry.color }}>{entry.name}:</span>
               <span className="font-medium">
-                {entry.name === 'Projects' ? entry.value : formatCurrency(entry.value)}
+                {entry.name === 'Projects' ? entry.value : formatCurrencyCompact(entry.value, currency)}
               </span>
             </div>
           ))}

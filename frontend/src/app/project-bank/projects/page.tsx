@@ -245,7 +245,7 @@ export default function ProjectListPage() {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Project List</h1>
               <p className="text-muted-foreground mt-1">
-                All projects in the national development pipeline — {filtered.length} projects
+                All projects in the national development pipeline ({filtered.length} projects)
               </p>
             </div>
           </div>

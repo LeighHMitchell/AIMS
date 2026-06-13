@@ -185,6 +185,7 @@ export function SidebarNav({
       defaultOpen: true,
       items: [
         { name: "FAQ", href: "/faq", show: true },
+        { name: "Glossary", href: "/glossary", show: true },
       ]
     },
   ]
@@ -235,6 +236,7 @@ export function SidebarNav({
       items: [
         { name: "Build History", href: "/build-history", show: true },
         { name: "FAQ", href: "/faq", show: true },
+        { name: "Glossary", href: "/glossary", show: true },
       ]
     },
   ]
@@ -260,6 +262,7 @@ export function SidebarNav({
       items: [
         { name: "Build History", href: "/build-history", show: true },
         { name: "FAQ", href: "/faq", show: true },
+        { name: "Glossary", href: "/glossary", show: true },
       ]
     },
   ]
@@ -273,6 +276,7 @@ export function SidebarNav({
       items: [
         { name: "Build History", href: "/build-history", show: true },
         { name: "FAQ", href: "/faq", show: true },
+        { name: "Glossary", href: "/glossary", show: true },
       ]
     },
   ]
@@ -332,7 +336,7 @@ export function SidebarNav({
         >
           {/* Module Context Chip + Back to Home */}
           {showBackToHome && moduleLabel && !isCollapsed && (
-            <div className="pb-3 mb-1 border-b border-border/60 dark:border-gray-700/50">
+            <div className="pb-3 mb-1 border-b border-border/60">
               <Link
                 href="/home"
                 className="group flex items-center gap-1.5 px-3 text-helper font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -345,7 +349,7 @@ export function SidebarNav({
 
           {/* Module CTA Button */}
           {currentModule === 'aims' && canCreateActivities && (
-            <div className="pb-4 border-b border-border dark:border-gray-700" data-tour="activities-create">
+            <div className="pb-4 border-b border-border" data-tour="activities-create">
               <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -353,7 +357,7 @@ export function SidebarNav({
                       <DropdownMenuTrigger asChild>
                         <GlassButton
                           className={cn(
-                            "w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800",
+                            "w-full justify-center gap-2 bg-primary hover:bg-primary/90",
                             isInActivityEditor && "opacity-50 cursor-not-allowed pointer-events-none"
                           )}
                           disabled={isInActivityEditor}
@@ -446,10 +450,10 @@ export function SidebarNav({
           )}
 
           {currentModule === 'project-bank' && canCreateProjects && (
-            <div className="pb-4 border-b border-border dark:border-gray-700">
+            <div className="pb-4 border-b border-border">
               <GlassButton
                 asChild
-                className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800"
+                className="w-full justify-center gap-2 bg-primary hover:bg-primary/90"
               >
                 <Link href="/project-bank/new">
                   <Plus className="h-4 w-4" />
@@ -460,10 +464,10 @@ export function SidebarNav({
           )}
 
           {currentModule === 'land-bank' && canCreateParcels && (
-            <div className="pb-4 border-b border-border dark:border-gray-700">
+            <div className="pb-4 border-b border-border">
               <GlassButton
                 asChild
-                className="w-full justify-center gap-2 bg-gray-900 hover:bg-gray-800"
+                className="w-full justify-center gap-2 bg-primary hover:bg-primary/90"
               >
                 <Link href="/land-bank/new">
                   <Plus className="h-4 w-4" />
@@ -489,7 +493,7 @@ export function SidebarNav({
                       "transition-colors duration-150",
                       isActive
                         ? "bg-[hsl(var(--nav-active-bg))] text-[hsl(var(--nav-active-fg))] shadow-sm ring-1 ring-black/5"
-                        : "text-foreground hover:bg-[hsl(var(--nav-hover-bg))] hover:text-[hsl(var(--nav-hover-fg))] dark:text-gray-200"
+                        : "text-foreground hover:bg-[hsl(var(--nav-hover-bg))] hover:text-[hsl(var(--nav-hover-fg))]"
                     )}
                   >
                     <ItemIcon className="h-5 w-5 flex-shrink-0" />
@@ -564,7 +568,7 @@ export function SidebarNav({
                     </Tooltip>
                   ) : (
                     <CollapsibleTrigger asChild>
-                      <button className="flex w-full items-center justify-between px-3 py-1.5 text-section-label font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors rounded-md hover:bg-[hsl(var(--nav-hover-bg))] dark:hover:bg-gray-800/30">
+                      <button className="flex w-full items-center justify-between px-3 py-1.5 text-section-label font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-[hsl(var(--nav-hover-bg))]">
                         <div className="flex items-center gap-2.5">
                           <GroupIcon className="h-5 w-5 flex-shrink-0" strokeWidth={1.75} />
                           <span>{group.label}</span>
@@ -585,7 +589,7 @@ export function SidebarNav({
                       {/* Vertical Connector Line */}
                       {!isCollapsed && isOpen && (
                         <div
-                          className="absolute left-[18px] top-0 bottom-0 w-px bg-muted dark:bg-gray-700"
+                          className="absolute left-[18px] top-0 bottom-0 w-px bg-muted"
                           style={{
                             height: '100%',
                           }}
@@ -625,7 +629,7 @@ export function SidebarNav({
                                 "transition-colors duration-150",
                                 isActive
                                   ? "bg-[hsl(var(--nav-active-bg))] text-[hsl(var(--nav-active-fg))] font-semibold shadow-sm ring-1 ring-black/5"
-                                  : "text-foreground hover:bg-[hsl(var(--nav-hover-bg))] hover:text-[hsl(var(--nav-hover-fg))] dark:text-gray-300 dark:hover:text-gray-100",
+                                  : "text-foreground hover:bg-[hsl(var(--nav-hover-bg))] hover:text-[hsl(var(--nav-hover-fg))]",
                                 // Add left padding for connector when not collapsed
                                 !isCollapsed && "ml-6 pl-6"
                               )}

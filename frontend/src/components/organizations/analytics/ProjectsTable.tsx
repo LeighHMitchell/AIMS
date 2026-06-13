@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ActivityStatusRow } from '@/components/ui/status-row';
 import {
   Table,
   TableBody,
@@ -16,6 +17,7 @@ import {
 } from '@/components/ui/table';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { formatCurrency } from '@/lib/format';
 import {
   Select,
   SelectContent,
@@ -23,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getActivityStatusLabel } from '@/lib/activity-status-utils';
 
 interface ProjectTableData {
   id: string;
@@ -46,21 +47,8 @@ interface ProjectsTableProps {
 type SortField = 'title' | 'iati_identifier' | 'status' | 'sectors' | 'commitments' | 'disbursements';
 type SortDirection = 'asc' | 'desc';
 
-// Keyed on IATI activity_status codes (and lowercase label aliases)
-const STATUS_COLORS: { [key: string]: string } = {
-  '1': 'bg-blue-100 text-blue-800',
-  'pipeline': 'bg-blue-100 text-blue-800',
-  '2': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
-  'implementation': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]',
-  '3': 'bg-muted text-foreground',
-  'finalisation': 'bg-muted text-foreground',
-  '4': 'bg-muted text-foreground',
-  'closed': 'bg-muted text-foreground',
-  '5': 'bg-destructive/10 text-red-800',
-  'cancelled': 'bg-destructive/10 text-red-800',
-  '6': 'bg-amber-100 text-amber-800',
-  'suspended': 'bg-amber-100 text-amber-800',
-};
+// Activity lifecycle status renders as [code] Label via ActivityStatusRow —
+// design-system Rule A: code chip left, never a colored pill.
 
 export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps) {
   const router = useRouter();
@@ -70,15 +58,6 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -268,34 +247,28 @@ export function ProjectsTable({ projects, currency = 'USD' }: ProjectsTableProps
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          className={
-                            STATUS_COLORS[String(project.status).toLowerCase()] || 'bg-muted text-foreground'
-                          }
-                        >
-                          {getActivityStatusLabel(project.status) || project.status}
-                        </Badge>
+                        <ActivityStatusRow status={project.status} />
                       </TableCell>
                       <TableCell className="text-body text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.sectors}>
-                          {project.sectors || '-'}
+                          {project.sectors || '—'}
                         </div>
                       </TableCell>
                       <TableCell className="text-body text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.developmentPartners}>
-                          {project.developmentPartners || '-'}
+                          {project.developmentPartners || '—'}
                         </div>
                       </TableCell>
                       <TableCell className="text-body text-muted-foreground max-w-xs">
                         <div className="truncate" title={project.executingAgencies}>
-                          {project.executingAgencies || '-'}
+                          {project.executingAgencies || '—'}
                         </div>
                       </TableCell>
                       <TableCell className="text-right text-body font-medium">
-                        {formatCurrency(project.commitments)}
+                        {formatCurrency(project.commitments, currency)}
                       </TableCell>
                       <TableCell className="text-right text-body font-medium">
-                        {formatCurrency(project.disbursements)}
+                        {formatCurrency(project.disbursements, currency)}
                       </TableCell>
                     </TableRow>
                   ))

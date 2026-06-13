@@ -158,7 +158,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[2fr_1fr_2fr_4fr]">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[4fr_1fr_2fr_2fr]">
         <DualMetricCardSkeleton />
         <DualMetricCardSkeleton />
         <DualMetricCardSkeleton />
@@ -176,71 +176,8 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
   }
 
   return (
-    <StaggerContainer className="grid gap-3 grid-cols-2 lg:grid-cols-[2fr_1fr_2fr_4fr]">
-      {/* Card 1: Financial Transactions */}
-      <StaggerItem>
-        <DualMetricCard
-          title="Financial Transactions"
-          helpText="Financial transactions where your organisation is involved — either as the reporting organisation, provider, or receiver of funds."
-          leftMetric={{
-            value: stats?.orgTransactionCount ?? 0,
-            label: 'Your Organisation',
-            tooltip: 'All transactions involving your organisation (as reporter, provider, or receiver)',
-          }}
-          rightMetric={{
-            value: stats?.otherOrgTransactionCount ?? 0,
-            label: 'Other Organisations',
-            tooltip: 'Transactions reported by other organisations where your organisation is a provider or receiver',
-          }}
-        />
-      </StaggerItem>
-
-      {/* Card 2: Budgets */}
-      <StaggerItem>
-        <TooltipProvider>
-          <Card className="bg-white hover:shadow-card-hover transition-shadow h-full">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-body font-medium text-muted-foreground">Budgets</span>
-                </div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    <p className="text-body">Budget records across all your organisation&apos;s activities.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <p className="text-3xl font-bold text-foreground">
-                {(stats?.orgBudgetCount ?? 0).toLocaleString()}
-              </p>
-              <p className="text-helper text-muted-foreground mt-1">Your Organisation</p>
-            </CardContent>
-          </Card>
-        </TooltipProvider>
-      </StaggerItem>
-
-      {/* Card 3: Planned Disbursements */}
-      <StaggerItem>
-        <DualMetricCard
-          title="Planned Disbursements"
-          helpText="Planned disbursement records across all your organisation's activities. These define expected fund transfers."
-          leftMetric={{
-            value: stats?.orgPlannedDisbursementCount ?? 0,
-            label: 'Your Organisation',
-            tooltip: 'Total planned disbursement records across all your organisation\'s activities',
-          }}
-          rightMetric={{
-            value: stats?.otherOrgPlannedDisbursementCount ?? 0,
-            label: 'Other Organisations',
-            tooltip: 'Planned disbursements reported by other organisations where your organisation is a provider or receiver',
-          }}
-        />
-      </StaggerItem>
-
-      {/* Card 3: Activities Overview (Validation + Publication + Status) */}
+    <StaggerContainer className="grid gap-3 grid-cols-2 lg:grid-cols-[4fr_1fr_2fr_2fr]">
+      {/* Card 1: Activities Overview (Validation + Publication + Status) */}
       <StaggerItem className="col-span-2 lg:col-span-1">
         <TooltipProvider>
           <Card className="bg-white hover:shadow-card-hover transition-shadow h-full">
@@ -309,7 +246,7 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
                           <p className="text-helper text-muted-foreground mt-1 whitespace-nowrap">Rejected</p>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent><p className="text-body">Activities that were reviewed and rejected by the government</p></TooltipContent>
+                      <TooltipContent><p className="text-body">Activities that were rejected by the partner government and may be resubmitted for validation</p></TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
@@ -350,6 +287,69 @@ export function DashboardHeroCards({ organizationId, userId }: DashboardHeroCard
             </CardContent>
           </Card>
         </TooltipProvider>
+      </StaggerItem>
+
+      {/* Card 2: Budgets */}
+      <StaggerItem>
+        <TooltipProvider>
+          <Card className="bg-white hover:shadow-card-hover transition-shadow h-full">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-body font-medium text-muted-foreground">Budgets</span>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="text-body">Budget records across all your organisation&apos;s activities.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <p className="text-3xl font-bold text-foreground">
+                {(stats?.orgBudgetCount ?? 0).toLocaleString()}
+              </p>
+              <p className="text-helper text-muted-foreground mt-1">Reported by Your Organisation</p>
+            </CardContent>
+          </Card>
+        </TooltipProvider>
+      </StaggerItem>
+
+      {/* Card 3: Planned Disbursements */}
+      <StaggerItem>
+        <DualMetricCard
+          title="Planned Disbursements"
+          helpText="Planned disbursement records across all your organisation's activities. These define expected fund transfers."
+          leftMetric={{
+            value: stats?.orgPlannedDisbursementCount ?? 0,
+            label: 'Reported by Your Organisation',
+            tooltip: 'Total planned disbursement records across all your organisation\'s activities',
+          }}
+          rightMetric={{
+            value: stats?.otherOrgPlannedDisbursementCount ?? 0,
+            label: 'Reported by Other Organisations',
+            tooltip: 'Planned disbursements reported by other organisations where your organisation is a provider or receiver',
+          }}
+        />
+      </StaggerItem>
+
+      {/* Card 4: Financial Transactions */}
+      <StaggerItem>
+        <DualMetricCard
+          title="Financial Transactions"
+          helpText="Financial transactions where your organisation is involved, either as the reporting organisation, provider, or receiver of funds."
+          leftMetric={{
+            value: stats?.orgTransactionCount ?? 0,
+            label: 'Reported by Your Organisation',
+            tooltip: 'All transactions involving your organisation (as reporter, provider, or receiver)',
+          }}
+          rightMetric={{
+            value: stats?.otherOrgTransactionCount ?? 0,
+            label: 'Reported by Other Organisations',
+            tooltip: 'Transactions reported by other organisations where your organisation is a provider or receiver',
+          }}
+        />
       </StaggerItem>
     </StaggerContainer>
   );

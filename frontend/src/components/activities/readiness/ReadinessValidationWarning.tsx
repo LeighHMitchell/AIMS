@@ -77,14 +77,7 @@ export function ReadinessValidationWarning({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {isComplete && allStagesSigned ? (
-              <CheckCircle className="h-5 w-5 text-[hsl(var(--success-icon))]" />
-            ) : (
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
-            )}
-            Readiness Checklist Status
-          </DialogTitle>
+          <DialogTitle>Readiness Checklist Status</DialogTitle>
           <DialogDescription>
             {isComplete && allStagesSigned
               ? 'The readiness checklist is complete.'

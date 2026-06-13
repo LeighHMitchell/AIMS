@@ -14,7 +14,7 @@ const Alert = React.forwardRef<
       "relative w-full rounded-lg border px-4 py-3 text-body [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
       {
         "bg-background text-foreground": variant === "default",
-        "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive": variant === "destructive",
+        "border-destructive/50 text-destructive [&>svg]:text-destructive": variant === "destructive",
       },
       className
     )}

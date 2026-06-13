@@ -44,7 +44,7 @@ import {
 } from "@/utils/transactionMigrationHelper";
 import { BulkActionToolbar } from "@/components/ui/bulk-action-toolbar";
 import { apiFetch } from '@/lib/api-fetch';
-import { formatCurrencyPrecise, formatCurrencyCompact, formatDate as formatDateCanonical } from '@/lib/format';
+import { formatCurrencyCompact } from '@/lib/format';
 import { txUsd } from '@/lib/analytics-transaction-filters';
 
 // Define FINANCE_TYPES locally since it's not exported from the helper
@@ -865,12 +865,6 @@ export default function TransactionsManager({
     toast.success("Transactions exported");
   };
 
-  // Helper function to safely format dates
-  const formatTransactionDate = (dateString: string | null | undefined) => {
-    if (!dateString) return '-';
-    return formatDateCanonical(dateString) || '-';
-  };
-
   // Calculate dynamic summary statistics by transaction type
   // Group transactions by type and calculate totals
   const transactionTypeSummaries = React.useMemo(() => {
@@ -976,15 +970,6 @@ export default function TransactionsManager({
     .filter(t => t.status === "published")
     .reduce((sum, t) => sum + txUsd(t), 0);
 
-  const formatCurrency = (value: number, currency: string) => {
-    return formatCurrencyPrecise(value, currency);
-  };
-
-  // Format currency with abbreviations (k, m, b) — values here are USD aggregates
-  const formatCurrencyAbbreviated = (value: number) => {
-    return formatCurrencyCompact(value);
-  };
-
   // Check if transaction was imported from IATI (no created_by field)
   const isImportedTransaction = (transaction: Transaction) => {
     return !('created_by' in transaction) || transaction.created_by === null;
@@ -1011,7 +996,7 @@ export default function TransactionsManager({
             <HeroCard
               key={summary.type}
               title={summary.typeName}
-              value={formatCurrencyAbbreviated(summary.totalUsd)}
+              value={formatCurrencyCompact(summary.totalUsd)}
               subtitle={`${summary.count} transaction${summary.count !== 1 ? 's' : ''}`}
               icon={<DollarSign className="h-5 w-5" />}
             />

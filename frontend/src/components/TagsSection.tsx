@@ -94,7 +94,7 @@ export default function TagsSection({ activityId, tags, onChange }: TagsSectionP
       // Recovered from offline — let the user know
       if (!apiAvailable) {
         setApiAvailable(true);
-        toast.success('Reconnected — your changes are saving.');
+        toast.success('Reconnected. Your changes are saving.');
       }
     } catch (error) {
       console.error('Error fetching tags:', error);

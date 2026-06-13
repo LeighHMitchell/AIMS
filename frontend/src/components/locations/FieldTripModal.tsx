@@ -541,7 +541,7 @@ export const FieldTripModal: React.FC<FieldTripModalProps> = ({
             {trip ? 'Edit Field Trip' : 'Add Field Trip'}
           </DialogTitle>
           <DialogDescription>
-            Record a workshop, visit, or other event — where it happened, what happened, and any photos
+            Record a workshop, visit, or other event: where it happened, what happened, and any photos
             or documents. A field trip stands on its own; it doesn't need an activity site.
           </DialogDescription>
         </DialogHeader>
@@ -802,7 +802,7 @@ export const FieldTripModal: React.FC<FieldTripModalProps> = ({
                   <Label className="flex items-center gap-2">
                     Event type
                     <RequiredDot />
-                    <HelpTextTooltip content="The kind of event — for example a workshop, field visit, training, or community consultation." />
+                    <HelpTextTooltip content="The kind of event, for example a workshop, field visit, training, or community consultation." />
                   </Label>
                   <Controller
                     control={control}
@@ -847,7 +847,7 @@ export const FieldTripModal: React.FC<FieldTripModalProps> = ({
                 <Label htmlFor="title" className="flex items-center gap-2">
                   Title
                   <RequiredDot />
-                  <HelpTextTooltip content="A short, recognisable name for the trip — used in lists and summaries." />
+                  <HelpTextTooltip content="A short, recognisable name for the trip, used in lists and summaries." />
                 </Label>
                 <Input
                   id="title"
@@ -908,7 +908,7 @@ export const FieldTripModal: React.FC<FieldTripModalProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="narrative" className="flex items-center gap-2">
                   Description
-                  <HelpTextTooltip content="A narrative of what happened — who was involved, what was discussed or done, and the main outcomes." />
+                  <HelpTextTooltip content="A narrative of what happened: who was involved, what was discussed or done, and the main outcomes." />
                 </Label>
                 <Textarea
                   id="narrative"
@@ -976,7 +976,7 @@ export const FieldTripModal: React.FC<FieldTripModalProps> = ({
                           : 'Drag & drop files here, or click to browse'}
                     </p>
                     <p className="mt-1 text-helper text-muted-foreground">
-                      Photos (JPG, PNG, GIF…) and documents (PDF, DOCX, XLSX…) — up to 10MB each
+                      Photos (JPG, PNG, GIF…) and documents (PDF, DOCX, XLSX…), up to 10MB each
                     </p>
                   </div>
                 </div>

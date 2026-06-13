@@ -45,7 +45,7 @@ import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_RANKED_PALETTE, OTHERS_COLOR, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
-import { formatTooltipCurrency } from '@/lib/format';
+import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
 import { ChartDataTable } from '@/components/ui/chart-data-table';
@@ -118,32 +118,6 @@ function getDateRangeFromTimeRange(timeRange: TimeRangeType): { from: Date | und
   }
 
   return { from, to: now };
-}
-
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  } else if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`;
-  } else if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
-  }
-  return `$${value.toFixed(0)}`;
-}
-
-function formatCurrencyUSD(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1)}B USD`;
-  } else if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M USD`;
-  } else if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1)}K USD`;
-  }
-  return `${value.toFixed(0)} USD`;
-}
-
-function formatCurrencyFull(value: number): string {
-  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function getMetricLabel(metric: MetricType, count: number): string {
@@ -338,7 +312,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0, compact = false }: TopDo
         <YAxis
           stroke={CHART_STRUCTURE_COLORS.axis}
           fontSize={11}
-          tickFormatter={formatCurrency}
+          tickFormatter={(v: number) => formatAxisCurrency(v)}
           tickLine={false}
           axisLine={false}
           width={56}
@@ -602,7 +576,7 @@ export function TopDonorAgenciesChart({ refreshKey = 0, compact = false }: TopDo
       {renderContent()}
       {!compact && (
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
-          This chart shows the top {topN} individual development partner organizations by financial contribution, with remaining donors aggregated. Use the Top N selector, metric, and calendar/year selectors to analyze funding patterns across different measures and periods.
+          This chart shows the top {topN} individual development partner organisations by financial contribution, with remaining donors aggregated. Use the Top N selector, metric, and calendar/year selectors to analyse funding patterns across different measures and periods.
         </p>
       )}
     </div>

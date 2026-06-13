@@ -187,10 +187,7 @@ export function UserActivityPanel({ userId, userName, isOpen, onClose }: UserAct
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            {userName || 'User Activity'}
-          </SheetTitle>
+          <SheetTitle>{userName || 'User Activity'}</SheetTitle>
           <SheetDescription>
             Complete activity history for this user
           </SheetDescription>

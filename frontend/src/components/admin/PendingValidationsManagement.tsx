@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ActivityStatusRow } from '@/components/ui/status-row';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -27,6 +28,8 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { TRANSACTION_TYPE_LABELS } from '@/types/transaction';
 import { apiFetch } from '@/lib/api-fetch';
+import { formatDate as formatLibDate } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 
 interface PendingActivity {
   id: string;
@@ -62,24 +65,10 @@ interface PendingTransaction {
   validated_at: string | null;
 }
 
-// Helper to format currency
-const formatCurrency = (value: number, currency: string = 'USD') => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
-// Helper to format date
+// Helper to format date — delegates to the canonical lib formatter.
 const formatDate = (dateString: string | null) => {
-  if (!dateString) return '-';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  if (!dateString) return '—';
+  return formatLibDate(dateString) || '—';
 };
 
 // Helper to get transaction type label
@@ -87,30 +76,11 @@ const getTransactionTypeLabel = (type: string) => {
   return TRANSACTION_TYPE_LABELS[type as keyof typeof TRANSACTION_TYPE_LABELS] || type;
 };
 
-// Helper to get activity status badge
-const getStatusBadge = (status: string | null) => {
-  const statusColors: Record<string, string> = {
-    '1': 'bg-muted text-foreground', // Pipeline/Identification
-    '2': 'bg-blue-100 text-blue-800', // Implementation
-    '3': 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]', // Finalisation
-    '4': 'bg-purple-100 text-purple-800', // Closed
-    '5': 'bg-destructive/10 text-red-800', // Cancelled
-    '6': 'bg-yellow-100 text-yellow-800', // Suspended
-  };
-  const statusLabels: Record<string, string> = {
-    '1': 'Pipeline',
-    '2': 'Implementation',
-    '3': 'Finalisation',
-    '4': 'Closed',
-    '5': 'Cancelled',
-    '6': 'Suspended',
-  };
-  return (
-    <Badge className={cn('text-helper', statusColors[status || ''] || 'bg-muted text-foreground')}>
-      {statusLabels[status || ''] || status || 'Unknown'}
-    </Badge>
-  );
-};
+// Activity lifecycle status renders as [code] Label via ActivityStatusRow —
+// design-system Rule A: code chip left, never a colored pill.
+const getStatusBadge = (status: string | null) => (
+  <ActivityStatusRow status={status} className="text-helper" />
+);
 
 // Activity Row Component with validation toggle
 const ActivityRow: React.FC<{
@@ -155,7 +125,7 @@ const ActivityRow: React.FC<{
       <TableCell>
         <div className="flex items-center gap-2">
           <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-body truncate max-w-[150px]">{activity.organization || '-'}</span>
+          <span className="text-body truncate max-w-[150px]">{activity.organization || '—'}</span>
         </div>
       </TableCell>
       <TableCell>
@@ -228,7 +198,7 @@ const TransactionRow: React.FC<{
       onClick={() => onNavigate(transaction.activity_id, transaction.id)}
     >
       <TableCell className="font-mono text-xs text-muted-foreground max-w-[120px] truncate">
-        {transaction.activity_iati_id || '-'}
+        {transaction.activity_iati_id || '—'}
       </TableCell>
       <TableCell className="max-w-[200px]">
         <div className="truncate text-body font-medium">{transaction.activity_title || 'Untitled'}</div>
@@ -241,14 +211,14 @@ const TransactionRow: React.FC<{
       <TableCell>
         <div className="flex items-center gap-2">
           <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-body truncate max-w-[120px]">{transaction.organization || '-'}</span>
+          <span className="text-body truncate max-w-[120px]">{transaction.organization || '—'}</span>
         </div>
       </TableCell>
       <TableCell>
         {formatDate(transaction.transaction_date)}
       </TableCell>
       <TableCell className="font-medium text-right">
-        {formatCurrency(transaction.value, transaction.currency)}
+        <CurrencyValue amount={transaction.value} currency={transaction.currency} />
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()}>
         <TooltipProvider>

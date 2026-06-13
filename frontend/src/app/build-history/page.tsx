@@ -14,6 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { sanitizeMinimal } from "@/lib/sanitize"
+import { formatDate } from '@/lib/format'
 import releases from '@/data/releases.json'
 
 interface Release {
@@ -39,15 +40,6 @@ export default function BuildHistoryPage() {
   const handlePageLimitChange = (newLimit: number) => {
     setPageLimit(newLimit)
     setCurrentPage(1)
-  }
-
-  // Format date nicely
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
   }
 
   return (

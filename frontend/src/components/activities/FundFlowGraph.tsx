@@ -444,7 +444,7 @@ export default function FundFlowGraph({
           disabled={!hasTransactions}
           className={`h-7 px-3 text-helper ${
             viewMode === 'transactions' 
-              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
               : 'bg-white text-muted-foreground border-input hover:bg-muted'
           }`}
         >
@@ -457,7 +457,7 @@ export default function FundFlowGraph({
           disabled={!hasPlanned}
           className={`h-7 px-3 text-helper ${
             viewMode === 'planned' 
-              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
               : 'bg-white text-muted-foreground border-input hover:bg-muted'
           }`}
         >
@@ -470,7 +470,7 @@ export default function FundFlowGraph({
           disabled={!hasTransactions || !hasPlanned}
           className={`h-7 px-3 text-helper ${
             viewMode === 'both' 
-              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
               : 'bg-white text-muted-foreground border-input hover:bg-muted'
           }`}
         >
@@ -551,7 +551,7 @@ export default function FundFlowGraph({
         </div>
         {viewMode === 'transactions' || viewMode === 'both' ? (
           <div className="text-helper text-muted-foreground mt-2">
-            <p className="mb-1"><strong>Transaction colors:</strong> Links are colored by Finance Type (if available) or Transaction Type</p>
+            <p className="mb-1"><strong>Transaction colours:</strong> Links are coloured by Finance Type (if available) or Transaction Type</p>
             <p>Hover over links to see transaction details including type, finance type, and value</p>
           </div>
         ) : null}

@@ -201,8 +201,8 @@ export function EditDocumentModal({ isOpen, onClose, onSuccess, document }: Edit
     icon: org.logo ? (
       <img src={org.logo} alt="" className="h-5 w-5 rounded-sm object-contain flex-shrink-0" />
     ) : (
-      <div className="h-5 w-5 rounded-sm bg-muted dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-        <span className="text-[10px] font-medium text-muted-foreground dark:text-muted-foreground">
+      <div className="h-5 w-5 rounded-sm bg-muted flex items-center justify-center flex-shrink-0">
+        <span className="text-[10px] font-medium text-muted-foreground">
           {(org.acronym || org.name || '?')[0].toUpperCase()}
         </span>
       </div>

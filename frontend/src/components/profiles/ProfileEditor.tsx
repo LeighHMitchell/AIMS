@@ -266,7 +266,7 @@ export function ProfileEditor(props: ProfileEditorProps) {
                     })}
                   </div>
                   <p className="text-helper text-muted-foreground">
-                    {icon ? 'Custom icon selected.' : 'No custom icon — using the default.'} Click a selected icon again to reset.
+                    {icon ? 'Custom icon selected.' : 'No custom icon; using the default.'} Click a selected icon again to reset.
                   </p>
                 </div>
 

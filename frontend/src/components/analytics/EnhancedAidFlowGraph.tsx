@@ -13,16 +13,16 @@ import { getTransactionTypeColor, OTHERS_COLOR, TRANSACTION_TYPE_LABELS as CANON
 // the same wording appears next to a "Recipient" badge in the popup header
 // and a "Recipient" tag in the partner list.
 const BADGE_DEFINITIONS: Record<string, string> = {
-  donor: 'An organisation that provides funding — typically a bilateral, multilateral, or foundation.',
+  donor: 'An organisation that provides funding, typically a bilateral, multilateral, or foundation.',
   recipient: 'An organisation that ultimately benefits from the funding (often a government or community).',
-  implementer: 'An organisation that delivers the activity on the ground — often an NGO or contractor.',
-  intermediary: 'An organisation that channels funds onward — receiving from one organisation and disbursing to another.',
+  implementer: 'An organisation that delivers the activity on the ground, often an NGO or contractor.',
+  intermediary: 'An organisation that channels funds onward, receiving from one organisation and disbursing to another.',
   'net receiver': 'This organisation has received more funding than it has sent during the selected period.',
   'net provider': 'This organisation has sent more funding than it has received during the selected period.',
   organisation: 'A party in the aid flow (no specific role detected for the selected period).',
   organization: 'A party in the aid flow (no specific role detected for the selected period).',
   sector: 'A thematic grouping of activities by sector (e.g. health, education).',
-  activity: 'An individual activity or project — the unit of work being funded or delivered.',
+  activity: 'An individual activity or project, the unit of work being funded or delivered.',
   inflow: 'The total value of funding this organisation received during the selected period.',
   outflow: 'The total value of funding this organisation sent during the selected period.',
   other: 'Transaction types other than the highlighted ones (e.g. reimbursements, interest, equity).',
@@ -857,15 +857,6 @@ export default function EnhancedAidFlowGraph({
     d3.select(svgRef.current).transition().duration(300)
       .call(zoomRef.current.transform as any, d3.zoomIdentity)
   }, [])
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
 
   // Close popup when clicking outside
   const handleContainerClick = useCallback(() => {

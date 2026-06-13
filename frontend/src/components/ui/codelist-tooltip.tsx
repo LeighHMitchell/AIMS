@@ -48,7 +48,7 @@ export function CodelistTooltip({
       <Tooltip delayDuration={200}>
         <TooltipTrigger asChild>
           <span
-            className={`cursor-help focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-0.5 -mx-0.5 ${className}`}
+            className={`cursor-help focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 rounded px-0.5 -mx-0.5 ${className}`}
             tabIndex={0}
             role="button"
             aria-label={`${definition.name}. Press to show definition.`}
@@ -104,7 +104,7 @@ export function CodelistTooltipInline({
       <Tooltip delayDuration={200}>
         <TooltipTrigger asChild>
           <span
-            className={`cursor-help font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+            className={`cursor-help font-mono text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded focus:outline-none focus:ring-2 focus:ring-ring ${className}`}
             tabIndex={0}
             role="button"
             aria-label={`Code ${definition.code}: ${definition.name}`}

@@ -60,7 +60,7 @@ import { ChartViewToggle, type ChartViewToggleOption } from '@/components/ui/cha
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { formatAxisCurrency, formatCurrencyCompact } from '@/lib/format'
-import { getFinancialSeriesColor, getTransactionTypeColor, BUDGET_COLOR } from '@/lib/chart-colors'
+import { getFinancialSeriesColor, getTransactionTypeColor, BUDGET_COLOR, CHART_COLOR_PALETTE } from '@/lib/chart-colors'
 
 type TimePeriod = '1m' | '3m' | '6m' | '1y' | '5y' | 'all'
 type GroupBy = 'year' | 'month'
@@ -316,8 +316,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
 
   const [containerSize, setContainerSize] = useState({ width: 1200, height: dynamicHeight })
 
-  // Sankey flows use USD-converted values.
-  const formatCurrency = (value: number) => formatCurrencyCompact(value)
+  // Sankey flows use USD-converted values (formatCurrencyCompact from @/lib/format).
 
   // Update height when data changes
   useEffect(() => {
@@ -418,8 +417,9 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
     }
 
     const nodes: SankeyNode[] = []
-    // Custom color palette: Primary Scarlet, Pale Slate, Blue Slate, Cool Steel, Platinum
-    const COLORS = ['#dc2625', '#cfd0d5', '#4c5568', '#7b95a7', '#f1f4f8']
+    // Org nodes are categorical (non-financial), so the shared brand palette
+    // applies — imported from chart-colors.ts, never a local duplicate.
+    const COLORS = CHART_COLOR_PALETTE
 
     // Add provider nodes (left side)
     let providerY = 0
@@ -554,7 +554,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
                 <tbody>
                   <tr class="border-b border-border last:border-b-0">
                     <td class="py-1.5 pr-4 text-foreground font-medium">Amount</td>
-                    <td class="py-1.5 text-right font-semibold text-foreground">${formatCurrency(flow.value)}</td>
+                    <td class="py-1.5 text-right font-semibold text-foreground">${formatCurrencyCompact(flow.value)}</td>
                   </tr>
                   <tr class="border-b border-border last:border-b-0">
                     <td class="py-1.5 pr-4 text-foreground font-medium">% of Total</td>
@@ -604,7 +604,7 @@ export const FundingSourceSankey: React.FC<FundingSourceSankeyProps> = ({
               <tbody>
                 <tr class="border-b border-border last:border-b-0">
                   <td class="py-1.5 pr-4 text-foreground font-medium">Amount</td>
-                  <td class="py-1.5 text-right font-semibold text-foreground">${formatCurrency(d.value)}</td>
+                  <td class="py-1.5 text-right font-semibold text-foreground">${formatCurrencyCompact(d.value)}</td>
                 </tr>
               </tbody>
             </table>
@@ -919,7 +919,7 @@ export default function FinancialAnalyticsTab({
               // monthKey is "YYYY-MM"
               const [y, m] = monthKey.split('-')
               const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1)
-              const period = dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+              const period = dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
               
               if (!grouped[monthKey]) {
                 grouped[monthKey] = { period, sortKey: monthKey, budget: 0, actual: 0 }
@@ -958,7 +958,7 @@ export default function FinancialAnalyticsTab({
             monthAllocations.forEach((monthAmount, monthKey) => {
               const [y, m] = monthKey.split('-')
               const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1)
-              const period = dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+              const period = dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
               
               if (!grouped[monthKey]) {
                 grouped[monthKey] = { period, sortKey: monthKey, budget: 0, actual: 0 }
@@ -1009,7 +1009,7 @@ export default function FinancialAnalyticsTab({
 
       if (budgetGroupBy === 'month' && item.date) {
         const dateObj = new Date(item.date)
-        period = dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        period = dateObj.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
         periodKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`
         sortKey = periodKey
       } else {
@@ -1271,7 +1271,7 @@ export default function FinancialAnalyticsTab({
           onClick={() => onChange('year')}
           className={`h-7 px-3 text-helper ${
             value === 'year' 
-              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
               : 'bg-card text-muted-foreground border-border hover:bg-muted/50'
           }`}
         >
@@ -1283,7 +1283,7 @@ export default function FinancialAnalyticsTab({
           onClick={() => onChange('month')}
           className={`h-7 px-3 text-helper ${
             value === 'month' 
-              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
               : 'bg-card text-muted-foreground border-border hover:bg-muted/50'
           }`}
         >
@@ -1293,16 +1293,8 @@ export default function FinancialAnalyticsTab({
     )
   }
 
-  // Aggregate/chart values in this tab are USD-converted.
-  const formatCurrency = (value: number) => formatCurrencyCompact(value)
-
-  const formatTooltipValue = (value: number) => formatCurrencyCompact(value)
-
-  // Compact currency formatter for Y-axis - whole numbers only
-  const formatCompactCurrency = (value: number) => formatAxisCurrency(value)
-
-  // Compact currency formatter for tooltips with one decimal
-  const formatCompactCurrencyTooltip = (value: number) => formatCurrencyCompact(value)
+  // Aggregate/chart values in this tab are USD-converted —
+  // formatted via formatCurrencyCompact / formatAxisCurrency from @/lib/format.
 
   // Toggle series visibility in the cumulative overview chart
   const handleToggleSeries = (seriesName: string) => {
@@ -1646,7 +1638,7 @@ export default function FinancialAnalyticsTab({
                       <span className="text-foreground font-medium">{entry.name}</span>
                     </td>
                     <td className="py-1.5 text-right font-semibold text-foreground">
-                      {formatTooltipValue(entry.value)}
+                      {formatCurrencyCompact(entry.value)}
                     </td>
                   </tr>
                 ))}
@@ -1953,8 +1945,8 @@ export default function FinancialAnalyticsTab({
         date: point.date.toISOString(),
         timestamp: point.timestamp,
         monthKey,
-        displayDate: point.date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        fullDate: point.date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        displayDate: point.date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
+        fullDate: point.date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
         'Incoming Funds': cumulativeIncomingFunds,
         'Incoming Commitments': cumulativeIncomingCommitments,
         'Outgoing Commitments': cumulativeOutgoingCommitments,
@@ -2025,8 +2017,8 @@ export default function FinancialAnalyticsTab({
           date: currentDate.toISOString(),
           timestamp: currentDate.getTime(),
           monthKey,
-          displayDate: currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-          fullDate: currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          displayDate: currentDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
+          fullDate: currentDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
           'Incoming Funds': lastCumulativeValues.incomingFunds,
           'Incoming Commitments': lastCumulativeValues.incomingCommitments,
           'Outgoing Commitments': lastCumulativeValues.outgoingCommitments,
@@ -2809,7 +2801,7 @@ export default function FinancialAnalyticsTab({
                     />
                     <YAxis tickFormatter={formatAxisCurrency} stroke="#64748B" fontSize={12} />
                     <Tooltip
-                      formatter={(value: any) => [formatCompactCurrencyTooltip(value), '']}
+                      formatter={(value: any) => [formatCurrencyCompact(value), '']}
                       separator=""
                       labelStyle={{ color: '#1e293b', fontWeight: 600 }}
                       contentStyle={{
@@ -2841,8 +2833,8 @@ export default function FinancialAnalyticsTab({
                     {filteredBudgetVsActual.map((row, index) => (
                       <tr key={index} className="border-b border-border hover:bg-muted/50">
                         <td className="py-2.5 px-4 font-medium text-foreground">{budgetGroupBy === 'year' ? budgetVsActualCal.getYearLabel(Number(row.year)) : row.period}</td>
-                        <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row.budget)}</td>
-                        <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(row.actual)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground">{formatCurrencyCompact(row.budget)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground">{formatCurrencyCompact(row.actual)}</td>
                       </tr>
                     ))}
                     {/* Total Row - Use periodic data to avoid double counting */}
@@ -2856,8 +2848,8 @@ export default function FinancialAnalyticsTab({
                       return (
                         <tr className="border-t-2 border-border bg-muted font-semibold">
                           <td className="py-2.5 px-4 text-foreground">Total</td>
-                          <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals.budget)}</td>
-                          <td className="text-right py-2.5 px-4 text-foreground">{formatTooltipValue(totals.actual)}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground">{formatCurrencyCompact(totals.budget)}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground">{formatCurrencyCompact(totals.actual)}</td>
                         </tr>
                       )
                     })()}
@@ -3101,7 +3093,7 @@ export default function FinancialAnalyticsTab({
                           <td className="py-2.5 px-4 font-medium text-foreground" title={flow.receiver}>
                             {flow.receiverDisplay || flow.receiver}
                           </td>
-                          <td className="text-right py-2.5 px-4 text-foreground">{formatCurrency(flow.value)}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground">{formatCurrencyCompact(flow.value)}</td>
                           <td className="text-right py-2.5 px-4 text-foreground">{percentage}%</td>
                         </tr>
                       )
@@ -3112,7 +3104,7 @@ export default function FinancialAnalyticsTab({
                       return (
                         <tr className="border-t-2 border-border bg-muted font-semibold">
                           <td className="py-2.5 px-4 text-foreground" colSpan={2}>Total</td>
-                          <td className="text-right py-2.5 px-4 text-foreground">{formatCurrency(total)}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground">{formatCurrencyCompact(total)}</td>
                           <td className="text-right py-2.5 px-4 text-foreground">100.0%</td>
                         </tr>
                       )
@@ -3142,7 +3134,7 @@ export default function FinancialAnalyticsTab({
           )}
           {isFullscreen && (
             <p className="text-body text-muted-foreground leading-relaxed mt-4">
-              Sankey-style flows run from each <strong>provider organisation</strong> on the left to the <strong>receivers</strong> on the right, with band width sized by USD value — wider bands mean more money moved between that pair, and narrow tails reveal smaller-volume relationships that wouldn't stand out in a flat transaction list. The toggle switches between <strong>actual transactions</strong> by type (incoming, commitment, disbursement, expenditure) and <strong>planned disbursements</strong> only. At a glance, this tells you who the activity's primary funders are, where the money is being directed, and whether funding is concentrated with one partner or spread across several — concentration can signal risk if a single funder withdraws.
+              Sankey-style flows run from each <strong>provider organisation</strong> on the left to the <strong>receivers</strong> on the right, with band width sized by USD value. Wider bands mean more money moved between that pair, and narrow tails reveal smaller-volume relationships that wouldn't stand out in a flat transaction list. The toggle switches between <strong>actual transactions</strong> by type (incoming, commitment, disbursement, expenditure) and <strong>planned disbursements</strong> only. At a glance, this tells you who the activity's primary funders are, where the money is being directed, and whether funding is concentrated with one partner or spread across several. Concentration can signal risk if a single funder withdraws.
             </p>
           )}
         </CardContent>
@@ -3167,7 +3159,7 @@ export default function FinancialAnalyticsTab({
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <FormulaTooltip
-                    content="Groups all outgoing transactions (commitments, disbursements, expenditures) by the IATI finance type of each transaction — bucketed into Grants, Loans, Equity, Guarantees / Insurance, Other, or Unspecified — and sums their USD-converted value. Each slice is that bucket's share of total outgoing USD."
+                    content="Groups all outgoing transactions (commitments, disbursements, expenditures) by the IATI finance type of each transaction (bucketed into Grants, Loans, Equity, Guarantees / Insurance, Other, or Unspecified) and sums their USD-converted value. Each slice is that bucket's share of total outgoing USD."
                     size={isFullscreen ? 'md' : 'sm'}
                   />
                   <ChartExpandIconButton isFullscreen={isFullscreen} onClick={toggle} />
@@ -3264,10 +3256,10 @@ export default function FinancialAnalyticsTab({
                             <td className="py-2.5 px-4 font-medium text-foreground">{aidModalityCal.getYearLabel(year)}</td>
                             {aidModalityByYear.buckets.map((bucket) => (
                               <td key={bucket} className="text-right py-2.5 px-4 text-foreground tabular-nums">
-                                {formatCurrency(row[bucket] || 0)}
+                                {formatCurrencyCompact(row[bucket] || 0)}
                               </td>
                             ))}
-                            <td className="text-right py-2.5 px-4 text-foreground tabular-nums font-medium">{formatCurrency(rowTotal)}</td>
+                            <td className="text-right py-2.5 px-4 text-foreground tabular-nums font-medium">{formatCurrencyCompact(rowTotal)}</td>
                           </tr>
                         )
                       })}
@@ -3280,9 +3272,9 @@ export default function FinancialAnalyticsTab({
                           <tr className="border-t-2 border-border bg-muted font-semibold">
                             <td className="py-2.5 px-4 text-foreground">Total</td>
                             {colTotals.map((v, i) => (
-                              <td key={i} className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(v)}</td>
+                              <td key={i} className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrencyCompact(v)}</td>
                             ))}
-                            <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(grand)}</td>
+                            <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrencyCompact(grand)}</td>
                           </tr>
                         )
                       })()}
@@ -3324,7 +3316,7 @@ export default function FinancialAnalyticsTab({
                               .filter((code) => Number(byType[code]) > 0)
                               .map((code) => ({
                                 label: AID_MODALITY_TYPE_LABELS[code],
-                                value: formatCurrency(Number(byType[code]) || 0),
+                                value: formatCurrencyCompact(Number(byType[code]) || 0),
                               }))
                             return (
                               <ChartTooltipCard
@@ -3332,7 +3324,7 @@ export default function FinancialAnalyticsTab({
                                 rows={[
                                   {
                                     label: 'Total',
-                                    value: formatCurrency(value),
+                                    value: formatCurrencyCompact(value),
                                     color: sliceColor,
                                     extra: `${pct.toFixed(1)}%`,
                                     bordered: breakdown.length > 0,
@@ -3358,7 +3350,7 @@ export default function FinancialAnalyticsTab({
               )}
               {isFullscreen && (
                 <p className="text-body text-muted-foreground leading-relaxed mt-4">
-                  The pie groups all <strong>outgoing transactions</strong> (commitments, disbursements, expenditures) by IATI <strong>Finance Type</strong> bucket — Grants, Loans, Equity, Guarantees / Insurance, Other, or Unspecified — with each slice sized by USD value. A chart that's almost entirely Grants tells you the activity is concessional in nature, while a Loans-heavy mix points to market or near-market financing. Reading the instrument mix this way is a quick way to assess concessionality, repayment risk, and how the activity fits into the funder's broader portfolio.
+                  The pie groups all <strong>outgoing transactions</strong> (commitments, disbursements, expenditures) by IATI <strong>Finance Type</strong> bucket (Grants, Loans, Equity, Guarantees / Insurance, Other, or Unspecified) with each slice sized by USD value. A chart that's almost entirely Grants tells you the activity is concessional in nature, while a Loans-heavy mix points to market or near-market financing. Reading the instrument mix this way is a quick way to assess concessionality, repayment risk, and how the activity fits into the funder's broader portfolio.
                 </p>
               )}
             </CardContent>
@@ -3413,7 +3405,7 @@ export default function FinancialAnalyticsTab({
                         <tr key={row.name} className="border-b border-border hover:bg-muted/50">
                           <td className="py-2.5 px-4 text-muted-foreground tabular-nums">{i + 1}</td>
                           <td className="py-2.5 px-4 font-medium text-foreground" title={row.name}>{row.displayName || row.name}</td>
-                          <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(Number(row.value) || 0)}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrencyCompact(Number(row.value) || 0)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -3440,7 +3432,7 @@ export default function FinancialAnalyticsTab({
                             return (
                               <ChartTooltipCard
                                 title={row.name}
-                                rows={[{ label: 'Outgoing', value: formatCurrency(Number(row.value) || 0), color: '#dc2625' }]}
+                                rows={[{ label: 'Outgoing', value: formatCurrencyCompact(Number(row.value) || 0), color: '#dc2625' }]}
                               />
                             )
                           }}
@@ -3460,7 +3452,7 @@ export default function FinancialAnalyticsTab({
               )}
               {isFullscreen && (
                 <p className="text-body text-muted-foreground leading-relaxed mt-4">
-                  The chart ranks the activity's five biggest <strong>provider organisations</strong> — the orgs sending the money — by total USD across all outgoing transactions (commitments, disbursements, expenditures). A single dominant top bar means the activity is funded primarily by one provider, while a flatter spread shows funding from several sources. It's the quickest way to identify the primary funders and to flag <strong>concentration risk</strong> — heavy reliance on one provider is a fragility worth tracking if that funder were ever to withdraw.
+                  The chart ranks the activity's five biggest <strong>provider organisations</strong> (the orgs sending the money) by total USD across all outgoing transactions (commitments, disbursements, expenditures). A single dominant top bar means the activity is funded primarily by one provider, while a flatter spread shows funding from several sources. It's the quickest way to identify the primary funders and to flag <strong>concentration risk</strong>: heavy reliance on one provider is a fragility worth tracking if that funder were ever to withdraw.
                 </p>
               )}
             </CardContent>
@@ -3515,7 +3507,7 @@ export default function FinancialAnalyticsTab({
                         <tr key={row.name} className="border-b border-border hover:bg-muted/50">
                           <td className="py-2.5 px-4 text-muted-foreground tabular-nums">{i + 1}</td>
                           <td className="py-2.5 px-4 font-medium text-foreground" title={row.name}>{row.displayName || row.name}</td>
-                          <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrency(Number(row.value) || 0)}</td>
+                          <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrencyCompact(Number(row.value) || 0)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -3542,7 +3534,7 @@ export default function FinancialAnalyticsTab({
                             return (
                               <ChartTooltipCard
                                 title={row.name}
-                                rows={[{ label: 'Incoming', value: formatCurrency(Number(row.value) || 0), color: '#4c5568' }]}
+                                rows={[{ label: 'Incoming', value: formatCurrencyCompact(Number(row.value) || 0), color: '#4c5568' }]}
                               />
                             )
                           }}
@@ -3562,7 +3554,7 @@ export default function FinancialAnalyticsTab({
               )}
               {isFullscreen && (
                 <p className="text-body text-muted-foreground leading-relaxed mt-4">
-                  The chart ranks the activity's five biggest <strong>receiver organisations</strong> — the orgs taking in the money — by total USD across all outgoing transactions (commitments, disbursements, expenditures). A single dominant top bar means the activity flows mostly to one implementer; a flatter spread distributes across several. It identifies the main implementing partners and exposes <strong>delivery concentration</strong> — over-reliance on one receiver is a delivery risk if that partner runs into capacity or compliance issues.
+                  The chart ranks the activity's five biggest <strong>receiver organisations</strong> (the orgs taking in the money) by total USD across all outgoing transactions (commitments, disbursements, expenditures). A single dominant top bar means the activity flows mostly to one implementer; a flatter spread distributes across several. It identifies the main implementing partners and exposes <strong>delivery concentration</strong>: over-reliance on one receiver is a delivery risk if that partner runs into capacity or compliance issues.
                 </p>
               )}
             </CardContent>

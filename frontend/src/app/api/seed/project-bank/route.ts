@@ -135,7 +135,7 @@ function buildProjects() {
       region: 'Sagaing',
       estimated_cost: 18_000_000,
       project_stage: 'intake_returned',
-      review_comments: 'Please clarify land tenure arrangements for the proposed site and provide letters of support from Sagaing Regional Government. Cost estimates for laboratory equipment appear understated — please revise with itemised quotations.',
+      review_comments: 'Please clarify land tenure arrangements for the proposed site and provide letters of support from Sagaing Regional Government. Cost estimates for laboratory equipment appear understated, so please revise with itemised quotations.',
       nominated_at: ago(30),
     }),
 
@@ -186,7 +186,7 @@ function buildProjects() {
         technology_methodology:
           'Modular zone development in three phases. Phase 1 covers 100 ha with plug-and-play factory shells. Smart metering and SCADA for all utilities.',
         technical_risks:
-          'Geotechnical conditions may require deep piling in some areas. Power supply from the national grid may be insufficient during peak — on-site 20 MW gas turbine backup planned.',
+          'Geotechnical conditions may require deep piling in some areas. Power supply from the national grid may be insufficient during peak, so on-site 20 MW gas turbine backup is planned.',
         environmental_impact_level: 'significant',
         social_impact_level: 'moderate',
         revenue_sources: ['Lease income', 'Service charges', 'User charges'],
@@ -214,7 +214,7 @@ function buildProjects() {
       origin: 'UNSOL',
       proponent_name: 'Myanmar Industrial Development Corporation',
       proponent_company: 'MIDC Holdings Ltd',
-      proponent_contact: 'U Tun Aung Kyaw, CEO — +95-2-456-789',
+      proponent_contact: 'U Tun Aung Kyaw, CEO, +95-2-456-789',
       project_stage: 'fs1_submitted',
       feasibility_stage: 'fs1_submitted',
       firr: 12,
@@ -238,7 +238,7 @@ function buildProjects() {
         technology_methodology:
           'Prefabricated construction with local assembly. Solar PV (5 kW per clinic) with battery storage. Telemedicine connectivity via satellite link for specialist consultations.',
         technical_risks:
-          'Remote locations in Chin State pose significant logistics challenges — road access limited during monsoon. Skilled labour availability is low. Cold chain maintenance for vaccines requires reliable solar power.',
+          'Remote locations in Chin State pose significant logistics challenges, with road access limited during monsoon. Skilled labour availability is low. Cold chain maintenance for vaccines requires reliable solar power.',
         environmental_impact_level: 'negligible',
         social_impact_level: 'negligible',
         has_revenue_component: false,
@@ -280,7 +280,7 @@ function buildProjects() {
         technology_methodology:
           'Mobile harbour cranes (2 per port), reach stackers, and automated gate systems. Dredging via cutter-suction dredger with disposal to engineered containment areas.',
         technical_risks:
-          'Sedimentation rates in the Ayeyarwady are high — annual maintenance dredging of ~500,000 m³ required. Monsoon flooding may damage port infrastructure if flood walls are not raised.',
+          'Sedimentation rates in the Ayeyarwady are high, so annual maintenance dredging of ~500,000 m³ is required. Monsoon flooding may damage port infrastructure if flood walls are not raised.',
         environmental_impact_level: 'moderate',
         social_impact_level: 'moderate',
         revenue_sources: ['User charges', 'Concession fees', 'Lease income'],
@@ -353,7 +353,7 @@ function buildProjects() {
       origin: 'UNSOL',
       proponent_name: 'Shan Digital Infrastructure Consortium',
       proponent_company: 'Myanmar Telecom Ventures Ltd',
-      proponent_contact: 'Daw Su Su Lwin, Managing Director — +95-1-234-567',
+      proponent_contact: 'Daw Su Su Lwin, Managing Director, +95-1-234-567',
       project_stage: 'fs2_categorized',
       feasibility_stage: 'categorized',
       firr: 14,
@@ -382,7 +382,7 @@ function buildProjects() {
         resettlement_required: true,
         revenue_sources: ['Toll fees', 'Lease income'],
         market_assessment_summary:
-          'No direct road link currently exists along the Rakhine coast — travel requires a 14-hour detour via Magway. Traffic demand study estimates 8,000 vehicles/day by Year 5 of operation. Toll willingness-to-pay validated at MMK 3,000 per car and MMK 8,000 per truck.',
+          'No direct road link currently exists along the Rakhine coast, so travel requires a 14-hour detour via Magway. Traffic demand study estimates 8,000 vehicles/day by Year 5 of operation. Toll willingness-to-pay validated at MMK 3,000 per car and MMK 8,000 per truck.',
         projected_annual_users: 2_920_000,
         projected_annual_revenue: 24_000_000,
         construction_period_years: 4,
@@ -448,7 +448,7 @@ function buildProjects() {
       origin: 'UNSOL',
       proponent_name: 'Kayah Heritage Tourism Group',
       proponent_company: 'Green Lotus Hospitality Ltd',
-      proponent_contact: 'U Sai Kyaw Zin, Director — +95-83-221-456',
+      proponent_contact: 'U Sai Kyaw Zin, Director, +95-83-221-456',
       project_stage: 'intake_rejected',
       rejection_reason:
         'The proposed site overlaps with a protected cultural heritage zone under the Ministry of Religious Affairs. Environmental screening indicates high biodiversity sensitivity. The proponent has not demonstrated adequate experience in eco-tourism development. Recommend resubmission after obtaining heritage clearance and partnering with an experienced operator.',

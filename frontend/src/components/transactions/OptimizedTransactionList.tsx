@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, SlidersHorizontal, RefreshCw, DollarSign, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { formatDate as formatDateCanonical } from '@/lib/format';
+import { formatDate } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 
 interface Transaction {
   id: string;
@@ -161,25 +162,6 @@ export function OptimizedTransactionList({
     loadTransactions(1, false);
   }, [clearSearch, loadTransactions]);
 
-  // Format currency
-  const formatCurrency = useCallback((value: number, currency: string) => {
-    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase()) 
-      ? currency.toUpperCase() 
-      : "USD";
-    
-    const formattedValue = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-    
-    return <><span className="text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
-  }, []);
-
-  // Format date
-  const formatDate = useCallback((dateString: string) => {
-    return formatDateCanonical(dateString);
-  }, []);
-
   // Load initial data
   useEffect(() => {
     loadTransactions(1, false);
@@ -230,7 +212,7 @@ export function OptimizedTransactionList({
             <div className="flex items-center gap-1 text-muted-foreground">
               <DollarSign className="w-4 h-4" />
               <span className="font-medium">
-                {formatCurrency(transaction.value, transaction.currency)}
+                <CurrencyValue amount={transaction.value} currency={transaction.currency} />
               </span>
             </div>
             
@@ -256,7 +238,7 @@ export function OptimizedTransactionList({
         </div>
       </div>
     </div>
-  ), [formatCurrency, formatDate]);
+  ), []);
 
   return (
     <div className={`space-y-4 ${className}`}>

@@ -210,7 +210,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
                     endDate={filters.endDate}
                     placeholderText="Start"
                     className="w-full h-9 px-3 text-body border rounded-md bg-background"
-                    dateFormat="MMM d, yyyy"
+                    dateFormat="d MMM yyyy"
                   />
                   <DatePicker
                     selected={filters.endDate}
@@ -221,7 +221,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
                     minDate={filters.startDate || undefined}
                     placeholderText="End"
                     className="w-full h-9 px-3 text-body border rounded-md bg-background"
-                    dateFormat="MMM d, yyyy"
+                    dateFormat="d MMM yyyy"
                   />
                 </div>
               </div>
@@ -237,7 +237,7 @@ export function PivotFilters({ filters, onChange, onApply, isLoading, onFilterOp
                   value={filters.organizationIds}
                   onChange={(value) => onChange({ ...filters, organizationIds: value })}
                   placeholder={loadingOptions ? "Loading..." : "Select partners..."}
-                  searchPlaceholder="Search organizations..."
+                  searchPlaceholder="Search organisations..."
                   icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
                   className="w-full"
                 />

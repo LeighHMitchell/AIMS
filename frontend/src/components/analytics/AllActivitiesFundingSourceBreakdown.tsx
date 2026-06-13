@@ -11,6 +11,7 @@ import { FundingSourceSankey } from '@/components/activities/FinancialAnalyticsT
 import { MultiSelect } from '@/components/ui/multi-select'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
+import { CurrencyValue } from '@/components/ui/currency-value';
 
 // Transaction type options for multi-select (IATI Standard v2.03)
 const TRANSACTION_TYPE_OPTIONS = [
@@ -114,14 +115,6 @@ export function AllActivitiesFundingSourceBreakdown({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFromStr, dateToStr, refreshKey, fundingSourceType, fundingTransactionTypes])
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}m`
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}k`
-    }
-    return `$${value.toFixed(0)}`
-  }
 
   const exportFundingSourceToCSV = () => {
     if (!fundingSourceData.providers || fundingSourceData.providers.length === 0) {
@@ -296,7 +289,7 @@ export function AllActivitiesFundingSourceBreakdown({
                       <tr key={index} className="border-b border-border hover:bg-muted/50">
                         <td className="py-2.5 px-4 font-medium text-foreground">{flow.provider}</td>
                         <td className="py-2.5 px-4 font-medium text-foreground">{flow.receiver}</td>
-                        <td className="text-right py-2.5 px-4 text-foreground">{formatCurrency(flow.value)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground"><CurrencyValue amount={flow.value} variant="short" /></td>
                         <td className="text-right py-2.5 px-4 text-foreground">{percentage}%</td>
                       </tr>
                     )
@@ -307,7 +300,7 @@ export function AllActivitiesFundingSourceBreakdown({
                     return (
                       <tr className="border-t-2 border-border bg-muted font-semibold">
                         <td className="py-2.5 px-4 text-foreground" colSpan={2}>Total</td>
-                        <td className="text-right py-2.5 px-4 text-foreground">{formatCurrency(total)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground"><CurrencyValue amount={total} variant="short" /></td>
                         <td className="text-right py-2.5 px-4 text-foreground">100.0%</td>
                       </tr>
                     )

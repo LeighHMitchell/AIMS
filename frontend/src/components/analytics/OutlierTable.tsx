@@ -86,7 +86,7 @@ export function OutlierTable({ rows, unit }: OutlierTableProps) {
       totalsRow={false}
       stripCurrencySuffix={false}
       maxHeight={460}
-      emptyMessage="No records cross the fence — this distribution looks clean."
+      emptyMessage="No records cross the fence; this distribution looks clean."
     />
   )
 }

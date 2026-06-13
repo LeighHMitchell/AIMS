@@ -37,6 +37,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { CurrencyValue } from '@/components/ui/currency-value'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
 import { useYearRangeDefault } from '@/hooks/useYearRangeDefault'
 
@@ -182,30 +183,6 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
     } finally {
       setLoading(false)
     }
-  }
-
-  const formatCurrency = (value: number): string => {
-    if (value === null || value === undefined || isNaN(value) || !isFinite(value) || value === 0) {
-      return '$0'
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
-
-  const formatCurrencyFull = (value: number): string => {
-    if (value === null || value === undefined || isNaN(value) || !isFinite(value) || value === 0) {
-      return '$0'
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value)
   }
 
   // Prepare chart data - group by policy marker
@@ -877,7 +854,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         </td>
                         <td className="text-right py-3 px-4 text-muted-foreground">{row.activity_count}</td>
                         <td className="text-right py-3 px-4 text-muted-foreground">
-                          {row.total_budget_usd > 0 ? formatCurrencyFull(row.total_budget_usd) : '-'}
+                          {row.total_budget_usd > 0 ? <CurrencyValue amount={row.total_budget_usd} /> : '—'}
                         </td>
                       </tr>
                     ))}
@@ -889,7 +866,7 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         {sortedData.reduce((sum, row) => sum + row.activity_count, 0)}
                       </td>
                       <td className="text-right py-3 px-4 font-semibold text-foreground">
-                        {formatCurrencyFull(sortedData.reduce((sum, row) => sum + row.total_budget_usd, 0))}
+                        <CurrencyValue amount={sortedData.reduce((sum, row) => sum + row.total_budget_usd, 0)} />
                       </td>
                     </tr>
                   </tfoot>
@@ -980,11 +957,11 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         </td>
                         {timeSeriesYears.map(year => (
                           <td key={year} className="text-right py-3 px-4 text-muted-foreground">
-                            {row.years[year] ? formatCurrencyFull(row.years[year]) : '-'}
+                            {row.years[year] ? <CurrencyValue amount={row.years[year]} /> : '—'}
                           </td>
                         ))}
                         <td className="text-right py-3 px-4 text-foreground font-semibold bg-muted">
-                          {formatCurrencyFull(row.total)}
+                          <CurrencyValue amount={row.total} />
                         </td>
                       </tr>
                     ))}
@@ -998,12 +975,12 @@ export function PolicyMarkersChart({ refreshKey = 0, onDataChange, compact = fal
                         const yearTotal = timeSeriesData.reduce((sum, row) => sum + (row.years[year] || 0), 0)
                         return (
                           <td key={year} className="text-right py-3 px-4 font-semibold text-foreground">
-                            {formatCurrencyFull(yearTotal)}
+                            <CurrencyValue amount={yearTotal} />
                           </td>
                         )
                       })}
                       <td className="text-right py-3 px-4 font-semibold text-foreground bg-muted">
-                        {formatCurrencyFull(timeSeriesData.reduce((sum, row) => sum + row.total, 0))}
+                        <CurrencyValue amount={timeSeriesData.reduce((sum, row) => sum + row.total, 0)} />
                       </td>
                     </tr>
                   </tfoot>

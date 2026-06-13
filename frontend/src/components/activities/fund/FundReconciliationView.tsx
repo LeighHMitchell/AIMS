@@ -216,7 +216,7 @@ export function FundReconciliationView({ activityId }: FundReconciliationViewPro
                               </p>
                               {child.unmatchedFund.map((t: any, i: number) => (
                                 <div key={i} className="text-helper text-muted-foreground ml-4">
-                                  ${t.amount.toLocaleString()} on {t.date || 'no date'} — no matching receipt on child
+                                  ${t.amount.toLocaleString()} on {t.date || 'no date'}: no matching receipt on child
                                 </div>
                               ))}
                             </div>
@@ -230,7 +230,7 @@ export function FundReconciliationView({ activityId }: FundReconciliationViewPro
                               </p>
                               {child.unmatchedChild.map((t: any, i: number) => (
                                 <div key={i} className="text-helper text-muted-foreground ml-4">
-                                  ${t.amount.toLocaleString()} on {t.date || 'no date'} — no matching disbursement on fund
+                                  ${t.amount.toLocaleString()} on {t.date || 'no date'}: no matching disbursement on fund
                                 </div>
                               ))}
                             </div>

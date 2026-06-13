@@ -522,7 +522,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
               <SelectTrigger>
                 <SelectValue placeholder={
                   !formData.nominating_ministry ? 'Select a ministry first'
-                    : agencyOptions.length === 0 ? 'No departments found — ministry is the implementer'
+                    : agencyOptions.length === 0 ? 'No departments found; ministry is the implementer'
                     : 'Select implementing agency...'
                 } />
               </SelectTrigger>
@@ -613,7 +613,7 @@ export function StageIntake({ wizard }: StageIntakeProps) {
 
           {/* Duration Input — free-form, with normalized summary */}
           <div>
-            <Label>Estimated Duration <HelpTooltip text="Total project duration from start to completion. Enter years and months freely — the total is calculated automatically." /> <FieldCheck value={formData.estimated_duration_months} /></Label>
+            <Label>Estimated Duration <HelpTooltip text="Total project duration from start to completion. Enter years and months freely, and the total is calculated automatically." /> <FieldCheck value={formData.estimated_duration_months} /></Label>
             <div className="flex gap-2 items-center">
               <Input
                 type="number"

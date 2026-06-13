@@ -335,7 +335,7 @@ export async function POST(
       const zipPath = `${folder}/${base}`;
       evidenceJobs.push(
         downloadFile('activity-documents', d.storage_path, {
-          area: `Readiness — ${templates.find((t) => t.id === tplId)?.name || 'Checklist'}`,
+          area: `Readiness: ${templates.find((t) => t.id === tplId)?.name || 'Checklist'}`,
           path: zipPath,
           name: d.file_name || base,
           size: d.file_size ?? null,
@@ -354,7 +354,7 @@ export async function POST(
       const zipPath = `${folder}/${base}`;
       evidenceJobs.push(
         downloadFile('government-input-documents', d.file_path, {
-          area: `Gov Inputs — ${cat}`,
+          area: `Gov Inputs: ${cat}`,
           path: zipPath,
           name: d.file_name || base,
           size: d.file_size ?? null,
@@ -373,7 +373,7 @@ export async function POST(
     if (endorsement?.document_url) {
       missingFiles.push({
         name: endorsement.document_title || 'Endorsement document',
-        reason: 'External link — view at original URL',
+        reason: 'External link (view at original URL)',
       });
     }
 
@@ -458,7 +458,7 @@ export async function POST(
     y = ((doc as any).lastAutoTable?.finalY || y) + 24;
 
     // Section 1 — Readiness Checklist
-    heading('Section 1 — Readiness Checklist');
+    heading('Section 1: Readiness Checklist');
     templates.forEach((t) => {
       const templateItems = (items || []).filter((i: AnyRow) => i.template_id === t.id);
       if (templateItems.length === 0) return;
@@ -514,7 +514,7 @@ export async function POST(
       const so = (signoffs || []).find((s: AnyRow) => s.template_id === t.id);
       if (so) {
         paragraph(
-          `Signed off by ${userMap.get(so.signed_off_by)?.name || 'Unknown'} — ${so.signature_title || ''} on ${formatIso(so.signed_off_at)}${so.remarks ? `\nRemarks: ${so.remarks}` : ''}`
+          `Signed off by ${userMap.get(so.signed_off_by)?.name || 'Unknown'}, ${so.signature_title || ''} on ${formatIso(so.signed_off_at)}${so.remarks ? `\nRemarks: ${so.remarks}` : ''}`
         );
       } else {
         paragraph('Sign-off: not yet recorded.');
@@ -525,7 +525,7 @@ export async function POST(
     // Section 2 — Government Inputs
     doc.addPage();
     y = 48;
-    heading('Section 2 — Government Inputs');
+    heading('Section 2: Government Inputs');
 
     // 2a — Contributions
     heading('2a. Contributions', 13);
@@ -646,7 +646,7 @@ export async function POST(
       doc.addPage();
       y = 48;
     }
-    heading('Section 3 — Endorsement');
+    heading('Section 3: Endorsement');
     if (!endorsement) {
       paragraph('No endorsement details have been recorded yet.');
     } else {
@@ -681,7 +681,7 @@ export async function POST(
     if (fetchedFiles.length > 0 || missingFiles.length > 0) {
       doc.addPage();
       y = 48;
-      heading('Appendix — File index');
+      heading('Appendix: File index');
       if (fetchedFiles.length > 0) {
         autoTable(doc, {
           startY: y,
@@ -697,7 +697,7 @@ export async function POST(
                 formatBytes(f.size),
                 formatIso(f.uploadedAt),
                 f.uploadedBy || '—',
-                canEmbed ? 'Yes — see following pages' : 'No — use ZIP variant for originals',
+                canEmbed ? 'Yes (see following pages)' : 'No (use ZIP variant for originals)',
               ];
             }
             return [

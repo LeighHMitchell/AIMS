@@ -27,6 +27,7 @@ import { exportToCSV } from '@/lib/exports';
 import { cn } from '@/lib/utils';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
 import { formatTooltipCurrency as libFormatTooltipCurrency } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 
 // User's simplified data structure
 interface SectorAllocation {
@@ -1383,20 +1384,12 @@ export default function SectorSankeyVisualization({
   const renderTable = () => {
     const formatPercentage = (v: number) => v.toFixed(0) + '%';
 
-    // Returns JSX so the "USD" prefix can render small + muted, matching the
-    // convention used elsewhere (e.g. transaction value cells).
-    const formatCurrency = (v: number) => {
-      let amount: string;
-      if (v >= 1_000_000) amount = (v / 1_000_000).toFixed(2) + 'm';
-      else if (v >= 1_000) amount = (v / 1_000).toFixed(2) + 'k';
-      else amount = v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-      return (
-        <span className="whitespace-nowrap">
-          <span className="text-helper text-muted-foreground font-normal mr-1">USD</span>
-          {amount}
-        </span>
-      );
-    };
+    // Style (b) table cells — shared muted-"USD"-prefix component.
+    const renderCurrencyCell = (v: number) => (
+      <span className="whitespace-nowrap">
+        <CurrencyValue amount={v} variant="short" />
+      </span>
+    );
 
     // Get all unique transaction types across all sectors
     const allTransactionTypes = new Set<string>();
@@ -1590,14 +1583,14 @@ export default function SectorSankeyVisualization({
                     </TableCell>
                     <TableCell className="text-right font-semibold">{formatPercentage(row.allocation.percentage)}</TableCell>
                     <TableCell className={`text-right font-medium ${highlightBudget ? 'bg-blue-50 font-semibold' : ''}`}>
-                      {formatCurrency(row.financial.budget || 0)}
+                      {renderCurrencyCell(row.financial.budget || 0)}
                     </TableCell>
                     <TableCell className={`text-right font-medium ${highlightPlanned ? 'bg-blue-50 font-semibold' : ''}`}>
-                      {formatCurrency(row.financial.plannedDisbursement || 0)}
+                      {renderCurrencyCell(row.financial.plannedDisbursement || 0)}
                     </TableCell>
                     {transactionTypeArray.map(type => (
                       <TableCell key={type} className="text-right font-medium">
-                        {formatCurrency((row.financial.transactionTypes && row.financial.transactionTypes[type]) || 0)}
+                        {renderCurrencyCell((row.financial.transactionTypes && row.financial.transactionTypes[type]) || 0)}
                       </TableCell>
                     ))}
                   </TableRow>
@@ -1607,14 +1600,14 @@ export default function SectorSankeyVisualization({
               <TableCell colSpan={3}>Total</TableCell>
               <TableCell className="text-right">{formatPercentage(totalPercentage)}</TableCell>
               <TableCell className={`text-right ${metricMode === 'budget' ? 'bg-blue-50' : ''}`}>
-                {formatCurrency(financialTotals.budget)}
+                {renderCurrencyCell(financialTotals.budget)}
               </TableCell>
               <TableCell className={`text-right ${metricMode === 'planned' ? 'bg-blue-50' : ''}`}>
-                {formatCurrency(financialTotals.plannedDisbursement)}
+                {renderCurrencyCell(financialTotals.plannedDisbursement)}
               </TableCell>
               {transactionTypeArray.map(type => (
                 <TableCell key={type} className="text-right">
-                  {formatCurrency(transactionTypeTotals[type] || 0)}
+                  {renderCurrencyCell(transactionTypeTotals[type] || 0)}
                 </TableCell>
               ))}
             </TableRow>

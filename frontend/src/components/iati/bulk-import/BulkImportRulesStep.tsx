@@ -240,7 +240,7 @@ export default function BulkImportRulesStep({
               </div>
               <div className="flex items-center gap-1.5">
                 <div>
-                  <h3 className="font-semibold text-foreground">Organization Resolution</h3>
+                  <h3 className="font-semibold text-foreground">Organisation Resolution</h3>
                   <p className="text-helper text-muted-foreground">Match referenced orgs</p>
                 </div>
                 <HelpTip text="IATI data references organizations by name and ID. This setting controls whether to automatically link them to organizations in your system, or create new ones." />

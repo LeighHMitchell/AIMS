@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 
 export default function TermsOfServicePage() {
   const router = useRouter();
-  const currentDate = new Date().toLocaleDateString('en-US', { 
+  const currentDate = new Date().toLocaleDateString('en-GB', { 
     year: 'numeric', 
     month: 'long', 
     day: 'numeric' 

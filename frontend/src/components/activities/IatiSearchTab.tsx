@@ -28,6 +28,8 @@ import flowTypesData from "@/data/flow-types.json"
 import financeTypesData from "@/data/finance-types.json"
 import { devLog, devError, prodError } from "@/lib/debug"
 import { apiFetch } from '@/lib/api-fetch';
+import { formatDate as formatDate_lib } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 
 interface IatiSearchTabProps {
   activityId: string
@@ -432,30 +434,14 @@ export default function IatiSearchTab({ activityId }: IatiSearchTabProps) {
   }
   
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "N/A"
-    try {
-      return new Date(dateStr).toLocaleDateString()
-    } catch {
-      return dateStr
-    }
+    if (!dateStr) return "—"
+    return formatDate_lib(dateStr) || dateStr
   }
-  
+
   const formatCurrency = (amount?: number, currency?: string) => {
-    if (!amount) return "N/A"
+    if (!amount) return "—"
     const curr = currency && /^[A-Z]{3}$/.test(currency) ? currency : "USD"
-    
-    // Format number with commas
-    const formattedValue = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount)
-    
-    // Return JSX with grey, smaller currency code
-    return (
-      <>
-        <span className="text-helper text-muted-foreground">{curr}</span> {formattedValue}
-      </>
-    )
+    return <CurrencyValue amount={amount} currency={curr} variant="full" />
   }
 
   // Helper to format code with name: code in monospace gray, name normal

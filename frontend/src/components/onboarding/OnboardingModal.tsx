@@ -200,7 +200,7 @@ export default function OnboardingModal({ user, onComplete }: OnboardingModalPro
                 value={form.organizationId}
                 onValueChange={(v) => updateField("organizationId", v)}
                 placeholder="Select your organisation..."
-                searchPlaceholder="Search organizations..."
+                searchPlaceholder="Search organisations..."
               />
             </div>
             <div>

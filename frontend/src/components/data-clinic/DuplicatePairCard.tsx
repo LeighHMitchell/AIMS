@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -114,12 +115,12 @@ export function DuplicatePairCard({ pair, onDismiss, isSuperUser }: DuplicatePai
       <div className="space-y-1 text-helper text-muted-foreground">
         {entity.iati_identifier && (
           <div>
-            <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{entity.iati_identifier}</span>
+            <CopyableIdBadge value={entity.iati_identifier} label="IATI identifier" tooltip="Click to copy IATI identifier" />
           </div>
         )}
         {entity.other_identifier && !entity.iati_identifier && (
           <div>
-            <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{entity.other_identifier}</span>
+            <CopyableIdBadge value={entity.other_identifier} label="Identifier" tooltip="Click to copy identifier" />
           </div>
         )}
         {entity.created_by_org_name && (

@@ -17,7 +17,7 @@ import { useChartYearRange } from '@/hooks/useChartYearRange'
  */
 
 const DESCRIPTION =
-  "This chart compares what the government itself puts into aid activities — its 'counterpart' contribution, both cash (financial) and in-kind items like staff time, office space, land or tax exemptions — against what external development partners actually disburse. It answers a simple ownership question: how much of the financing is domestic versus external? A larger government share signals stronger national ownership and co-financing. Use the calendar and year controls (top-left) to change the period; note that some government contributions are recorded without a specific date, so they are always included regardless of the period selected."
+  "This chart compares what the government itself puts into aid activities (its 'counterpart' contribution, both cash (financial) and in-kind items like staff time, office space, land or tax exemptions) against what external development partners actually disburse. It answers a simple ownership question: how much of the financing is domestic versus external? A larger government share signals stronger national ownership and co-financing. Use the calendar and year controls (top-left) to change the period; note that some government contributions are recorded without a specific date, so they are always included regardless of the period selected."
 
 interface GovData { external: number; governmentFinancial: number; governmentInKind: number }
 

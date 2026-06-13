@@ -117,27 +117,6 @@ export function ODAByFlowTypeChart({
     }
   }
 
-  const formatCurrency = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      const safeValue = Number(value)
-      if (isNaN(safeValue) || !isFinite(safeValue)) {
-        return '$0'
-      }
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 1
-      }).format(safeValue)
-    } catch (error) {
-      console.error('[ODAByFlowTypeChart] Error formatting currency:', error, value)
-      return '$0'
-    }
-  }
-
   // Generate colors by category — slate-only ramp for dashboard consistency.
   const getColorForCategory = (category: string, index: number): string => {
     const colors: Record<string, string[]> = {

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { DollarSign, TrendingUp, Activity, Users, Target, Wallet } from 'lucide-react'
 import { BRAND_COLORS, CHART_BAR_COLORS } from './sectorColorMap'
 import { StaggerContainer, StaggerItem } from '@/components/ui/stagger'
+import { formatCurrencyCompact } from '@/lib/format'
 
 interface SectorMetricsCardsProps {
   totalPlanned: number
@@ -24,45 +25,32 @@ export function SectorMetricsCards({
   totalPartners
 }: SectorMetricsCardsProps) {
   
-  const formatCurrency = (value: number) => {
-    if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-      return '$0'
-    }
-    if (value === 0) return '$0'
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
-
   // Using brand colors for consistency with charts
   const metrics = [
     {
       title: 'Total Budgets',
-      value: formatCurrency(totalBudgets),
+      value: formatCurrencyCompact(totalBudgets),
       icon: Target,
       iconColor: CHART_BAR_COLORS.budgets,
       bgColor: `${CHART_BAR_COLORS.budgets}15` // 15% opacity
     },
     {
       title: 'Planned Disbursements',
-      value: formatCurrency(totalPlanned),
+      value: formatCurrencyCompact(totalPlanned),
       icon: Wallet,
       iconColor: CHART_BAR_COLORS.planned,
       bgColor: `${CHART_BAR_COLORS.planned}15`
     },
     {
       title: 'Actual Disbursements',
-      value: formatCurrency(totalActual),
+      value: formatCurrencyCompact(totalActual),
       icon: DollarSign,
       iconColor: CHART_BAR_COLORS.actual,
       bgColor: `${CHART_BAR_COLORS.actual}15`
     },
     {
       title: 'Commitments',
-      value: formatCurrency(totalCommitments),
+      value: formatCurrencyCompact(totalCommitments),
       icon: TrendingUp,
       iconColor: CHART_BAR_COLORS.commitments,
       bgColor: `${CHART_BAR_COLORS.commitments}30` // Slightly more visible for light color

@@ -934,7 +934,7 @@ export default function BulkImportSourceStep({
                         organizations={organizations}
                         value={selectedOrgId || user?.organizationId || ''}
                         onValueChange={handleOrgChange}
-                        placeholder="Select organization to import..."
+                        placeholder="Select organisation to import..."
                       />
                     </div>
                   )}
@@ -1268,7 +1268,7 @@ export default function BulkImportSourceStep({
                           {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')} elapsed
                           {paginatedProgress.currentPage > 0 && paginatedProgress.currentPage < paginatedProgress.totalPages && (
                             <span className="text-muted-foreground ml-2">
-                              — ~{(() => {
+                              · ~{(() => {
                                 const remainingPages = paginatedProgress.totalPages - paginatedProgress.currentPage
                                 const remainingSec = remainingPages * 14
                                 return remainingSec < 60
@@ -1314,7 +1314,7 @@ export default function BulkImportSourceStep({
                         </p>
                         {estimatedTime && (
                           <p className="text-body text-muted-foreground mt-2">
-                            {estimatedTime.count.toLocaleString()} activities found — estimated time: ~{
+                            {estimatedTime.count.toLocaleString()} activities found. Estimated time: ~{
                               estimatedTime.seconds < 60
                                 ? `${estimatedTime.seconds} seconds`
                                 : estimatedTime.seconds < 120
@@ -1384,7 +1384,7 @@ export default function BulkImportSourceStep({
                   <div className="mt-6 p-4 bg-muted border border-border rounded-lg text-body text-foreground max-w-md text-center">
                     <p className="font-medium">You can navigate away from this screen</p>
                     <p className="text-muted-foreground mt-1">
-                      Just don&apos;t close this browser tab. Come back when you&apos;re ready — the fetch will continue in the background.
+                      Just don&apos;t close this browser tab. Come back when you&apos;re ready; the fetch will continue in the background.
                     </p>
                   </div>
 

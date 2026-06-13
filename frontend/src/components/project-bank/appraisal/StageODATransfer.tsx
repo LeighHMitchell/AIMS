@@ -36,7 +36,7 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
       // Save draft first — abort transfer if save fails
       const saved = await wizard.saveDraft();
       if (!saved) {
-        setTransferError('Failed to save project data — please fix errors and try again');
+        setTransferError('Failed to save project data. Please fix errors and try again');
         return;
       }
 
@@ -53,7 +53,7 @@ export function StageODATransfer({ wizard }: StageODATransferProps) {
       const result = await res.json();
       updateField('aims_activity_id', result.activity_id);
     } catch {
-      setTransferError('Network error — please try again');
+      setTransferError('Network error. Please try again');
     } finally {
       setTransferring(false);
     }

@@ -22,27 +22,9 @@ import { AlertCircle } from 'lucide-react'
 import { CHART_BAR_COLORS } from './sectorColorMap'
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
-import { formatAxisCurrency, formatCurrencyPrecise } from '@/lib/format'
+import { formatAxisCurrency, formatCurrencyPrecise, formatCurrencyCompact } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { ChartDataTable } from '@/components/ui/chart-data-table'
-// Inline currency formatter to avoid initialization issues
-const formatCurrencyAbbreviated = (value: number): string => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${(absValue / 1000000).toFixed(1)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${(absValue / 1000).toFixed(1)}k`
-  } else {
-    formatted = `$${absValue.toFixed(0)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
-}
 
 interface SectorBarChartProps {
   data: SectorMetrics[]
@@ -258,26 +240,6 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
     }
   }
 
-  const formatCurrency = (value: number) => {
-    if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-      return '$0'
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
-
-  // Use shared currency formatter for tooltips
-  const formatTooltipCurrency = (value: number) => {
-    if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-      return '$0'
-    }
-    return formatCurrencyAbbreviated(value)
-  }
-
   // Use brand color palette for chart bars
   const barColors: Record<string, string> = {
     budgets: CHART_BAR_COLORS.budgets,        // Cool Steel
@@ -349,7 +311,7 @@ export function SectorBarChart({ data, filters, compact = false }: SectorBarChar
         label: entry.name,
         value: entry.dataKey === 'projects' || entry.dataKey === 'partners'
           ? entry.value.toLocaleString()
-          : formatTooltipCurrency(entry.value),
+          : formatCurrencyCompact(entry.value),
         color: entry.color,
       }))
       return <ChartTooltipCard title={title} rows={rows} maxWidth={460} />

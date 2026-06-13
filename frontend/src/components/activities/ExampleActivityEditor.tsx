@@ -225,7 +225,7 @@ export function ExampleActivityEditor() {
           <ul className="space-y-2 text-body">
             <li>✓ IATI v2.03 compliant document-link implementation</li>
             <li>✓ Multi-language narratives for titles and descriptions</li>
-            <li>✓ Document categorization with IATI Document Category codelist</li>
+            <li>✓ Document categorisation with IATI Document Category codelist</li>
             <li>✓ Language selection (ISO 639-1)</li>
             <li>✓ Recipient country and region support</li>
             <li>✓ Real-time validation with helpful error messages</li>

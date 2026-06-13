@@ -1,8 +1,8 @@
 "use client"
 
 import React from "react"
-import { format } from "date-fns"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { formatCurrencyPrecise, formatDate } from "@/lib/format"
 
 interface CurrencyTooltipProps {
   children: React.ReactNode
@@ -31,24 +31,8 @@ export function CurrencyTooltip({
     return <>{children}</>
   }
 
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), 'dd MMM yyyy')
-    } catch {
-      return dateString
-    }
-  }
-
-  const formatAmount = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(amount)
-  }
-
-  const tooltipContent = `Converted from ${formatAmount(originalAmount, originalCurrency)} using ${exchangeRate} rate on ${formatDate(conversionDate)}`
+  // formatDate returns '' for invalid input — fall back to the raw string.
+  const tooltipContent = `Converted from ${formatCurrencyPrecise(originalAmount, originalCurrency)} using ${exchangeRate} rate on ${formatDate(conversionDate) || conversionDate}`
 
   return (
     <TooltipProvider>

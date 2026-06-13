@@ -302,8 +302,8 @@ export default function TagEditPage() {
 
                 {/* Color */}
                 <div className="space-y-2">
-                  <Label htmlFor="tag-color" className="flex items-center gap-1.5">Theme color
-                    <HelpTextTooltip size="sm" content="The accent color used for this tag's card banner and the charts on its profile page. Leave unset to use the auto-generated color derived from the tag name." />
+                  <Label htmlFor="tag-color" className="flex items-center gap-1.5">Theme colour
+                    <HelpTextTooltip size="sm" content="The accent colour used for this tag's card banner and the charts on its profile page. Leave unset to use the auto-generated colour derived from the tag name." />
                   </Label>
                   <div className="flex items-center gap-3">
                     <input

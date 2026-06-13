@@ -104,7 +104,7 @@ export function DataQualitySummaryCard({ className }: { className?: string }) {
           Data Quality
         </CardTitle>
         <CardDescription>
-          Data gaps in your organisation&apos;s activities — click an issue to review and fix
+          Data gaps in your organisation&apos;s activities. Click an issue to review and fix.
         </CardDescription>
       </CardHeader>
       <CardContent>

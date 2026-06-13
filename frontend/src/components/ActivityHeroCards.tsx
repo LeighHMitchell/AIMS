@@ -14,7 +14,8 @@ import {
   Target,
   Clock
 } from "lucide-react";
-import { format, differenceInDays, parseISO } from "date-fns";
+import { differenceInDays, parseISO } from "date-fns";
+import { formatCurrencyCompact, formatDate } from "@/lib/format";
 import { normalizeTransactionType } from "@/lib/transaction-usd-helper";
 import { StaggerContainer, StaggerItem } from "@/components/ui/stagger";
 
@@ -149,23 +150,9 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
   const creatorOrg = partners.find(p => p.id === activity.createdBy?.id) || 
     { id: '', name: activity.created_by_org_name || 'Unknown Organisation', acronym: activity.created_by_org_acronym };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Not set';
-    try {
-      return format(parseISO(dateString), 'MMM dd, yyyy');
-    } catch {
-      return 'Invalid date';
-    }
-  };
+  // Missing/invalid dates render as an em-dash per the design system.
+  const formatDateOrDash = (dateString?: string) =>
+    (dateString && formatDate(dateString)) || '—';
 
   return (
     <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -182,19 +169,19 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
           <div>
             <p className="text-body text-blue-600 font-medium">Total Budgeted</p>
             <p className="text-2xl font-bold text-blue-900">
-              {formatCurrency(financials.totalPlannedBudget)}
+              {formatCurrencyCompact(financials.totalPlannedBudget)}
             </p>
           </div>
           <div>
             <p className="text-body text-blue-600 font-medium">Total Disbursed</p>
             <p className="text-xl font-semibold text-blue-800">
-              {formatCurrency(financials.totalDisbursement)}
+              {formatCurrencyCompact(financials.totalDisbursement)}
             </p>
           </div>
           <div>
             <p className="text-body text-blue-600 font-medium">Total Expended</p>
             <p className="text-xl font-semibold text-blue-700">
-              {formatCurrency(financials.totalExpenditure)}
+              {formatCurrencyCompact(financials.totalExpenditure)}
             </p>
           </div>
         </CardContent>
@@ -274,14 +261,14 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
               <Calendar className="h-3 w-3 text-purple-600" />
               <span className="text-purple-600">Start:</span>
               <span className="text-purple-800 font-medium">
-                {formatDate(activity.actualStartDate || activity.plannedStartDate)}
+                {formatDateOrDash(activity.actualStartDate || activity.plannedStartDate)}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-3 w-3 text-purple-600" />
               <span className="text-purple-600">End:</span>
               <span className="text-purple-800 font-medium">
-                {formatDate(activity.actualEndDate || activity.plannedEndDate)}
+                {formatDateOrDash(activity.actualEndDate || activity.plannedEndDate)}
               </span>
             </div>
           </div>
@@ -321,7 +308,7 @@ export const ActivityHeroCards: React.FC<ActivityHeroCardsProps> = ({
           <div>
             <p className="text-body text-orange-600 font-medium">Remaining Budget</p>
             <p className="text-lg font-semibold text-orange-700">
-              {formatCurrency(Math.max(0, financials.totalCommitment - financials.totalSpent))}
+              {formatCurrencyCompact(Math.max(0, financials.totalCommitment - financials.totalSpent))}
             </p>
           </div>
         </CardContent>

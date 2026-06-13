@@ -189,7 +189,7 @@ ${documents
                   <h3 className="text-lg font-semibold">Generated IATI XML</h3>
                   <button
                     onClick={() => navigator.clipboard.writeText(generateFullXml())}
-                    className="px-3 py-1 text-body bg-blue-500 text-white rounded hover:bg-blue-600"
+                    className="px-3 py-1 text-body bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
                   >
                     Copy XML
                   </button>
@@ -206,7 +206,7 @@ ${documents
                   <h3 className="text-lg font-semibold">Generated JSON</h3>
                   <button
                     onClick={() => navigator.clipboard.writeText(generateFullJson())}
-                    className="px-3 py-1 text-body bg-blue-500 text-white rounded hover:bg-blue-600"
+                    className="px-3 py-1 text-body bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
                   >
                     Copy JSON
                   </button>

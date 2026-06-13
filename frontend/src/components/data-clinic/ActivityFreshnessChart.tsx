@@ -578,7 +578,7 @@ export function ActivityFreshnessChart() {
                       {getStatusLabel(activity.activity_status)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {format(parseISO(activity.updated_at), 'MMM d, yyyy')}
+                      {format(parseISO(activity.updated_at), 'd MMM yyyy')}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {activity.days_since_update} days

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/useUser";
@@ -147,72 +147,72 @@ export default function DataClinicPage() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-              <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            <PageTabsList>
+              <PageTabsTrigger value="activities">
                 <FileText className="h-4 w-4" />
                 Activities
-              </TabsTrigger>
-              <TabsTrigger value="transactions" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="transactions">
                 <ArrowLeftRight className="h-4 w-4" />
                 Transactions
-              </TabsTrigger>
-              <TabsTrigger value="budgets" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="budgets">
                 <Wallet className="h-4 w-4" />
                 Budgets
-              </TabsTrigger>
-              <TabsTrigger value="planned-disbursements" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="planned-disbursements">
                 <Banknote className="h-4 w-4" />
                 Planned Disbursements
-              </TabsTrigger>
-              <TabsTrigger value="organizations" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="organizations">
                 <Building2 className="h-4 w-4" />
                 Organizations
-              </TabsTrigger>
-              <TabsTrigger value="people" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="people">
                 <Users className="h-4 w-4" />
                 People
-              </TabsTrigger>
-              <TabsTrigger value="sectors" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="sectors">
                 <Layers className="h-4 w-4" />
                 Sectors
-              </TabsTrigger>
-              <TabsTrigger value="sdg" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="sdg">
                 <Target className="h-4 w-4" />
                 SDGs
-              </TabsTrigger>
-              <TabsTrigger value="locations" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="locations">
                 <MapPin className="h-4 w-4" />
                 Locations
-              </TabsTrigger>
-              <TabsTrigger value="policy-markers" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="policy-markers">
                 <Flag className="h-4 w-4" />
                 Policy Markers
-              </TabsTrigger>
-              <TabsTrigger value="tags" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="tags">
                 <Tag className="h-4 w-4" />
                 Tags
-              </TabsTrigger>
-              <TabsTrigger value="working-groups" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="working-groups">
                 <Network className="h-4 w-4" />
                 Working Groups
-              </TabsTrigger>
-              <TabsTrigger value="duplicates" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="duplicates">
                 <Copy className="h-4 w-4" />
                 Duplicates
-              </TabsTrigger>
-              <TabsTrigger value="timeliness" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="timeliness">
                 <Clock className="h-4 w-4" />
                 Timeliness
-              </TabsTrigger>
-              <TabsTrigger value="financial-dates" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="financial-dates">
                 <CalendarDays className="h-4 w-4" />
                 Financial Dates
-              </TabsTrigger>
-              <TabsTrigger value="financial-completeness" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              </PageTabsTrigger>
+              <PageTabsTrigger value="financial-completeness">
                 <PieChart className="h-4 w-4" />
                 Financial Completeness
-              </TabsTrigger>
-            </TabsList>
+              </PageTabsTrigger>
+            </PageTabsList>
 
             <TabsContent value="activities">
               <DataClinicActivities />

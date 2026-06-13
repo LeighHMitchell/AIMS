@@ -46,6 +46,7 @@ import {
 } from '@/types/results';
 import { PeriodRow } from './PeriodRow';
 import { ResultVocabularySearchableSelect } from '@/components/forms/ResultVocabularySearchableSelect';
+import { formatCurrency } from '@/lib/format';
 
 interface IndicatorCardProps {
   indicator: ResultIndicator;
@@ -170,7 +171,7 @@ export function IndicatorCard({
       case 'percentage':
         return `${value}%`;
       case 'currency':
-        return `$${value.toLocaleString()}`;
+        return formatCurrency(value);
       case 'unit':
         return value.toLocaleString();
       default:
@@ -443,7 +444,7 @@ export function IndicatorCard({
                   )}
                 </div>
               ) : (
-                <p className="text-body text-muted-foreground italic">No baseline data yet — add a starting value to track progress</p>
+                <p className="text-body text-muted-foreground italic">No baseline data yet. Add a starting value to track progress</p>
               )}
 
               {/* Baseline Form */}
@@ -630,7 +631,7 @@ export function IndicatorCard({
                   <div className="h-36 mt-3">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsLineChart data={indicator.periods.map(p => ({
-                        date: new Date(p.period_end).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                        date: new Date(p.period_end).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
                         target: p.target_value || 0,
                         actual: p.actual_value || 0
                       }))} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>

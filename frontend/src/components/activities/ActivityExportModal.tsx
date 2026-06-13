@@ -144,9 +144,9 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
         {/* Preview */}
         <div className="space-y-4">
           <div className="text-body text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-200">
-            <div className="font-medium text-blue-900 mb-1">🎨 Optimized Image Export</div>
+            <div className="font-medium text-blue-900 mb-1">🎨 Optimised Image Export</div>
             <ul className="text-blue-800 text-helper space-y-1">
-              <li>• Optimized dimensions (800x600px) for better sharing</li>
+              <li>• Optimised dimensions (800x600px) for better sharing</li>
               <li>• Compact header with title overlay</li>
               <li>• Side-by-side financial and activity details</li>
               <li>• Prominent financial progress visualization</li>
@@ -165,7 +165,7 @@ export function ActivityExportModal({ activity, isOpen, onClose }: ActivityExpor
         </div>
 
         <div className="text-helper text-muted-foreground text-center pt-4 border-t">
-          <p>💡 This optimized layout is specifically designed for image exports and sharing while keeping your card UI unchanged.</p>
+          <p>💡 This optimised layout is specifically designed for image exports and sharing while keeping your card UI unchanged.</p>
         </div>
       </DialogContent>
     </Dialog>

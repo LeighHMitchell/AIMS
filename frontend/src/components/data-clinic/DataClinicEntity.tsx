@@ -260,7 +260,7 @@ export function DataClinicEntity({ entity }: { entity: string }) {
         <button
           type="button"
           onClick={linkClick}
-          title="Linked — click to change"
+          title="Linked: click to change"
           className="flex items-center gap-2 rounded px-1 py-0.5 -mx-1 hover:bg-muted/60 transition-colors text-left"
         >
           {org?.logo ? (
@@ -276,14 +276,14 @@ export function DataClinicEntity({ entity }: { entity: string }) {
       return (
         <div className="flex items-start gap-2 flex-wrap">
           <span className="text-body break-words">{orgName}</span>
-          <Badge variant="outline" className="text-helper border border-amber-500 text-amber-600 bg-transparent whitespace-nowrap cursor-pointer hover:bg-amber-50" title="Named but not linked — click to link" onClick={linkClick}>
+          <Badge variant="outline" className="text-helper border border-amber-500 text-amber-600 bg-transparent whitespace-nowrap cursor-pointer hover:bg-amber-50" title="Named but not linked: click to link" onClick={linkClick}>
             <Unlink className="h-3 w-3 mr-1" />Unlinked
           </Badge>
         </div>
       )
     }
     return (
-      <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent cursor-pointer hover:bg-red-50" title="No organisation — click to link" onClick={linkClick}>
+      <Badge variant="outline" className="text-helper border border-red-500 text-red-600 bg-transparent cursor-pointer hover:bg-red-50" title="No organisation: click to link" onClick={linkClick}>
         <AlertCircle className="h-3 w-3 mr-1" />Missing
       </Badge>
     )

@@ -6,6 +6,7 @@ import { MapMarker, MarkerContent, MarkerPopup, MarkerTooltip, useMap } from '@/
 import { LocationPinIcon } from '@/components/maps/LocationPinIcon';
 import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { formatCurrencyCompact, formatDate } from '@/lib/format';
 
 interface SectorData {
   code: string;
@@ -103,32 +104,8 @@ const getStatusInfo = (status?: string): { label: string; color: string; bgColor
   return statusMap[key] || statusMap[status || ''] || { label: status || 'Unknown', color: '#6b7280', bgColor: '#f3f4f6' };
 };
 
-const formatCompactCurrency = (amount?: number): string => {
-  if (amount === undefined || amount === null || amount === 0) return '$0';
-  const absAmount = Math.abs(amount);
-  const sign = amount < 0 ? '-' : '';
-  if (absAmount >= 1000000000) {
-    return `${sign}$${(absAmount / 1000000000).toFixed(1)}b`;
-  } else if (absAmount >= 1000000) {
-    return `${sign}$${(absAmount / 1000000).toFixed(1)}m`;
-  } else if (absAmount >= 1000) {
-    return `${sign}$${(absAmount / 1000).toFixed(1)}k`;
-  }
-  return `${sign}$${absAmount.toFixed(0)}`;
-};
-
-const formatDate = (dateStr?: string): string => {
-  if (!dateStr) return '-';
-  try {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  } catch {
-    return '-';
-  }
-};
+/** Thin wrapper: map data uses optional amounts; delegates to the canonical compact form. */
+const formatCompactCurrency = (amount?: number): string => formatCurrencyCompact(amount ?? 0);
 
 const getFullAddress = (location: LocationData): string => {
   const parts = [];
@@ -138,7 +115,7 @@ const getFullAddress = (location: LocationData): string => {
   if (location.district_name) parts.push(location.district_name);
   if (location.state_region_name) parts.push(location.state_region_name);
   if (location.city) parts.push(location.city);
-  return parts.join(', ') || '-';
+  return parts.join(', ') || '—';
 };
 
 // Timeline progress visualization component
@@ -163,18 +140,6 @@ function TimelineProgress({
   let progressPercent = totalDuration > 0 ? (elapsedTime / totalDuration) * 100 : 0;
   progressPercent = Math.max(0, Math.min(100, progressPercent));
   
-  const formatTimelineDate = (dateStr: string): string => {
-    try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
-    } catch {
-      return '-';
-    }
-  };
-  
   return (
     <div className="mb-3">
       <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Project Timeline</div>
@@ -183,11 +148,11 @@ function TimelineProgress({
       <div className="flex justify-between mb-1.5">
         <div>
           <div className="text-[10px] text-muted-foreground">Actual Start</div>
-          <div className="text-helper font-semibold text-foreground">{formatTimelineDate(actualStartDate)}</div>
+          <div className="text-helper font-semibold text-foreground">{formatDate(actualStartDate)}</div>
         </div>
         <div className="text-right">
           <div className="text-[10px] text-muted-foreground">Planned End</div>
-          <div className="text-helper font-semibold text-foreground">{formatTimelineDate(plannedEndDate)}</div>
+          <div className="text-helper font-semibold text-foreground">{formatDate(plannedEndDate)}</div>
         </div>
       </div>
       
@@ -469,7 +434,7 @@ function LocationMarker({
               </div>
             )}
             <span className="text-helper text-foreground">
-              {location.activity?.organization_name || '-'}
+              {location.activity?.organization_name || '—'}
               {location.activity?.organization_acronym && location.activity?.organization_acronym !== location.activity?.organization_name && (
                 <span className="text-foreground"> ({location.activity.organization_acronym})</span>
               )}

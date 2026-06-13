@@ -77,7 +77,7 @@ export function ReadinessStageSignoff({
                 </p>
                 <p>
                   <span className="font-medium">Date:</span>{' '}
-                  {format(new Date(signoff.signed_off_at), 'MMMM d, yyyy')}
+                  {format(new Date(signoff.signed_off_at), 'd MMMM yyyy')}
                 </p>
                 <p>
                   <span className="font-medium">Items:</span>{' '}

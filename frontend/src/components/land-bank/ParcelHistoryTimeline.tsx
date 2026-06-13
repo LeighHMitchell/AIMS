@@ -35,7 +35,7 @@ export function ParcelHistoryTimeline({ history }: ParcelHistoryTimelineProps) {
                   {HISTORY_ACTION_LABELS[entry.action] || entry.action}
                 </p>
                 <p className="text-helper text-muted-foreground mt-0.5">
-                  by {userName} &middot; {new Date(entry.created_at).toLocaleDateString('en-US', {
+                  by {userName} &middot; {new Date(entry.created_at).toLocaleDateString('en-GB', {
                     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                   })}
                 </p>

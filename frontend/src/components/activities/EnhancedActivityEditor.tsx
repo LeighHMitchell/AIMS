@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { ActivityStatusRow } from '@/components/ui/status-row';
 import { Separator } from '@/components/ui/separator';
 import { DatePicker } from '@/components/ui/date-picker';
 import { EnhancedActivityComments } from './EnhancedActivityComments';
@@ -608,17 +609,7 @@ export default function EnhancedActivityEditor({ activityId, initialData = {} }:
                 {/* Activity Status and Basic Info */}
                 <div className="flex items-center gap-2 mb-4">
                   {formData.activity_status && (
-                    <Badge 
-                      className={
-                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Implementation" ? "bg-blue-100 text-blue-800" :
-                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Finalisation" ? "bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))]" :
-                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Closed" ? "bg-muted text-foreground" :
-                        ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label === "Cancelled" ? "bg-destructive/10 text-red-800" : 
-                        "bg-muted text-foreground"
-                      }
-                    >
-                      {ACTIVITY_STATUSES.find(s => s.value === formData.activity_status)?.label || 'Pipeline'}
-                    </Badge>
+                    <ActivityStatusRow status={formData.activity_status} />
                   )}
                   
                   {formData.collaboration_type && (

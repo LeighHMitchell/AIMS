@@ -13,6 +13,7 @@ import {
   TRANSACTION_COLUMNS,
   TRANSACTION_TYPE_DEFINITIONS
 } from '@/utils/transaction-grouping'
+import { formatCurrency } from '@/lib/format'
 
 export default function TransactionGroupingDemoPage() {
   // Sample transaction data for demonstration
@@ -29,15 +30,6 @@ export default function TransactionGroupingDemoPage() {
 
   const groupedTransactions = groupTransactionsByType(sampleTransactions)
   const totals = calculateTransactionGroupTotals(sampleTransactions)
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value)
-  }
 
   const getGroupColor = (group: string) => {
     switch (group) {

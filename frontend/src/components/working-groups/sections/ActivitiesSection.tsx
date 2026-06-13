@@ -3,6 +3,7 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge'
 import { FileText } from 'lucide-react'
 
 interface LinkedActivity {
@@ -46,8 +47,13 @@ export default function ActivitiesSection({ activities }: ActivitiesSectionProps
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h4 className="font-medium">{activity.title}</h4>
-                  <p className="text-body text-muted-foreground mt-1">
-                    {activity.iati_id && <span>{activity.iati_id} &middot; </span>}
+                  <p className="text-body text-muted-foreground mt-1 flex items-center gap-1.5 flex-wrap">
+                    {activity.iati_id && (
+                      <>
+                        <CopyableIdBadge value={activity.iati_id} label="IATI identifier" tooltip="Click to copy IATI identifier" />
+                        <span>&middot;</span>
+                      </>
+                    )}
                     {activity.partner_name}
                   </p>
                 </div>

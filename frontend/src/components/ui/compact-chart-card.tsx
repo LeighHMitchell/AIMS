@@ -283,8 +283,12 @@ export function CompactChartCard({
             </div>
           )}
           
-          {/* Chart content */}
-          <div className="mt-6">
+          {/* Chart content. The explainer paragraph that each chart renders at
+              the bottom (only when expanded) carries the canonical
+              `text-body text-muted-foreground leading-relaxed` class — give it a
+              divider line above so it reads as a footer, matching the
+              Largest Activities reference treatment. */}
+          <div className="mt-6 [&_.text-body.text-muted-foreground.leading-relaxed]:mt-4 [&_.text-body.text-muted-foreground.leading-relaxed]:pt-4 [&_.text-body.text-muted-foreground.leading-relaxed]:border-t [&_.text-body.text-muted-foreground.leading-relaxed]:border-border">
             <ChartExpansionProvider isExpanded={true}>
               <ChartCardToolbarContext.Provider
                 value={{

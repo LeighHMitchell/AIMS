@@ -518,7 +518,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
           <img src="/images/empty-flag.webp" alt="No policy markers" className="h-32 mx-auto mb-4 opacity-50" />
           <h3 className="text-base font-medium mb-2">No policy markers assigned</h3>
           <p className="text-muted-foreground mb-4">
-            Tag cross-cutting themes this activity addresses — like gender equality, climate change, or biodiversity.
+            Tag cross-cutting themes this activity addresses, like gender equality, climate change, or biodiversity.
           </p>
         </div>
       ) : (
@@ -776,7 +776,7 @@ export default function PolicyMarkersSectionIATIWithCustom({ activityId, policyM
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1.5 shrink-0">
                   <Label>Policy Marker</Label>
-                  <HelpTextTooltip content="The IATI standard or custom policy marker linked to this entry. Policy markers identify whether an activity targets a particular policy objective such as gender equality, environment, or governance. The marker cannot be changed once added — remove and re-add to switch markers.">
+                  <HelpTextTooltip content="The IATI standard or custom policy marker linked to this entry. Policy markers identify whether an activity targets a particular policy objective such as gender equality, environment, or governance. The marker cannot be changed once added; remove and re-add to switch markers.">
                     <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
                   </HelpTextTooltip>
                 </div>

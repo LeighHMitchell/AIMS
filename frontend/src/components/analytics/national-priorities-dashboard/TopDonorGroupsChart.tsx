@@ -53,7 +53,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { exportChartToCSV } from "@/lib/chart-export";
 import { CHART_RANKED_PALETTE, OTHERS_COLOR, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
-import { formatTooltipCurrency } from "@/lib/format";
+import { formatTooltipCurrency, formatAxisCurrency } from "@/lib/format";
 import { ChartTooltipCard } from "@/components/ui/chart-tooltip";
 import { useChartExpansion } from "@/lib/chart-expansion-context";
 import { ChartDataTable, CodeChip } from "@/components/ui/chart-data-table";
@@ -157,32 +157,6 @@ function getDateRangeFromTimeRange(timeRange: TimeRangeType): { from: Date | und
   }
 
   return { from, to: now };
-}
-
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  } else if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`;
-  } else if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
-  }
-  return `$${value.toFixed(0)}`;
-}
-
-function formatCurrencyWithSymbol(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1)}B USD`;
-  } else if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M USD`;
-  } else if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1)}K USD`;
-  }
-  return `${value.toFixed(0)} USD`;
-}
-
-function formatCurrencyFull(value: number): string {
-  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 // Short uppercase code for a parent group (e.g. "World Bank Group" → "WBG",
@@ -400,7 +374,7 @@ export function TopDonorGroupsChart({ refreshKey = 0, compact = false }: TopDono
         <YAxis
           stroke={CHART_STRUCTURE_COLORS.axis}
           fontSize={11}
-          tickFormatter={formatCurrency}
+          tickFormatter={(v: number) => formatAxisCurrency(v)}
           tickLine={false}
           axisLine={false}
           width={56}

@@ -13,7 +13,7 @@ import {
   CalendarDays,
   XCircle
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { formatDate } from '@/lib/format'
 import { PivotFilterState } from './PivotFilters'
 import { cn } from '@/lib/utils'
 
@@ -109,8 +109,6 @@ function DateRangeChip({
   endDate: Date | null
   onRemove: () => void 
 }) {
-  const formatDate = (date: Date) => format(date, 'MMM d, yyyy')
-  
   let label = ''
   if (startDate && endDate) {
     label = `${formatDate(startDate)} - ${formatDate(endDate)}`
@@ -165,7 +163,7 @@ export function FilterBreadcrumbs({
     return (
       <div className={cn("flex items-center gap-2 py-2", className)}>
         <span className="text-helper text-muted-foreground/60 italic">
-          No filters applied — filter chips will appear here
+          No filters applied. Filter chips will appear here
         </span>
       </div>
     )

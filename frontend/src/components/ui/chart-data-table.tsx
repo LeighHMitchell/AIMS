@@ -307,7 +307,7 @@ export function ChartDataTable({
                   sortField === col.key ? (sortOrder === 'asc' ? 'ascending' : 'descending') : undefined
                 }
                 className={cn(
-                  "px-4 py-3 font-medium text-foreground border-b whitespace-nowrap",
+                  "px-4 py-3 font-medium text-muted-foreground border-b whitespace-nowrap",
                   col.align === 'right' ? "text-right" : "text-left",
                   col.sortable && sortableHeaderClasses,
                 )}
@@ -330,7 +330,7 @@ export function ChartDataTable({
               </th>
             ))}
             {totalsColumn && (
-              <th className="text-right px-4 py-3 font-medium text-foreground border-b whitespace-nowrap">
+              <th className="text-right px-4 py-3 font-medium text-muted-foreground border-b whitespace-nowrap">
                 {totalsColumnLabel}
               </th>
             )}

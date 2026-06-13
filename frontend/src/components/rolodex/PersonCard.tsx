@@ -476,12 +476,12 @@ export function PersonCard({
                 href={orgHref}
                 onClick={(e) => e.stopPropagation()}
                 className="relative z-10 no-underline hover:no-underline"
-                style={{ color: colors.coolSteel }}
+                style={{ color: colors.blueSlate }}
               >
                 {orgLabel}
               </a>
             ) : (
-              orgLabel
+              <span style={{ color: colors.blueSlate }}>{orgLabel}</span>
             )}
           </div>
 

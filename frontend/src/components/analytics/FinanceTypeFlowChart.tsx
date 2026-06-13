@@ -51,25 +51,6 @@ const AVAILABLE_YEARS = Array.from(
   { length: currentYear + 10 - 2010 + 1 },
   (_, i) => 2010 + i
 )
-// Inline currency formatter to avoid initialization issues
-const formatCurrencyAbbreviated = (value: number): string => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${(absValue / 1000000).toFixed(1)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${(absValue / 1000).toFixed(1)}k`
-  } else {
-    formatted = `$${absValue.toFixed(0)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
-}
-
 interface FinanceTypeFlowChartProps {
   dateRange?: {
     from: Date
@@ -560,28 +541,6 @@ export function FinanceTypeFlowChart({
     }
   }, [chartData, onDataChange])
 
-  // Format currency for display
-  const formatCurrency = (value: number) => {
-    const isNegative = value < 0
-    const absValue = Math.abs(value)
-
-    let formatted = ''
-    if (absValue >= 1000000000) {
-      formatted = `$${Math.round(absValue / 1000000000)}b`
-    } else if (absValue >= 1000000) {
-      formatted = `$${Math.round(absValue / 1000000)}m`
-    } else if (absValue >= 1000) {
-      formatted = `$${Math.round(absValue / 1000)}k`
-    } else {
-      formatted = `$${Math.round(absValue)}`
-    }
-
-    return isNegative ? `-${formatted}` : formatted
-  }
-
-  // Use the module-level currency formatter for tooltips
-  const formatTooltipValue = formatCurrencyAbbreviated
-
   // Helper function to get flow type name from code
   const getFlowTypeName = (code: string): string => {
     const flowType = allFlowTypes.find(ft => ft.code === code)
@@ -917,7 +876,7 @@ export function FinanceTypeFlowChart({
                             size="sm"
                             className="h-8 gap-1"
                             title={localDateRange?.from && localDateRange?.to
-                              ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                              ? `${format(localDateRange.from, 'd MMM yyyy')} – ${format(localDateRange.to, 'd MMM yyyy')}`
                               : undefined}
                           >
                             <CalendarIcon className="h-4 w-4" />
@@ -1418,7 +1377,7 @@ export function FinanceTypeFlowChart({
         <p className="text-body text-muted-foreground">
           This chart visualizes financial flows by breaking down transactions according to their flow type (e.g., ODA, OOF, private flows)
           and finance type (e.g., grants, loans, equity investments). Understanding these classifications is essential for analyzing
-          the nature and terms of development assistance—whether funds are concessional or non-concessional, repayable or not,
+          the nature and terms of development assistance: whether funds are concessional or non-concessional, repayable or not,
           and how they align with international reporting standards like the OECD DAC. Use the filters to compare different
           transaction types (commitments, disbursements, expenditures) across time periods, helping identify trends in how
           aid is structured and delivered. The periodic view shows year-by-year flows, while cumulative view reveals the

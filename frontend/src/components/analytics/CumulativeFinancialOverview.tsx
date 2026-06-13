@@ -51,24 +51,6 @@ import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors';
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
-// Inline currency formatter to avoid initialization issues
-const formatCurrencyAbbreviated = (value: number): string => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${(absValue / 1000000).toFixed(1)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${(absValue / 1000).toFixed(1)}k`
-  } else {
-    formatted = `$${absValue.toFixed(0)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
-}
 
 type DataMode = 'cumulative' | 'periodic'
 type ChartType = 'line' | 'bar' | 'area' | 'table' | 'total'
@@ -823,27 +805,6 @@ export function CumulativeFinancialOverview({
     return Math.floor(dataLength / 10)  // Show ~10 ticks
   }
 
-  const formatCurrency = (value: number) => {
-    const isNegative = value < 0
-    const absValue = Math.abs(value)
-
-    let formatted = ''
-    if (absValue >= 1000000000) {
-      formatted = `$${Math.round(absValue / 1000000000)}b`
-    } else if (absValue >= 1000000) {
-      formatted = `$${Math.round(absValue / 1000000)}m`
-    } else if (absValue >= 1000) {
-      formatted = `$${Math.round(absValue / 1000)}k`
-    } else {
-      formatted = `$${Math.round(absValue)}`
-    }
-
-    return isNegative ? `-${formatted}` : formatted
-  }
-
-  // Use the module-level currency formatter for tooltips
-  const formatTooltipValue = formatCurrencyAbbreviated
-
   // IATI transaction-type code for a series key (null for Budgets/Planned).
   const getTransactionTypeCode = (seriesName: string): string | null =>
     KEY_TO_CODE[seriesName] || (seriesName === 'Commitments' ? '2' : null)
@@ -1137,7 +1098,7 @@ export function CumulativeFinancialOverview({
                             size="sm"
                             className="h-8 gap-1"
                             title={effectiveDateRange?.from && effectiveDateRange?.to
-                              ? `${format(effectiveDateRange.from, 'MMM d, yyyy')} – ${format(effectiveDateRange.to, 'MMM d, yyyy')}`
+                              ? `${format(effectiveDateRange.from, 'd MMM yyyy')} – ${format(effectiveDateRange.to, 'd MMM yyyy')}`
                               : undefined}
                           >
                             <CalendarIcon className="h-4 w-4" />

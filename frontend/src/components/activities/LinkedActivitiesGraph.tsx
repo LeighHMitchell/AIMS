@@ -600,7 +600,7 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
           <select
             value={depth}
             onChange={(e) => onDepthChange(e.target.value as DepthOption)}
-            className="px-3 py-2 bg-white border border-input rounded-lg text-body font-medium text-foreground shadow-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+            className="px-3 py-2 bg-white border border-input rounded-lg text-body font-medium text-foreground shadow-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring cursor-pointer"
             disabled={loading}
           >
             <option value="1">Direct links</option>
@@ -658,7 +658,7 @@ const LinkedActivitiesGraph: React.FC<LinkedActivitiesGraphProps> = ({
       {/* Truncation warning */}
       {graphData?.truncated && (
         <div className="absolute bottom-4 left-4 z-10 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-body">
-          Graph truncated — showing {graphData.totalCount} activities (max 100)
+          Graph truncated: showing {graphData.totalCount} activities (max 100)
         </div>
       )}
 

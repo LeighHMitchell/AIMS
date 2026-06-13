@@ -89,6 +89,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
+import { formatDate as formatDate_lib } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 
 interface IatiImportTabProps {
   activityId: string;
@@ -601,40 +603,20 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
   };
 
   // Format currency with validation and multi-currency detection
-  const formatCurrency = (value: number, currency?: string | any) => {
-      const formattedValue = new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-
-    // If multiple currencies detected, show warning
-    if (hasMultipleCurrencies) {
-      return `Mixed currencies ${formattedValue}`;
-    }
-
-    // Clean up currency - handle various formats
+  // Resolve a possibly-messy currency input (array / Set / CSV string) to a
+  // single valid ISO code, falling back to the detected single currency or USD.
+  const resolveCurrencyCode = (currency?: string | any): string => {
     let cleanCurrency: string | undefined = undefined;
 
     if (currency) {
-      // If it's an array, get first element
       if (Array.isArray(currency)) {
         cleanCurrency = currency[0];
-      }
-      // If it's a Set, get first element
-      else if (currency instanceof Set) {
+      } else if (currency instanceof Set) {
         cleanCurrency = Array.from(currency)[0] as string;
-      }
-      // If it's a string
-      else if (typeof currency === 'string') {
+      } else if (typeof currency === 'string') {
         // If it's an array-like string (e.g., "USD,USD,USD"), take just the first one
-        if (currency.includes(',')) {
-          cleanCurrency = currency.split(',')[0].trim();
-        } else {
-          cleanCurrency = currency;
-        }
-      }
-      // Convert to string as fallback
-      else {
+        cleanCurrency = currency.includes(',') ? currency.split(',')[0].trim() : currency;
+      } else {
         cleanCurrency = String(currency);
         if (cleanCurrency.includes(',')) {
           cleanCurrency = cleanCurrency.split(',')[0].trim();
@@ -642,47 +624,23 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
       }
     }
 
-    // Use the single currency detected, or fall back to the cleaned currency
     const currencyToUse = singleCurrency || cleanCurrency;
     const isValidCurrency = currencyToUse && /^[A-Z]{3}$/.test(currencyToUse);
-    const currencyCode = isValidCurrency ? currencyToUse : 'USD';
-
-    // Return plain string with currency code and formatted value
-    return `${currencyCode} ${formattedValue}`;
+    return isValidCurrency ? currencyToUse! : 'USD';
   };
-  
-  // Format date
+
+  // Format date — delegates to the canonical lib formatter (D MMM YYYY).
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return "N/A";
-    try {
-      return new Date(dateStr).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    } catch {
-      return dateStr;
-    }
+    if (!dateStr) return "—";
+    return formatDate_lib(dateStr) || dateStr;
   };
 
-  // Render currency with styled currency code
+  // Render currency with styled (muted ISO code) value, per the data-table style.
   const renderCurrency = (value: number, currency?: string) => {
-    const formatted = formatCurrency(value, currency);
-    const parts = formatted.split(' ');
-
-    if (parts.length >= 2) {
-      const currencyCode = parts[0];
-      const amount = parts.slice(1).join(' ');
-
-      return (
-        <>
-          <span className="text-caption text-muted-foreground mr-1">{currencyCode}</span>
-          <span>{amount}</span>
-        </>
-      );
+    if (hasMultipleCurrencies) {
+      return `Mixed currencies ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value)}`;
     }
-
-    return formatted;
+    return <CurrencyValue amount={value} currency={resolveCurrencyCode(currency)} variant="full" />;
   };
 
   // Helper to format code with name: code in monospace gray, name normal
@@ -13467,7 +13425,7 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="text-body font-medium text-muted-foreground opacity-70 cursor-help">{field.importValue || 'N/A'}</span>
+                                    <span className="text-body font-medium text-muted-foreground opacity-70 cursor-help">{field.importValue || '—'}</span>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p className="text-helper">{field.inheritedFrom}</p>
@@ -13492,9 +13450,9 @@ export default function IatiImportTab({ activityId, onNavigateToGeneral }: IatiI
                             ) : typeof field.importValue === 'object' ? (
                               <span className="text-body text-muted-foreground italic">Complex data</span>
                             ) : field.fieldName === 'IATI Identifier' ? (
-                              <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue || 'N/A'}</span>
+                              <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue || '—'}</span>
                             ) : (
-                              <span className="text-body font-medium text-foreground">{field.importValue || 'N/A'}</span>
+                              <span className="text-body font-medium text-foreground">{field.importValue || '—'}</span>
                             )}
                           </div>
                         </td>
@@ -13806,7 +13764,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
   const dropdownContent = isOpen && buttonRect && (
     <div 
       ref={dropdownRef}
-      className="fixed bg-card border border-border rounded-md shadow-lg z-[9999] max-h-[200px] overflow-y-auto"
+      className="fixed bg-card border border-border rounded-md shadow-lg z-[10001] max-h-[200px] overflow-y-auto"
       style={{
         top: buttonRect.bottom + 4,
         left: buttonRect.left,
@@ -14468,7 +14426,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
           <Button 
             onClick={handleSave}
             disabled={Math.abs(totalPercentage - 100) > 0.01}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-primary hover:bg-primary/90"
           >
             <CheckCircle className="h-4 w-4 mr-2" />
             Apply Mapping

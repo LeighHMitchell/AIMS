@@ -19,6 +19,7 @@ import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, OTHERS_COLOR } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { CurrencyValue } from '@/components/ui/currency-value'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 
 interface Top10GovernmentValidatedChartProps {
@@ -108,27 +109,6 @@ export function Top10GovernmentValidatedChart({
       setData([])
     } finally {
       setLoading(false)
-    }
-  }
-
-  const formatCurrency = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      const safeValue = Number(value)
-      if (isNaN(safeValue) || !isFinite(safeValue)) {
-        return '$0'
-      }
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 0
-      }).format(safeValue)
-    } catch (error) {
-      console.error('[Top10GovernmentValidatedChart] Error formatting currency:', error, value)
-      return '$0'
     }
   }
 
@@ -291,12 +271,12 @@ export function Top10GovernmentValidatedChart({
             </thead>
             <tbody>
               {data.map((entry, index) => (
-                <tr key={entry.orgId} className={index % 2 === 0 ? 'bg-muted' : 'bg-white'}>
+                <tr key={entry.orgId} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                   <td className="py-3 px-4 text-foreground">
                     {entry.name}{entry.acronym ? ` (${entry.acronym})` : ''}
                   </td>
                   <td className="py-3 px-4 text-right text-foreground font-medium">
-                    {formatCurrency(entry.totalValue)}
+                    <CurrencyValue amount={entry.totalValue} variant="short" />
                   </td>
                   <td className="py-3 px-4 text-right text-foreground">
                     {entry.projectCount}

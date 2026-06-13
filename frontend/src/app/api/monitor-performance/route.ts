@@ -31,7 +31,7 @@ export async function GET() {
       recommendations: executionTime > 1000 ? [
         'Database response time > 1s - consider upgrading Supabase plan',
         'Enable query caching',
-        'Optimize database indexes'
+        'Optimise database indexes'
       ] : ['Performance is good']
     })
     

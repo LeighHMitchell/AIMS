@@ -100,7 +100,7 @@ export default function SectorSunburstDemo() {
             <strong>Features:</strong>
             <ul className="mt-2 ml-4 space-y-1">
               <li>• Automatic hierarchy building from 5-digit DAC codes</li>
-              <li>• Color-coded by DAC category</li>
+              <li>• Colour-coded by DAC category</li>
               <li>• Shows unallocated percentage if total &lt; 100%</li>
               <li>• Responsive design for mobile and desktop</li>
               <li>• Built with Recharts for smooth performance</li>

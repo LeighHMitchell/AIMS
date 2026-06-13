@@ -6,7 +6,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Users,
@@ -332,30 +332,30 @@ export default function WorkingGroupProfilePage() {
 
         {/* Tabs */}
         <Tabs defaultValue="members" className="space-y-6">
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
-            <TabsTrigger value="members" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+          <PageTabsList>
+            <PageTabsTrigger value="members">
               <Users className="h-4 w-4" />
               Members ({workingGroup.members.length})
-            </TabsTrigger>
+            </PageTabsTrigger>
             {workingGroup.sub_groups.length > 0 && (
-              <TabsTrigger value="sub-groups" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <PageTabsTrigger value="sub-groups">
                 <GitBranch className="h-4 w-4" />
                 Sub-Groups ({workingGroup.sub_groups.length})
-              </TabsTrigger>
+              </PageTabsTrigger>
             )}
-            <TabsTrigger value="meetings" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            <PageTabsTrigger value="meetings">
               <Calendar className="h-4 w-4" />
               Meetings ({workingGroup.meetings.length})
-            </TabsTrigger>
-            <TabsTrigger value="activities" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="activities">
               <FileText className="h-4 w-4" />
               Activities ({workingGroup.activities.length})
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            </PageTabsTrigger>
+            <PageTabsTrigger value="documents">
               <FileText className="h-4 w-4" />
               Documents ({workingGroup.documents.length})
-            </TabsTrigger>
-          </TabsList>
+            </PageTabsTrigger>
+          </PageTabsList>
 
           {/* Members Tab */}
           <TabsContent value="members">
@@ -425,7 +425,7 @@ export default function WorkingGroupProfilePage() {
                             ) : '—'}
                           </TableCell>
                           <TableCell className="text-muted-foreground whitespace-nowrap">
-                            {member.joined_on ? format(new Date(member.joined_on), 'MMM d, yyyy') : '—'}
+                            {member.joined_on ? format(new Date(member.joined_on), 'd MMM yyyy') : '—'}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -458,7 +458,7 @@ export default function WorkingGroupProfilePage() {
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <GitBranch className="h-12 w-12 text-muted-foreground mb-3" />
                       <p className="text-body text-muted-foreground">No sub-working groups yet</p>
-                      <p className="text-helper text-muted-foreground mt-1">Create sub-working groups to organize specialized topics</p>
+                      <p className="text-helper text-muted-foreground mt-1">Create sub-working groups to organise specialised topics</p>
                     </div>
                   ) : (
                     workingGroup.sub_groups.map((sg) => (
@@ -533,7 +533,7 @@ export default function WorkingGroupProfilePage() {
                             <div className="flex items-center gap-4 mt-1 text-body text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-3.5 w-3.5" />
-                                {format(new Date(meeting.meeting_date), 'MMM d, yyyy')}
+                                {format(new Date(meeting.meeting_date), 'd MMM yyyy')}
                               </div>
                               {meeting.start_time && (
                                 <div className="flex items-center gap-1">
@@ -636,7 +636,7 @@ export default function WorkingGroupProfilePage() {
                                   <p className="text-body text-muted-foreground mt-1">{doc.description}</p>
                                 )}
                                 <p className="text-helper text-muted-foreground mt-1">
-                                  Uploaded on {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}
+                                  Uploaded on {format(new Date(doc.uploaded_at), 'd MMM yyyy')}
                                   {doc.uploaded_by_name && ` by ${doc.uploaded_by_name}`}
                                 </p>
                               </div>

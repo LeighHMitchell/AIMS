@@ -201,7 +201,7 @@ export function MonitoringTab({ projectId }: MonitoringTabProps) {
                     <tr key={r.id}>
                       <td className="py-2 px-2">
                         {r.report_period_start && r.report_period_end
-                          ? `${r.report_period_start} — ${r.report_period_end}`
+                          ? `${r.report_period_start} – ${r.report_period_end}`
                           : '—'}
                       </td>
                       <td className="py-2 px-2">{r.due_date || '—'}</td>

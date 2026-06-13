@@ -37,36 +37,18 @@ import { format } from 'date-fns'
 import { CustomYear, getCustomYearRange, getCustomYearLabel, sortCustomYearsCalendarFirst } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
-import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
+import { CHART_STRUCTURE_COLORS, BUDGET_COLOR, PLANNED_DISBURSEMENT_COLOR, getTransactionTypeColor } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
 import { getCategoryInfo, getSectorInfo } from '@/lib/dac-sector-utils'
 
-// Inline currency formatter to avoid initialization issues
-const formatCurrencyAbbreviated = (value: number): string => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${(absValue / 1000000).toFixed(1)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${(absValue / 1000).toFixed(1)}k`
-  } else {
-    formatted = `$${absValue.toFixed(0)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
-}
-
-// Color palette - slate-only for dashboard consistency
+// Canonical financial-series colors — resolved via chart-colors.ts so a
+// Disbursement bar here matches every other chart (single source of truth).
 const COLORS = {
-  newCommitments: '#334155',       // slate-700
-  plannedDisbursements: '#4c5568', // Blue Slate
-  actualDisbursements: '#7b95a7',  // Cool Steel
-  budgets: '#cfd0d5',              // Pale Slate
+  newCommitments: getTransactionTypeColor('2'),      // Outgoing Commitment
+  plannedDisbursements: PLANNED_DISBURSEMENT_COLOR,  // anchor yellow
+  actualDisbursements: getTransactionTypeColor('3'), // Disbursement red
+  budgets: BUDGET_COLOR,                             // anchor blue
 }
 
 // Data keys configuration for financial metrics
@@ -408,19 +390,6 @@ export function PlannedActualDisbursementBySector({
     return [0, 'auto']
   }, [chartData, visibleFinancialSeries])
 
-  const formatYAxisCurrency = (value: number) => {
-    const absValue = Math.abs(value)
-    const sign = value < 0 ? '-' : ''
-    if (absValue >= 1000000000) {
-      return `${sign}$${(absValue / 1000000000).toFixed(0)}b`
-    } else if (absValue >= 1000000) {
-      return `${sign}$${(absValue / 1000000).toFixed(0)}m`
-    } else if (absValue >= 1000) {
-      return `${sign}$${(absValue / 1000).toFixed(0)}k`
-    }
-    return `${sign}$${absValue.toFixed(0)}`
-  }
-
   const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
     if (!active || !payload || !payload.length) return null
 
@@ -716,7 +685,7 @@ export function PlannedActualDisbursementBySector({
                           size="sm"
                           className="h-8 gap-1"
                           title={localDateRange?.from && localDateRange?.to
-                            ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                            ? `${format(localDateRange.from, 'd MMM yyyy')} – ${format(localDateRange.to, 'd MMM yyyy')}`
                             : undefined}
                         >
                           <CalendarIcon className="h-4 w-4" />

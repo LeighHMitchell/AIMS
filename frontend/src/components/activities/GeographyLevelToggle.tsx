@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
-import { Loader2, AlertTriangle, Check } from 'lucide-react'
+import { Loader2, Check } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -153,8 +153,7 @@ export function GeographyLevelToggle({
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <AlertDialogTitle>
               {pendingLevel === 'activity'
                 ? 'Switch to Activity-Level Geography?'
                 : 'Switch to Transaction-Level Geography?'}

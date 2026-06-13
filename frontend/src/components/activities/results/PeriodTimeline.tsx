@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/format';
 import { IndicatorPeriod, MeasureType } from '@/types/results';
 import {
   Tooltip,
@@ -48,15 +49,15 @@ const formatValue = (value: number | null | undefined, measure?: MeasureType): s
     case 'percentage':
       return `${value}%`;
     case 'currency':
-      return `$${value.toLocaleString()}`;
+      return formatCurrency(value);
     default:
       return value.toLocaleString();
   }
 };
 
-// Format date for display
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('en-US', { 
+// Month-year period label ("May 2024") — granularity the lib formatDate lacks.
+const formatMonthYear = (date: Date): string => {
+  return date.toLocaleDateString('en-GB', { 
     month: 'short', 
     year: 'numeric' 
   });
@@ -81,7 +82,7 @@ export function PeriodTimeline({ periods, measure, className }: PeriodTimelinePr
         actual: period.actual_value,
         achievement,
         status: getStatus(achievement),
-        label: `${formatDate(new Date(period.period_start))} - ${formatDate(new Date(period.period_end))}`
+        label: `${formatMonthYear(new Date(period.period_start))} - ${formatMonthYear(new Date(period.period_end))}`
       };
     });
   }, [periods]);
@@ -158,7 +159,7 @@ export function PeriodTimeline({ periods, measure, className }: PeriodTimelinePr
                 {/* Date label below */}
                 <div className="mt-3 text-center">
                   <div className="text-helper text-muted-foreground whitespace-nowrap">
-                    {formatDate(point.periodEnd)}
+                    {formatMonthYear(point.periodEnd)}
                   </div>
                 </div>
 

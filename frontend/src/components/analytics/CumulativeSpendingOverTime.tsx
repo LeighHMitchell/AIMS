@@ -20,7 +20,7 @@ import { ChartViewToggle } from '@/components/ui/chart-view-toggle'
 import { useChartExpansion, ChartExpansionProvider } from '@/lib/chart-expansion-context'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { formatTooltipCurrency, formatAxisCurrency, formatDate } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { exportChartToCSV } from '@/lib/chart-export'
 import { toast } from 'sonner'
@@ -74,24 +74,6 @@ const SERIES_COLOR: Record<string, string> = Object.fromEntries(
   SERIES.map(s => [s.key, metricColor(s.metric)])
 )
 const gradId = (key: string) => `cspend-grad-${key.replace(/[^a-zA-Z0-9]/g, '-')}`
-// Inline currency formatter to avoid initialization issues
-const formatCurrencyAbbreviated = (value: number): string => {
-  const isNegative = value < 0
-  const absValue = Math.abs(value)
-
-  let formatted = ''
-  if (absValue >= 1000000000) {
-    formatted = `$${(absValue / 1000000000).toFixed(1)}b`
-  } else if (absValue >= 1000000) {
-    formatted = `$${(absValue / 1000000).toFixed(1)}m`
-  } else if (absValue >= 1000) {
-    formatted = `$${(absValue / 1000).toFixed(1)}k`
-  } else {
-    formatted = `$${absValue.toFixed(0)}`
-  }
-
-  return isNegative ? `-${formatted}` : formatted
-}
 
 interface CumulativeSpendingOverTimeProps {
   dateRange?: {
@@ -251,7 +233,7 @@ function CumulativeSpendingOverTimeInner({
           const row: Record<string, any> = {
             date: point.date.toISOString(),
             timestamp: point.timestamp,
-            displayDate: point.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            displayDate: formatDate(point.date),
           }
           SERIES_KEYS.forEach(k => {
             cumulative[k] += point.inc[k] || 0
@@ -613,7 +595,7 @@ function CumulativeSpendingOverTimeInner({
         {/* Explanatory text — only in expanded view */}
         {isExpanded && (
           <p className="text-body text-muted-foreground leading-relaxed mt-4">
-            This chart tracks running totals over time, with a separate line per selected metric. Use the Metrics dropdown to choose any combination of Budgets, Planned Disbursements, and the 13 IATI transaction types (default: Disbursements + Expenditures). All amounts are USD-normalised — transactions are added on their transaction date, while budgets and planned disbursements are added on their period start date. A steeper slope indicates a higher rate over that period.
+            This chart tracks running totals over time, with a separate line per selected metric. Use the Metrics dropdown to choose any combination of Budgets, Planned Disbursements, and the 13 IATI transaction types (default: Disbursements + Expenditures). All amounts are USD-normalised: transactions are added on their transaction date, while budgets and planned disbursements are added on their period start date. A steeper slope indicates a higher rate over that period.
           </p>
         )}
     </div>

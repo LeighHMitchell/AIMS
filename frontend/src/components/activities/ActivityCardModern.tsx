@@ -7,9 +7,10 @@ import { Calendar, Clock, Building2, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBookmarks } from '@/hooks/use-bookmarks';
 import { formatActivityDate, formatRelativeTime } from '@/lib/date-utils';
+import { formatCurrencyCompact } from '@/lib/format';
 import { ActivityCardSkeleton } from './ActivityCardSkeleton';
 import { ActivityCardActionMenu } from './ActivityCardActionMenu';
-import { getActivityStatusLabel } from '@/lib/activity-status-utils';
+import { ActivityStatusRow } from '@/components/ui/status-row';
 import { CardShell, CardShellLogoOverlay, CardShellRipLine } from '@/components/ui/card-shell';
 
 // Color palette — uses brand tokens from CSS variables for theme compatibility
@@ -54,22 +55,6 @@ interface ActivityCardModernProps {
   onDelete?: (activityId: string) => void;
   isLoading?: boolean;
 }
-
-// Currency formatting utility
-const formatCurrency = (value: number) => {
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}m`;
-  } else if (value >= 1000) {
-    return `$${(value / 1000).toFixed(1)}k`;
-  } else {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  }
-};
 
 const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
   activity,
@@ -200,9 +185,11 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
             {activity.activity_status && (
               <>
                 <span>•</span>
-                <span style={{ color: colors.paleSlate }}>
-                  {getActivityStatusLabel(activity.activity_status)}
-                </span>
+                <ActivityStatusRow
+                  status={activity.activity_status}
+                  variant="overlay"
+                  className="text-[#cfd0d5]"
+                />
               </>
             )}
           </div>
@@ -245,7 +232,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
               </p>
               <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
-                <span>{formatCurrency(activity.totalBudget || 0)}</span>
+                <span>{formatCurrencyCompact(activity.totalBudget || 0)}</span>
               </div>
             </div>
             <div className="space-y-1">
@@ -254,7 +241,7 @@ const ActivityCardModern: React.FC<ActivityCardModernProps> = ({
               </p>
               <div className="flex items-center gap-2 font-medium text-body" style={{ color: colors.blueSlate }}>
                 <DollarSign className="w-4 h-4" style={{ color: colors.coolSteel }} />
-                <span>{formatCurrency(activity.totalPlannedDisbursement || 0)}</span>
+                <span>{formatCurrencyCompact(activity.totalPlannedDisbursement || 0)}</span>
               </div>
             </div>
           </div>

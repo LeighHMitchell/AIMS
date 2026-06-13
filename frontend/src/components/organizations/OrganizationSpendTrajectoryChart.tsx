@@ -24,7 +24,7 @@ import { format } from 'date-fns'
 import { useCustomYears } from '@/hooks/useCustomYears'
 import { getCustomYearLabel } from '@/types/custom-years'
 import { apiFetch } from '@/lib/api-fetch';
-import { formatAxisCurrency } from '@/lib/format';
+import { formatAxisCurrency, formatCurrencyCompact } from '@/lib/format';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
 import { PLANNED_DISBURSEMENT_COLOR, PERFECT_SPEND_COLOR, getTransactionTypeColor } from '@/lib/chart-colors';
 
@@ -77,22 +77,6 @@ interface OrganizationSpendTrajectoryChartProps {
    *  rendering even in `compact` mode (where the internal toolbar UI is
    *  suppressed). */
   viewModeOverride?: 'chart' | 'table'
-}
-
-const formatCurrencyCompact = (value: number): string => {
-  const absValue = Math.abs(value)
-  if (absValue >= 1000000000) return `$${(value / 1000000000).toFixed(0)}b`
-  if (absValue >= 1000000) return `$${(value / 1000000).toFixed(0)}m`
-  if (absValue >= 1000) return `$${(value / 1000).toFixed(0)}k`
-  return `$${value.toFixed(0)}`
-}
-
-const formatTooltipCurrency = (value: number): string => {
-  const absValue = Math.abs(value)
-  if (absValue >= 1000000000) return `$${(value / 1000000000).toFixed(1)}b`
-  if (absValue >= 1000000) return `$${(value / 1000000).toFixed(1)}m`
-  if (absValue >= 1000) return `$${(value / 1000).toFixed(1)}k`
-  return `$${value.toFixed(0)}`
 }
 
 export function OrganizationSpendTrajectoryChart({
@@ -421,7 +405,7 @@ export function OrganizationSpendTrajectoryChart({
                     <span className="text-foreground font-medium">Even-spend baseline</span>
                   </td>
                   <td className="py-1.5 text-right font-semibold text-foreground">
-                    {formatTooltipCurrency(perfectSpend)}
+                    {formatCurrencyCompact(perfectSpend)}
                   </td>
                 </tr>
                 <tr className="border-b border-border">
@@ -430,7 +414,7 @@ export function OrganizationSpendTrajectoryChart({
                     <span className="text-foreground font-medium capitalize">{getComparisonLabel()}</span>
                   </td>
                   <td className="py-1.5 text-right font-semibold text-foreground">
-                    {formatTooltipCurrency(comparisonValue)}
+                    {formatCurrencyCompact(comparisonValue)}
                   </td>
                 </tr>
                 <tr className="border-t border-border">
@@ -439,7 +423,7 @@ export function OrganizationSpendTrajectoryChart({
                     <span className="text-foreground font-medium">Gap to baseline</span>
                   </td>
                   <td className="py-1.5 text-right font-semibold" style={{ color: variance >= 0 ? '#16a34a' : '#dc2626' }}>
-                    {Math.abs(variance) < 1 ? '—' : `${variance >= 0 ? '+' : '-'}${formatTooltipCurrency(Math.abs(variance))}`}
+                    {Math.abs(variance) < 1 ? '—' : `${variance >= 0 ? '+' : '-'}${formatCurrencyCompact(Math.abs(variance))}`}
                   </td>
                 </tr>
               </tbody>
@@ -493,16 +477,16 @@ export function OrganizationSpendTrajectoryChart({
               return (
                 <TableRow key={year}>
                   <TableCell className="font-medium text-foreground">{year}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatTooltipCurrency(inYear)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatTooltipCurrency(cumActual)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatTooltipCurrency(baseline)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatCurrencyCompact(inYear)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatCurrencyCompact(cumActual)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatCurrencyCompact(baseline)}</TableCell>
                   <TableCell className="text-right tabular-nums" style={{ color: varianceColor }}>
                     {Math.abs(variance) < 1
                       ? "—"
-                      : `${variance >= 0 ? "+" : "−"}${formatTooltipCurrency(Math.abs(variance))}`}
+                      : `${variance >= 0 ? "+" : "−"}${formatCurrencyCompact(Math.abs(variance))}`}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatTooltipCurrency(Number(row.cumulativePlannedDisbursements) || 0)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatTooltipCurrency(Number(row.cumulativeCommitments) || 0)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatCurrencyCompact(Number(row.cumulativePlannedDisbursements) || 0)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatCurrencyCompact(Number(row.cumulativeCommitments) || 0)}</TableCell>
                 </TableRow>
               )
             })

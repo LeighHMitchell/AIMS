@@ -27,6 +27,7 @@ import type { ValidationRulesResponse } from '@/types/validation-rules';
 import { ACTIVITY_STATUS_LABELS } from '@/types/validation-rules';
 import { apiFetch } from '@/lib/api-fetch';
 import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
+import { formatDate } from '@/lib/format';
 
 interface ValidationRulesCardProps {
   organizationId: string;
@@ -43,16 +44,6 @@ interface DataQualityIssue {
   details: string;
   /** Activity editor href, deep-linked to the most relevant tab. */
   editHref: string;
-}
-
-// Format date for display
-function formatDate(dateString: string | null): string {
-  if (!dateString) return '—';
-  return new Date(dateString).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
 }
 
 const statusLabel = (status: string): string =>
@@ -80,7 +71,8 @@ function flattenIssues(data: ValidationRulesResponse): DataQualityIssue[] {
     issues.push({
       category: 'Activity', rule: 'Implementation With Actual End Date',
       activityId: item.id, iatiIdentifier: item.iati_identifier || '', title: item.title_narrative,
-      status: statusLabel(item.activity_status), details: `Actual end: ${formatDate(item.actual_end_date)}`,
+      status: statusLabel(item.activity_status),
+      details: `Actual end: ${item.actual_end_date ? formatDate(item.actual_end_date) : '—'}`,
       editHref: href(item.id),
     });
   });

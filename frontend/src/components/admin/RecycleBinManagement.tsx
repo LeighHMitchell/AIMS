@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -232,26 +232,26 @@ export function RecycleBinManagement() {
       </CardHeader>
       <CardContent>
         <Tabs value={activeEntity} onValueChange={(v) => setActiveEntity(v as EntityType)}>
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-4 flex flex-wrap">
+          <PageTabsList className="mb-4">
             {ENTITY_TYPES.map(et => {
               const meta = ENTITY_META[et]
               const Icon = meta.Icon
               const count = counts[et] ?? 0
               return (
-                <TabsTrigger
+                <PageTabsTrigger
                   key={et}
                   value={et}
-                  className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                >
+                  
+>
                   <Icon className="h-4 w-4" />
                   {meta.label}
                   {count > 0 && (
                     <Badge variant="secondary" className="ml-1">{count}</Badge>
                   )}
-                </TabsTrigger>
+                </PageTabsTrigger>
               )
             })}
-          </TabsList>
+          </PageTabsList>
 
           {ENTITY_TYPES.map(et => (
             <TabsContent key={et} value={et} className="space-y-4">

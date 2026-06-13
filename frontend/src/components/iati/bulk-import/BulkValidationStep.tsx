@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -258,7 +259,7 @@ export default function BulkValidationStep({
                         )}
                         <div>
                           <p className="font-medium text-body">{activity.title || activity.iatiIdentifier}</p>
-                          <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>
+                          <CopyableIdBadge value={activity.iatiIdentifier} label="IATI identifier" tooltip="Click to copy IATI identifier" />
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

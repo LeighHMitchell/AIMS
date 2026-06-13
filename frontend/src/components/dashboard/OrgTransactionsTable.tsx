@@ -17,7 +17,9 @@ import {
 } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ArrowUpRight, ArrowDownLeft, DollarSign, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
+import { EmptyOrgIndicator } from '@/components/ui/empty-org-indicator';
 import { TableRowActionMenu } from './TableRowActionMenu';
 import { apiFetch } from '@/lib/api-fetch';
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
@@ -240,10 +242,7 @@ export function OrgTransactionsTable({
   // Only show the skeleton on the initial load. On a sort/page refetch we keep
   // the existing rows visible so the column just reorders (no full-table flash).
   const tableContent = loading && transactions.length === 0 ? loadingSkeleton : error ? errorContent : transactions.length === 0 ? (
-    <div className="text-center py-8">
-      <DollarSign className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-      <p className="text-body text-muted-foreground">No transactions found</p>
-    </div>
+    <EmptyState illustration="/images/empty-piggybank.webp" message="No transactions found" />
   ) : (
     <>
       <Table>
@@ -307,27 +306,47 @@ export function OrgTransactionsTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 flex-wrap" title={`${transaction.providerOrgName} → ${transaction.receiverOrgName}`}>
-                        <span className="flex items-center gap-1.5 flex-shrink-0">
-                          <OrganizationLogo
-                            logo={transaction.providerOrgLogo}
-                            name={transaction.providerOrgName}
-                            size="sm"
-                          />
-                          <span className="text-body text-muted-foreground whitespace-nowrap">
-                            {transaction.providerOrgAcronym || transaction.providerOrgName}
-                          </span>
-                          <span className="text-muted-foreground">→</span>
-                        </span>
-                        <span className="flex items-center gap-1.5 min-w-0">
-                          <OrganizationLogo
-                            logo={transaction.receiverOrgLogo}
-                            name={transaction.receiverOrgName}
-                            size="sm"
-                          />
-                          <span className="text-body text-muted-foreground whitespace-nowrap">
-                            {transaction.receiverOrgAcronym || transaction.receiverOrgName}
-                          </span>
-                        </span>
+                        {(() => {
+                          const providerLabel = transaction.providerOrgAcronym || (transaction.providerOrgName !== 'Unknown' ? transaction.providerOrgName : '');
+                          const receiverLabel = transaction.receiverOrgAcronym || (transaction.receiverOrgName !== 'Unknown' ? transaction.receiverOrgName : '');
+                          return (
+                            <>
+                              <span className="flex items-center gap-1.5 flex-shrink-0">
+                                {providerLabel ? (
+                                  <>
+                                    <OrganizationLogo
+                                      logo={transaction.providerOrgLogo}
+                                      name={transaction.providerOrgName}
+                                      size="sm"
+                                    />
+                                    <span className="text-body text-muted-foreground whitespace-nowrap">
+                                      {providerLabel}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <EmptyOrgIndicator role="provider" />
+                                )}
+                                <span className="text-muted-foreground">→</span>
+                              </span>
+                              <span className="flex items-center gap-1.5 min-w-0">
+                                {receiverLabel ? (
+                                  <>
+                                    <OrganizationLogo
+                                      logo={transaction.receiverOrgLogo}
+                                      name={transaction.receiverOrgName}
+                                      size="sm"
+                                    />
+                                    <span className="text-body text-muted-foreground whitespace-nowrap">
+                                      {receiverLabel}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <EmptyOrgIndicator role="receiver" />
+                                )}
+                              </span>
+                            </>
+                          );
+                        })()}
                       </div>
                     </TableCell>
                     <TableCell>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent } from "@/components/ui/card";
+import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -215,12 +216,14 @@ export default function ValidationsPage() {
                         )}
                         
                         <div className="flex items-center gap-4 text-body text-muted-foreground">
-                          <span>Partner ID: {activity.partnerId}</span>
+                          {activity.partnerId && (
+                            <span className="flex items-center gap-1.5">Partner ID: <CopyableIdBadge value={activity.partnerId} label="Partner ID" tooltip="Click to copy partner ID" /></span>
+                          )}
                           {activity.submittedByName && (
                             <span>Submitted by {activity.submittedByName}</span>
                           )}
                           {activity.submittedAt && (
-                            <span>{format(new Date(activity.submittedAt), 'MMM d, yyyy')}</span>
+                            <span>{format(new Date(activity.submittedAt), 'd MMM yyyy')}</span>
                           )}
                           {activity.comments && activity.comments.length > 0 && (
                             <div className="flex items-center gap-1">

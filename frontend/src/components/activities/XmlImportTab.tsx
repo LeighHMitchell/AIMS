@@ -81,6 +81,8 @@ import {
   Save,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
+import { formatDate } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 
 interface IatiImportTabProps {
   activityId: string;
@@ -253,8 +255,10 @@ const getBudgetTypeName = (code: string): string => {
   return typeMap[code] || `Type ${code}`;
 };
 
+// Plain-string "ISO code + value" form for progress messages (the lib's
+// helpers are symbol-first; <CurrencyValue> is JSX-only, so neither fits here).
 const formatCurrencyValue = (value: number | undefined, currency: string): string => {
-  if (value === undefined || value === null) return 'N/A';
+  if (value === undefined || value === null) return '—';
   return `${currency} ${value.toLocaleString()}`;
 };
 
@@ -473,39 +477,6 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
     return `${code} ${fullName}`;
   };
   
-  // Format currency with validation
-  const formatCurrency = (value: number, currency?: string) => {
-    const isValidCurrency = currency && /^[A-Z]{3}$/.test(currency);
-    const currencyCode = isValidCurrency ? currency : 'USD';
-    
-    // Format number with commas
-    const formattedValue = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-    
-    // Return JSX with grey, smaller currency code
-    return (
-      <>
-        <span className="text-xs text-muted-foreground">{currencyCode}</span> {formattedValue}
-      </>
-    );
-  };
-  
-  // Format date
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "N/A";
-    try {
-      return new Date(dateStr).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
   // Helper to format code with name: code in monospace gray, name normal
   // If name contains code at start (e.g., "110 Standard grant"), extract just the name part
   const formatCodeWithName = (code?: string, name?: string) => {
@@ -647,7 +618,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   <div>
                     <span className="text-muted-foreground font-medium">Total Budget:</span>
                     <div className="mt-0.5 text-foreground font-medium">
-                      {formatCurrency(activity.totalBudget, activity.currency)}
+                      <CurrencyValue amount={activity.totalBudget} currency={activity.currency} />
                     </div>
                   </div>
                 )}
@@ -655,7 +626,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   <div>
                     <span className="text-muted-foreground font-medium">Total Planned Disbursement:</span>
                     <div className="mt-0.5 text-foreground font-medium">
-                      {formatCurrency(activity.totalPlannedDisbursement, activity.currency)}
+                      <CurrencyValue amount={activity.totalPlannedDisbursement} currency={activity.currency} />
                     </div>
                   </div>
                 )}
@@ -663,7 +634,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   <div>
                     <span className="text-muted-foreground font-medium">Total Outgoing Commitment:</span>
                     <div className="mt-0.5 text-foreground font-medium">
-                      {formatCurrency(activity.totalOutgoingCommitment, activity.currency)}
+                      <CurrencyValue amount={activity.totalOutgoingCommitment} currency={activity.currency} />
                     </div>
                   </div>
                 )}
@@ -671,7 +642,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                   <div>
                     <span className="text-muted-foreground font-medium">Total Disbursement:</span>
                     <div className="mt-0.5 text-foreground font-medium">
-                      {formatCurrency(activity.totalDisbursement, activity.currency)}
+                      <CurrencyValue amount={activity.totalDisbursement} currency={activity.currency} />
                     </div>
                   </div>
                 )}
@@ -735,14 +706,14 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             {activity.startDatePlanned && (
               <div className="col-span-1">
                 <span className="text-muted-foreground font-medium">Planned Start:</span>
-                <div className="mt-0.5 text-foreground">{formatDate(activity.startDatePlanned)}</div>
+                <div className="mt-0.5 text-foreground">{formatDate(activity.startDatePlanned) || '—'}</div>
               </div>
             )}
 
             {activity.startDateActual && (
               <div className="col-span-1">
                 <span className="text-muted-foreground font-medium">Actual Start:</span>
-                <div className="mt-0.5 text-foreground">{formatDate(activity.startDateActual)}</div>
+                <div className="mt-0.5 text-foreground">{formatDate(activity.startDateActual) || '—'}</div>
               </div>
             )}
 
@@ -880,14 +851,14 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
             {activity.endDatePlanned && (
               <div className="col-span-1">
                 <span className="text-muted-foreground font-medium">Planned End:</span>
-                <div className="mt-0.5 text-foreground">{formatDate(activity.endDatePlanned)}</div>
+                <div className="mt-0.5 text-foreground">{formatDate(activity.endDatePlanned) || '—'}</div>
               </div>
             )}
 
             {activity.endDateActual && (
               <div className="col-span-1">
                 <span className="text-muted-foreground font-medium">Actual End:</span>
-                <div className="mt-0.5 text-foreground">{formatDate(activity.endDateActual)}</div>
+                <div className="mt-0.5 text-foreground">{formatDate(activity.endDateActual) || '—'}</div>
               </div>
             )}
 
@@ -909,7 +880,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
               <div className="col-span-1">
                 <span className="text-muted-foreground font-medium">Total Value:</span>
                 <div className="mt-0.5 text-foreground font-medium">
-                  {formatCurrency(activity.totalBudget, activity.currency)}
+                  <CurrencyValue amount={activity.totalBudget} currency={activity.currency} />
                 </div>
               </div>
             )}
@@ -9479,7 +9450,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                 importSelectedFields();
               }}
               disabled={parsedFields.filter(f => f.selected).length === 0}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
             >
               <DownloadCloud className="h-4 w-4 mr-2" />
               Import Selected Fields
@@ -9524,7 +9495,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                           });
                         });
                       }}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
                       size="lg"
                     >
                       <Copy className="h-4 w-4 mr-2" />
@@ -9901,7 +9872,7 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="text-body font-medium text-muted-foreground opacity-70 cursor-help">{field.importValue || 'N/A'}</span>
+                                    <span className="text-body font-medium text-muted-foreground opacity-70 cursor-help">{field.importValue || '—'}</span>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p className="text-helper">{field.inheritedFrom}</p>
@@ -9926,9 +9897,9 @@ export default function IatiImportTab({ activityId }: IatiImportTabProps) {
                             ) : typeof field.importValue === 'object' ? (
                               <span className="text-body text-muted-foreground italic">Complex data</span>
                             ) : field.fieldName === 'IATI Identifier' ? (
-                              <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue || 'N/A'}</span>
+                              <span className="text-sm font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{field.importValue || '—'}</span>
                             ) : (
-                              <span className="text-body font-medium text-foreground">{field.importValue || 'N/A'}</span>
+                              <span className="text-body font-medium text-foreground">{field.importValue || '—'}</span>
                             )}
                           </div>
                         </td>
@@ -10138,7 +10109,7 @@ const PortalDropdown = ({ sector, sectorsGroup, originalIndex, isOpen, onToggle,
   const dropdownContent = isOpen && buttonRect && (
     <div 
       ref={dropdownRef}
-      className="fixed bg-card border border-border rounded-md shadow-lg z-[9999] max-h-[200px] overflow-y-auto"
+      className="fixed bg-card border border-border rounded-md shadow-lg z-[10001] max-h-[200px] overflow-y-auto"
       style={{
         top: buttonRect.bottom + 4,
         left: buttonRect.left,
@@ -10883,7 +10854,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
                                     variant="default"
                                     size="sm"
                                     onClick={() => handleAddSubsector(originalCode, sector.originalPercentage)}
-                                    className="h-8 px-3 text-helper bg-blue-600 hover:bg-blue-700 text-white"
+                                    className="h-8 px-3 text-helper bg-primary hover:bg-primary/90 text-primary-foreground"
                                   >
                                     <Plus className="h-3 w-3 mr-1" />
                                     Add Subsector
@@ -10981,7 +10952,7 @@ const SectorRefinementModal = ({ isOpen, onClose, originalSectors, onSave }: Sec
           <Button
             onClick={handleSave}
             disabled={Math.abs(totalPercentage - 100) > 0.01}
-            className="bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             <Save className="h-4 w-4 mr-2" />
             Save Refined Sectors

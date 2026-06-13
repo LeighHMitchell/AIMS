@@ -179,7 +179,7 @@ export default function ContactSearchBar({ onSelect, onCreateNew }: ContactSearc
             <p className="text-helper text-muted-foreground px-2 py-1">
               {query
                 ? `Found ${filteredResults.length} contact${filteredResults.length !== 1 ? 's' : ''}`
-                : `${filteredResults.length} contact${filteredResults.length !== 1 ? 's' : ''} — type to filter`}
+                : `${filteredResults.length} contact${filteredResults.length !== 1 ? 's' : ''}, type to filter`}
             </p>
             {filteredResults.map((result) => {
               const fullName = [result.title, result.firstName, result.lastName].filter(Boolean).join(' ');

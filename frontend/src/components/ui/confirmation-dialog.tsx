@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 interface ConfirmationDialogProps {
   open: boolean
@@ -20,8 +20,6 @@ interface ConfirmationDialogProps {
   cancelText?: string
   isDestructive?: boolean
   isLoading?: boolean
-  /** Custom icon — defaults to AlertTriangle for destructive, none otherwise */
-  icon?: React.ReactNode
 }
 
 /**
@@ -49,23 +47,13 @@ export function ConfirmationDialog({
   cancelText = "Cancel",
   isDestructive = false,
   isLoading = false,
-  icon,
 }: ConfirmationDialogProps) {
-  const displayIcon =
-    icon !== undefined
-      ? icon
-      : isDestructive
-        ? <AlertTriangle className="h-5 w-5 text-destructive" />
-        : null
-
   return (
     <Dialog open={open} onOpenChange={isLoading ? undefined : onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {displayIcon}
-            {title}
-          </DialogTitle>
+          {/* DialogTitle is text-only by design-system rule — no leading icon */}
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="pt-3">
             {description}
           </DialogDescription>

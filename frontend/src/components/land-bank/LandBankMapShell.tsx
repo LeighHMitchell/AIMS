@@ -42,7 +42,7 @@ const ESRI_SATELLITE_STYLE = {
       ],
       tileSize: 256,
       attribution:
-        "© Esri — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+        "© Esri. Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
       maxzoom: 19,
     },
   },

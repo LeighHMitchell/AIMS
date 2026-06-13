@@ -445,7 +445,7 @@ export default function MembersSection({ workingGroupId }: MembersSectionProps) 
                   </td>
                   <td className="px-4 py-3 text-body text-muted-foreground">{member.person_email || '—'}</td>
                   <td className="px-4 py-3 text-body text-muted-foreground whitespace-nowrap">
-                    {member.joined_on ? format(new Date(member.joined_on), 'MMM d, yyyy') : '—'}
+                    {member.joined_on ? format(new Date(member.joined_on), 'd MMM yyyy') : '—'}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <DropdownMenu>

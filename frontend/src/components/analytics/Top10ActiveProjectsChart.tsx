@@ -249,7 +249,7 @@ export function Top10ActiveProjectsChart({
             </thead>
             <tbody>
               {data.map((entry, index) => (
-                <tr key={entry.orgId} className={index % 2 === 0 ? 'bg-muted' : 'bg-white'}>
+                <tr key={entry.orgId} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                   <td className="py-3 px-4 text-foreground">
                     {entry.name}{entry.acronym ? ` (${entry.acronym})` : ''}
                   </td>

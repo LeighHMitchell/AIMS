@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
-import { Loader2, AlertTriangle, Check } from 'lucide-react'
+import { Loader2, Check } from 'lucide-react'
 import { LoadingText } from '@/components/ui/loading-text'
 import {
   AlertDialog,
@@ -199,10 +199,9 @@ export function SectorAllocationModeToggle({
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              {pendingMode === 'activity' 
-                ? 'Switch to Activity-Level Sectors?' 
+            <AlertDialogTitle>
+              {pendingMode === 'activity'
+                ? 'Switch to Activity-Level Sectors?'
                 : 'Switch to Transaction-Level Sectors?'}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">

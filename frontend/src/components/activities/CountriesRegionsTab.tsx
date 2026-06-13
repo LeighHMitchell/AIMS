@@ -1077,7 +1077,7 @@ export default function CountriesRegionsTab({
                           <TooltipContent side="top" className="max-w-xs">
                             <p>
                               The IATI vocabulary is set automatically by the
-                              Type you pick — Country uses ISO 3166-1 alpha-2,
+                              Type you pick. Country uses ISO 3166-1 alpha-2,
                               Region uses OECD DAC, and Custom uses your
                               reporting organisation's vocabulary.
                             </p>

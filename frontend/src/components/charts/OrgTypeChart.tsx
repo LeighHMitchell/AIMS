@@ -266,7 +266,7 @@ export const OrgTypeChart: React.FC<OrgTypeChartProps> = ({
       <div className="mt-6">
         <p className="text-body text-muted-foreground leading-relaxed">
           This chart compares planned budgets with actual spending (disbursements and expenditures) by
-          organisation type — government, NGO, multilateral, private sector and so on. Use it to see which
+          organisation type, such as government, NGO, multilateral, private sector and so on. Use it to see which
           kinds of actors channel the most resources and how their spending tracks against budget,
           highlighting where particular delivery channels are over- or under-performing. All amounts are USD.
         </p>

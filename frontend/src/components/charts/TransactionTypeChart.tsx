@@ -18,8 +18,8 @@ import { ChartViewToggle } from "@/components/ui/chart-view-toggle";
 import { InlineViewToggle, InlineCsvButton, useChartCardTableMode } from "@/components/ui/inline-toolbar-buttons";
 import { ChartLoadingPlaceholder } from "@/components/ui/loading-text";
 import { apiFetch } from '@/lib/api-fetch';
-import { CHART_STRUCTURE_COLORS, getTransactionTypeColor } from '@/lib/chart-colors';
-import { formatAxisCurrency } from '@/lib/format';
+import { CHART_STRUCTURE_COLORS, getTransactionTypeColor, OTHERS_COLOR } from '@/lib/chart-colors';
+import { formatAxisCurrency, formatTooltipCurrency } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
 
@@ -90,20 +90,6 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
   // of truth (lib/chart-colors) so this chart matches every other
   // transaction-type chart in the app.
 
-  const formatValue = (value: number) => {
-    if (metric === 'value') {
-      if (value >= 1000000000) {
-        return `${(value / 1000000000).toFixed(1)}B`;
-      } else if (value >= 1000000) {
-        return `${(value / 1000000).toFixed(1)}M`;
-      } else if (value >= 1000) {
-        return `${(value / 1000).toFixed(0)}K`;
-      }
-      return value.toLocaleString();
-    }
-    return value.toString();
-  };
-
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -113,8 +99,8 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
           title={data.typeName}
           rows={[
             { label: `# of ${data.typeName} Transactions`, value: data.count.toLocaleString(), color },
-            { label: 'Total Value', value: `${currency} ${data.totalValue.toLocaleString()}` },
-            { label: 'Average', value: `${currency} ${data.averageValue.toLocaleString()}` },
+            { label: 'Total Value', value: formatTooltipCurrency(data.totalValue, isExpanded, currency) },
+            { label: 'Average', value: formatTooltipCurrency(data.averageValue, isExpanded, currency) },
             { label: 'Percentage', value: `${data.percentage.toFixed(1)}%` },
           ]}
         />
@@ -250,7 +236,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
               label={renderTxLabel}
               outerRadius={140}
               innerRadius={70}
-              fill="#8884d8"
+              fill={OTHERS_COLOR}
               dataKey="displayValue"
               paddingAngle={2}
             >
@@ -267,7 +253,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
             <YAxis
               stroke="#4c5568"
               fontSize={12}
-              tickFormatter={metric === 'value' ? formatAxisCurrency : formatValue}
+              tickFormatter={metric === 'value' ? (v: number) => formatAxisCurrency(v) : (v: number) => String(v)}
               label={{ 
                 value: metric === 'count' ? 'Count' : `Value (${currency})`, 
                 angle: -90, 
@@ -289,7 +275,7 @@ export const TransactionTypeChart: React.FC<TransactionTypeChartProps> = ({
       {/* Explanatory text — only in expanded view */}
       {isExpanded && (
         <p className="text-body text-muted-foreground leading-relaxed mt-6">
-          This chart groups every reported transaction by its IATI transaction type — commitments, disbursements, expenditures and the rest — so you can see where financial activity is concentrated. Toggle between transaction count and total value to compare how often each type is reported against how much money it represents, and switch to the bar view to read the magnitudes directly. Disbursements are usually the clearest signal of money actually reaching the ground, so a healthy portfolio typically shows disbursements and expenditures making up a substantial share of total value.
+          This chart groups every reported transaction by its IATI transaction type (commitments, disbursements, expenditures and the rest) so you can see where financial activity is concentrated. Toggle between transaction count and total value to compare how often each type is reported against how much money it represents, and switch to the bar view to read the magnitudes directly. Disbursements are usually the clearest signal of money actually reaching the ground, so a healthy portfolio typically shows disbursements and expenditures making up a substantial share of total value.
         </p>
       )}
     </div>

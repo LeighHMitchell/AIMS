@@ -965,7 +965,7 @@ export function SectorMappingsManagement() {
             <ChevronsUpDown className="h-3 w-3 ml-2 shrink-0 opacity-50" />
           </div>
         </PopoverTrigger>
-        <PopoverContent align="start" side="bottom" sideOffset={4} className="w-[450px] p-0 z-[9999]" avoidCollisions={true} collisionPadding={20}>
+        <PopoverContent align="start" side="bottom" sideOffset={4} className="w-[450px] p-0 z-[10005]" avoidCollisions={true} collisionPadding={20}>
           <Command>
             <CommandInput
               placeholder="Search by code or name..."

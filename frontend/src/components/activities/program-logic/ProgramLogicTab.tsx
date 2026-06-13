@@ -260,7 +260,7 @@ export function ProgramLogicTab({ activityId, readOnly = false }: ProgramLogicTa
     if (!graph) return;
     try {
       await deleteLogic(graph.logic.id);
-      toast.success("Program logic deleted — you can create a new one");
+      toast.success("Program logic deleted. You can create a new one");
       setGraph(null);
       setNotSetup(true);
       setScope("investment");
@@ -277,7 +277,7 @@ export function ProgramLogicTab({ activityId, readOnly = false }: ProgramLogicTa
       title: "Delete Program Logic?",
       description: (
         <>
-          This permanently removes the entire program logic for this investment —
+          This permanently removes the entire program logic for this investment:
           every tier, node, contribution link, indicator link and snapshot. This
           cannot be undone. You can then create a new one from any framework.
         </>
@@ -294,7 +294,7 @@ export function ProgramLogicTab({ activityId, readOnly = false }: ProgramLogicTa
         count > 0 ? (
           <>
             “{tier.name}” still has {count} node{count === 1 ? "" : "s"}. Move or
-            delete those first — a tier with nodes can't be removed.
+            delete those first; a tier with nodes can't be removed.
           </>
         ) : (
           <>Remove the “{tier.name}” tier from this program logic?</>
@@ -368,7 +368,7 @@ export function ProgramLogicTab({ activityId, readOnly = false }: ProgramLogicTa
             <h3 className="text-lg font-semibold truncate">{logic.title}</h3>
             <HelpTextTooltip
               size="sm"
-              content="A program logic is the design-level theory of change for this investment — tiers of statements (outputs → outcomes → impact) connected by contribution links. It sits above the machine-readable IATI results and is never exported to IATI; only any indicators you link to it export."
+              content="A program logic is the design-level theory of change for this investment: tiers of statements (outputs → outcomes → impact) connected by contribution links. It sits above the machine-readable IATI results and is never exported to IATI; only any indicators you link to it export."
             />
             <Badge variant="secondary">{presetLabel}</Badge>
             <HelpTextTooltip
@@ -441,7 +441,7 @@ export function ProgramLogicTab({ activityId, readOnly = false }: ProgramLogicTa
               </Button>
               <HelpTextTooltip
                 size="sm"
-                content="Delete this entire program logic — every tier, node, link and snapshot — so you can start afresh with a different framework. This cannot be undone."
+                content="Delete this entire program logic (every tier, node, link and snapshot) so you can start afresh with a different framework. This cannot be undone."
               />
             </>
           )}
@@ -557,7 +557,7 @@ export function ProgramLogicTab({ activityId, readOnly = false }: ProgramLogicTa
           <Target className="h-3.5 w-3.5 mr-1" /> indicators
           <HelpTextTooltip
             size="sm"
-            content="Attach existing IATI result indicators as measurement evidence for a node. Optional — a node can have zero. Linking never creates an indicator; unlinking never deletes one."
+            content="Attach existing IATI result indicators as measurement evidence for a node. Optional, since a node can have zero. Linking never creates an indicator; unlinking never deletes one."
           />
         </span>
         <span className="inline-flex items-center">
@@ -598,7 +598,7 @@ export function ProgramLogicTab({ activityId, readOnly = false }: ProgramLogicTa
                     Accountability ceiling
                     <HelpTextTooltip
                       size="sm"
-                      content="The tier the implementer is accountable to deliver. Links crossing above this line (to higher tiers) default to ‘contribution’ — you influence but don't solely cause the higher result. At or below it, ‘attribution’ is allowed."
+                      content="The tier the implementer is accountable to deliver. Links crossing above this line (to higher tiers) default to ‘contribution’, meaning you influence but don't solely cause the higher result. At or below it, ‘attribution’ is allowed."
                     />
                   </span>
                   <div className="flex-1 border-t border-dashed border-amber-400" />

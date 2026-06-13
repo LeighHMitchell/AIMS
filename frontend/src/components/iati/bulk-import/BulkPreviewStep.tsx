@@ -49,6 +49,7 @@ import type { ParsedActivity } from './types'
 import { IATI_COUNTRIES } from '@/data/iati-countries'
 import { useHomeCountry } from '@/contexts/SystemSettingsContext'
 import { codeAndName } from '@/lib/iati/codelist-resolver'
+import { formatDate } from '@/lib/format'
 
 interface BulkPreviewStepProps {
   activities: ParsedActivity[]
@@ -815,32 +816,22 @@ export default function BulkPreviewStep({
                         </div>
                       </TableCell>
                       <TableCell className="text-helper text-muted-foreground">
-                        {(() => {
-                          const formatDate = (dateStr: string) => {
-                            const d = new Date(dateStr)
-                            return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                          }
-                          return (
-                            <>
-                              {activity.planned_start_date && (
-                                <span>{formatDate(activity.planned_start_date)}</span>
-                              )}
-                              {activity.planned_start_date && activity.planned_end_date && ' → '}
-                              {activity.planned_end_date && (
-                                <span>{formatDate(activity.planned_end_date)}</span>
-                              )}
-                            </>
-                          )
-                        })()}
+                        {activity.planned_start_date && (
+                          <span>{formatDate(activity.planned_start_date)}</span>
+                        )}
+                        {activity.planned_start_date && activity.planned_end_date && ' → '}
+                        {activity.planned_end_date && (
+                          <span>{formatDate(activity.planned_end_date)}</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-center text-helper text-muted-foreground">
-                        {classifyScope(activity, filterCountry) === 'Unknown' ? '-' : classifyScope(activity, filterCountry)}
+                        {classifyScope(activity, filterCountry) === 'Unknown' ? '—' : classifyScope(activity, filterCountry)}
                       </TableCell>
                       <TableCell className="text-right text-body">
                         {(activity.transactions || []).length}
                       </TableCell>
                       <TableCell className="text-right text-body">
-                        {(activity.budgets || []).length || '-'}
+                        {(activity.budgets || []).length || '—'}
                       </TableCell>
                       <TableCell className="text-center">
                         {hasErrors ? (
@@ -869,7 +860,7 @@ export default function BulkPreviewStep({
                         {activity.lastUpdatedDatetime && (
                           <div className="flex items-center gap-1 text-helper text-muted-foreground mb-3">
                             <Clock className="h-3 w-3" />
-                            Last updated: {new Date(activity.lastUpdatedDatetime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            Last updated: {formatDate(activity.lastUpdatedDatetime)}
                           </div>
                         )}
 
@@ -1048,7 +1039,7 @@ export default function BulkPreviewStep({
                                   <Calendar className="h-3 w-3" /> Actual Start
                                 </span>
                                 <p className="text-muted-foreground mt-0.5">
-                                  {new Date(activity.actual_start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  {formatDate(activity.actual_start_date)}
                                 </p>
                               </div>
                             )}
@@ -1059,7 +1050,7 @@ export default function BulkPreviewStep({
                                   <Calendar className="h-3 w-3" /> Actual End
                                 </span>
                                 <p className="text-muted-foreground mt-0.5">
-                                  {new Date(activity.actual_end_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  {formatDate(activity.actual_end_date)}
                                 </p>
                               </div>
                             )}
@@ -1088,7 +1079,7 @@ export default function BulkPreviewStep({
                                               <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{c.code}</span>
                                               {countryName}
                                             </td>
-                                            <td className={`py-1 text-right ${isHomeCountry ? 'text-foreground' : ''}`}>{c.percentage != null ? `${c.percentage}%` : '-'}</td>
+                                            <td className={`py-1 text-right ${isHomeCountry ? 'text-foreground' : ''}`}>{c.percentage != null ? `${c.percentage}%` : '—'}</td>
                                           </tr>
                                         )
                                       })}
@@ -1139,7 +1130,7 @@ export default function BulkPreviewStep({
                                             <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1.5">{r.code}</span>
                                             {regionNames[r.code] || r.code}
                                           </td>
-                                          <td className="py-1 text-right">{r.percentage != null ? `${r.percentage}%` : '-'}</td>
+                                          <td className="py-1 text-right">{r.percentage != null ? `${r.percentage}%` : '—'}</td>
                                         </tr>
                                       )
                                     })}
@@ -1176,7 +1167,7 @@ export default function BulkPreviewStep({
                           <div className="space-y-3">
                             {activity.participatingOrgs && activity.participatingOrgs.length > 0 && (
                               <div>
-                                <span className="font-medium text-foreground text-helper uppercase">Organizations</span>
+                                <span className="font-medium text-foreground text-helper uppercase">Organisations</span>
                                 <table className="mt-1 w-full text-helper">
                                   <tbody>
                                     {activity.participatingOrgs.map((org, i) => {
@@ -1212,7 +1203,7 @@ export default function BulkPreviewStep({
                                                 {orgTypeNames[org.type] || ''}
                                               </>
                                             ) : (
-                                              <span className="text-muted-foreground">-</span>
+                                              <span className="text-muted-foreground">—</span>
                                             )}
                                           </td>
                                           <td className="py-1 text-muted-foreground">{org.name}</td>
@@ -1259,7 +1250,7 @@ export default function BulkPreviewStep({
                                             {' '}
                                             {s.name || s.code}
                                           </td>
-                                          <td className="py-1 text-right">{s.percentage != null ? `${s.percentage}%` : '-'}</td>
+                                          <td className="py-1 text-right">{s.percentage != null ? `${s.percentage}%` : '—'}</td>
                                         </tr>
                                       )
                                     })}
@@ -1335,7 +1326,7 @@ export default function BulkPreviewStep({
                                               <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground mr-1">{c.type}</span>
                                               {condTypeNames[c.type] || ''}
                                             </td>
-                                            <td className="py-1 text-muted-foreground">{c.narrative || '-'}</td>
+                                            <td className="py-1 text-muted-foreground">{c.narrative || '—'}</td>
                                           </tr>
                                         )
                                       })}
@@ -1384,10 +1375,10 @@ export default function BulkPreviewStep({
                                             {txTypeNames[tx.type] || tx.type}
                                           </td>
                                           <td className="py-1 text-center">
-                                            {tx.recipientCountryCode ? <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{tx.recipientCountryCode}</span> : <span className="text-gray-300">-</span>}
+                                            {tx.recipientCountryCode ? <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{tx.recipientCountryCode}</span> : <span className="text-gray-300">—</span>}
                                           </td>
                                           <td className="py-1 text-center">
-                                            {tx.recipientRegionCode ? <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{tx.recipientRegionCode}</span> : <span className="text-gray-300">-</span>}
+                                            {tx.recipientRegionCode ? <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{tx.recipientRegionCode}</span> : <span className="text-gray-300">—</span>}
                                           </td>
                                           <td className="py-1 text-right font-medium"><span className="text-helper text-muted-foreground mr-0.5">{tx.currency}</span>{tx.value?.toLocaleString()}</td>
                                         </tr>
@@ -1493,7 +1484,7 @@ export default function BulkPreviewStep({
                                           <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground">{item.code}</span>
                                           {item.description && <span className="ml-1.5">{item.description}</span>}
                                         </td>
-                                        <td className="py-1 text-right">{item.percentage != null ? `${item.percentage}%` : '-'}</td>
+                                        <td className="py-1 text-right">{item.percentage != null ? `${item.percentage}%` : '—'}</td>
                                       </tr>
                                     ))}
                                   </tbody>
@@ -1533,7 +1524,7 @@ export default function BulkPreviewStep({
                                                   <span className="text-muted-foreground">{contactTypeNames[contact.type] || ''}</span>
                                                 </>
                                               ) : (
-                                                <span className="text-muted-foreground">-</span>
+                                                <span className="text-muted-foreground">—</span>
                                               )}
                                             </td>
                                           </tr>
@@ -1547,7 +1538,7 @@ export default function BulkPreviewStep({
                                                   {contact.departmentName && <span className="text-muted-foreground">{contact.departmentName}</span>}
                                                 </>
                                               ) : (
-                                                <span className="text-muted-foreground">-</span>
+                                                <span className="text-muted-foreground">—</span>
                                               )}
                                             </td>
                                           </tr>
@@ -1571,7 +1562,7 @@ export default function BulkPreviewStep({
                                                   </p>
                                                 )}
                                                 {!contact.personName && !contact.email && !contact.telephone && !contact.website && (
-                                                  <span className="text-muted-foreground">-</span>
+                                                  <span className="text-muted-foreground">—</span>
                                                 )}
                                               </div>
                                             </td>
@@ -1630,14 +1621,14 @@ export default function BulkPreviewStep({
                                                 <p className="text-muted-foreground mt-0.5">{docCategoryNames[doc.categoryCode] || ''}</p>
                                               </>
                                             ) : (
-                                              <span className="text-muted-foreground">-</span>
+                                              <span className="text-muted-foreground">—</span>
                                             )}
                                           </td>
                                           <td className="py-1.5 text-muted-foreground align-top">
                                             <p className="font-medium">{doc.title || 'Untitled'}</p>
                                             {doc.documentDate && (
                                               <p className="text-muted-foreground text-[10px]">
-                                                {new Date(doc.documentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                {formatDate(doc.documentDate)}
                                               </p>
                                             )}
                                           </td>
@@ -1745,7 +1736,7 @@ export default function BulkPreviewStep({
                                                 <span className="bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground" title={sigNames[pm.significance] || ''}>
                                                   {sigNames[pm.significance] || pm.significance}
                                                 </span>
-                                              ) : '-'}
+                                              ) : '—'}
                                             </td>
                                           </tr>
                                         )
@@ -1941,10 +1932,10 @@ export default function BulkPreviewStep({
                                           <tr key={i} className="border-t border-border">
                                             <td className="py-1 text-muted-foreground">{ls.year}</td>
                                             <td className="py-1 text-right text-muted-foreground">
-                                              {ls.principalOutstanding != null ? `${ls.currency || 'USD'} ${ls.principalOutstanding.toLocaleString()}` : '-'}
+                                              {ls.principalOutstanding != null ? `${ls.currency || 'USD'} ${ls.principalOutstanding.toLocaleString()}` : '—'}
                                             </td>
                                             <td className="py-1 text-right text-muted-foreground">
-                                              {ls.interestReceived != null ? `${ls.currency || 'USD'} ${ls.interestReceived.toLocaleString()}` : '-'}
+                                              {ls.interestReceived != null ? `${ls.currency || 'USD'} ${ls.interestReceived.toLocaleString()}` : '—'}
                                             </td>
                                           </tr>
                                         ))}

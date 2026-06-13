@@ -272,7 +272,7 @@ export function ParticipatingOrgModal({
             className="flex items-center gap-2 cursor-pointer text-body text-muted-foreground hover:text-foreground transition-colors py-2"
           >
             <span>Advanced Fields</span>
-            <HelpTextTooltip content="These optional fields provide additional IATI-compliant metadata for specialized reporting requirements." />
+            <HelpTextTooltip content="These optional fields provide additional IATI-compliant metadata for specialised reporting requirements." />
             {showAdvanced ? (
               <ChevronUp className="h-4 w-4" />
             ) : (
@@ -301,7 +301,7 @@ export function ParticipatingOrgModal({
               <div className="space-y-2">
                 <Label htmlFor="activity_id_ref" className="flex items-center gap-2">
                   Related Activity IATI Identifier
-                  <HelpTextTooltip content="The IATI identifier of a related activity if the organization also reports it. This corresponds to the @activity-id attribute in IATI XML." />
+                  <HelpTextTooltip content="The IATI identifier of a related activity if the organisation also reports it. This corresponds to the @activity-id attribute in IATI XML." />
                 </Label>
                 <Input
                   id="activity_id_ref"

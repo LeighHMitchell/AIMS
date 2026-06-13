@@ -10,7 +10,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 import { Layers, MapPin, PieChart as PieChartIcon, Calendar } from "lucide-react"
 import Link from "next/link"
 import { formatAxisCurrency } from "@/lib/format"
-import { getActivityStatusDisplay } from "@/lib/activity-status-utils"
+import { ActivityStatusRow } from "@/components/ui/status-row"
 
 interface ChildActivity {
   id: string
@@ -200,9 +200,7 @@ export function FundDisbursementsView({ activityId }: FundDisbursementsViewProps
                     </Link>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={`text-xs ${getActivityStatusDisplay(child.status).className}`}>
-                      {getActivityStatusDisplay(child.status).label}
-                    </Badge>
+                    <ActivityStatusRow status={child.status} className="text-xs" />
                   </TableCell>
                   <TableCell className="text-right">
                     {child.committed > 0 ? `$${child.committed.toLocaleString()}` : '-'}

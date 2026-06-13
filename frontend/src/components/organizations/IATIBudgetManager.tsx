@@ -340,11 +340,6 @@ export function IATIBudgetManager({
     toast('Budget line deleted');
   };
 
-  const formatCurrency = (amount: number | undefined, currency: string = defaultCurrency) => {
-    if (amount === undefined) return 'N/A';
-    return formatCurrencyPrecise(amount, currency);
-  };
-
   const renderBudgetCard = (budget: Budget, budgetIndex: number) => {
     const typeInfo = BUDGET_TYPES.find(t => t.value === budget.budgetType);
     const Icon = typeInfo?.icon || DollarSign;
@@ -370,7 +365,9 @@ export function IATIBudgetManager({
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary">
-                {formatCurrency(budget.value, budget.currency)}
+                {budget.value !== undefined
+                  ? formatCurrencyPrecise(budget.value, budget.currency || defaultCurrency)
+                  : '—'}
               </Badge>
               {!readOnly && (
                 <div className="flex gap-1">
@@ -433,7 +430,9 @@ export function IATIBudgetManager({
                         {line.narrative || `Line ${lineIndex + 1}`}
                       </div>
                       <div className="text-helper text-muted-foreground">
-                        {formatCurrency(line.value, line.currency)}
+                        {line.value !== undefined
+                          ? formatCurrencyPrecise(line.value, line.currency || defaultCurrency)
+                          : '—'}
                         {line.ref && <span className="ml-2">Ref: {line.ref}</span>}
                       </div>
                     </div>

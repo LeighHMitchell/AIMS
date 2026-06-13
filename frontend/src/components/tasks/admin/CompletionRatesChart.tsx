@@ -14,7 +14,7 @@ export function CompletionRatesChart({ data }: CompletionRatesChartProps) {
     return {
       labels: data.map((d) => {
         const date = new Date(d.date);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return date.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
       }),
       created: data.map((d) => d.created),
       completed: data.map((d) => d.completed),
@@ -57,7 +57,7 @@ export function CompletionRatesChart({ data }: CompletionRatesChartProps) {
           const createdHeight = (item.created / maxValue) * 180;
           const completedHeight = (item.completed / maxValue) * 180;
           const date = new Date(item.date);
-          const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const label = date.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
 
           return (
             <div

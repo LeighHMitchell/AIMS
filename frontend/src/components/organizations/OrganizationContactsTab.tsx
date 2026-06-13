@@ -1093,7 +1093,7 @@ function ContactFormDialog({
             <Label htmlFor="type">
               Contact Type <RequiredDot />
               <FieldHelp>
-                The IATI contact type — pick the role this person plays. "General Enquiries" is fine for a public-facing point of contact; use "Financial Management" or "Project Management" when this person handles a specific function.
+                The IATI contact type. Pick the role this person plays. "General Enquiries" is fine for a public-facing point of contact; use "Financial Management" or "Project Management" when this person handles a specific function.
               </FieldHelp>
             </Label>
             <Popover open={contactTypeOpen} onOpenChange={setContactTypeOpen}>
@@ -1256,7 +1256,7 @@ function ContactFormDialog({
             <Label htmlFor="email">
               Email
               <FieldHelp>
-                Public-facing email — typically a role-based address like info@example.org. Avoid sharing personal mailboxes unless the contact is happy to receive direct enquiries.
+                Public-facing email, typically a role-based address like info@example.org. Avoid sharing personal mailboxes unless the contact is happy to receive direct enquiries.
               </FieldHelp>
             </Label>
             <Input
@@ -1286,7 +1286,7 @@ function ContactFormDialog({
             <div className="col-span-8">
               <Label htmlFor="phoneNumber">
                 Phone Number
-                <FieldHelp>Just the number — no country code (that's set in the field on the left). Spaces and hyphens are fine.</FieldHelp>
+                <FieldHelp>Just the number, with no country code (that's set in the field on the left). Spaces and hyphens are fine.</FieldHelp>
               </Label>
               <Input
                 id="phoneNumber"
@@ -1302,7 +1302,7 @@ function ContactFormDialog({
             <Label htmlFor="website">
               Website
               <FieldHelp>
-                Personal or role-specific page — for example a staff bio. Must include the protocol, e.g. https://example.org/team/alex.
+                Personal or role-specific page, for example a staff bio. Must include the protocol, e.g. https://example.org/team/alex.
               </FieldHelp>
             </Label>
             <Input
@@ -1320,7 +1320,7 @@ function ContactFormDialog({
             <Label htmlFor="mailingAddress">
               Mailing Address
               <FieldHelp>
-                Full postal address for letters or deliveries — street, city, region, postal code, and country. Leave blank if the contact has no public mailing address.
+                Full postal address for letters or deliveries: street, city, region, postal code, and country. Leave blank if the contact has no public mailing address.
               </FieldHelp>
             </Label>
             <textarea
@@ -1329,7 +1329,7 @@ function ContactFormDialog({
               onChange={(e) => handleChange('mailingAddress', e.target.value)}
               placeholder="Street address, city, postal code"
               rows={3}
-              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
@@ -1338,7 +1338,7 @@ function ContactFormDialog({
             <Label htmlFor="notes">
               Notes
               <FieldHelp>
-                Internal context that won't appear publicly — for example "best reached on Tuesdays" or "covers Yangon office only". Keep sensitive data out of this field.
+                Internal context that won't appear publicly, for example "best reached on Tuesdays" or "covers Yangon office only". Keep sensitive data out of this field.
               </FieldHelp>
             </Label>
             <textarea
@@ -1347,7 +1347,7 @@ function ContactFormDialog({
               onChange={(e) => handleChange('notes', e.target.value)}
               placeholder="Additional notes about this contact..."
               rows={2}
-              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </form>

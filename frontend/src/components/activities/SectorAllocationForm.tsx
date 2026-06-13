@@ -240,7 +240,7 @@ export default function SectorAllocationForm({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search DAC 5 code or sub-sector name..."
-                className="w-full pl-10 pr-3 py-2 border border-input rounded-md focus:ring-blue-800 focus:border-blue-800"
+                className="w-full pl-10 pr-3 py-2 border border-input rounded-md focus:ring-ring focus:border-blue-800"
               />
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
             </div>
@@ -309,7 +309,7 @@ export default function SectorAllocationForm({
                       value={allocation.percentage}
                       onChange={(e) => updateAllocationPercentage(allocation.id!, parseFloat(e.target.value) || 0)}
                       onFocus={() => setActiveAllocationId(allocation.id!)}
-                      className="w-24 px-2 py-1 border border-input rounded-md text-body focus:ring-blue-800 focus:border-blue-800"
+                      className="w-24 px-2 py-1 border border-input rounded-md text-body focus:ring-ring focus:border-blue-800"
                     />
                     <span className="text-body text-muted-foreground">%</span>
                   </div>

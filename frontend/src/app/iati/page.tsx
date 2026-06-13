@@ -148,7 +148,7 @@ export default function IATIImportPage() {
                 <button
                   onClick={handleParse}
                   disabled={isUploading}
-                  className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="ml-auto px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
                 >
                   {isUploading ? 'Processing...' : 'Parse File'}
                 </button>
@@ -197,7 +197,7 @@ export default function IATIImportPage() {
               </div>
               
               <div className="bg-green-50 p-4 rounded">
-                <p className="text-body text-[hsl(var(--success-icon))] font-medium">Organizations</p>
+                <p className="text-body text-[hsl(var(--success-icon))] font-medium">Organisations</p>
                 <p className="text-2xl font-bold text-green-900">{parseResult.organizations.length}</p>
                 {parseResult.organizations.filter(o => o.matched).length > 0 && (
                   <p className="text-helper text-[hsl(var(--success-icon))] mt-1">
@@ -305,7 +305,7 @@ export default function IATIImportPage() {
                   <div className="mt-4 p-4 bg-blue-50 rounded">
                     <h3 className="font-medium text-blue-800 mb-2">Database Verification:</h3>
                     <ul className="text-body text-blue-600 space-y-1">
-                      <li>Total Organizations in DB: {importResult.verification.totalOrganizations || 0}</li>
+                      <li>Total Organisations in DB: {importResult.verification.totalOrganizations || 0}</li>
                       <li>Total Activities in DB: {importResult.verification.totalActivities || 0}</li>
                       <li>Total Transactions in DB: {importResult.verification.totalTransactions || 0}</li>
                     </ul>

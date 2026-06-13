@@ -245,7 +245,7 @@ export const AidTypeChart: React.FC<AidTypeChartProps> = ({
       <div className="mt-6">
         <p className="text-body text-muted-foreground leading-relaxed">
           This chart compares planned budgets against actual spending (disbursements and expenditures)
-          broken down by IATI aid type — budget support, project aid, technical assistance and so on.
+          broken down by IATI aid type: budget support, project aid, technical assistance and so on.
           Use it to see which delivery modalities dominate the portfolio and where commitments are or
           aren&apos;t translating into spend: a tall budget bar with little disbursement signals aid that
           is pledged but not yet flowing through that modality. All amounts are USD.

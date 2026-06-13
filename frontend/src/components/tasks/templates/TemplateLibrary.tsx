@@ -89,7 +89,7 @@ export function TemplateLibrary({ userId, onApplyTemplate, onCreateNew }: Templa
       ...defaults,
       title: `${template.default_title || template.name} (Copy)`,
     } as Partial<WizardFormData>);
-    toast.success('Template duplicated - customize and save as new template');
+    toast.success('Template duplicated - customise and save as new template');
   };
 
   // Filter templates based on search and tab

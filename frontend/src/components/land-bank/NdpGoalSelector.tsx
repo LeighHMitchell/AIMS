@@ -110,7 +110,7 @@ export function NdpGoalSelector({
             <SelectItem value="none">None</SelectItem>
             {pillars.map(g => (
               <SelectItem key={g.id} value={g.id}>
-                {g.code} — {g.name}{legacyIds.has(g.id) ? " (previous plan)" : ""}
+                {g.code}: {g.name}{legacyIds.has(g.id) ? " (previous plan)" : ""}
               </SelectItem>
             ))}
           </SelectContent>
@@ -125,7 +125,7 @@ export function NdpGoalSelector({
               const goal = pillars.find(g => g.id === id)
               return (
                 <Badge key={id} variant="outline" className="gap-1 pr-1">
-                  {goal ? `${goal.code} — ${goal.name}${legacyIds.has(id) ? " (previous plan)" : ""}` : id}
+                  {goal ? `${goal.code}: ${goal.name}${legacyIds.has(id) ? " (previous plan)" : ""}` : id}
                   <button
                     type="button"
                     onClick={() => removeSecondary(id)}
@@ -146,7 +146,7 @@ export function NdpGoalSelector({
             <SelectContent>
               {availableSecondary.map(g => (
                 <SelectItem key={g.id} value={g.id}>
-                  {g.code} — {g.name}
+                  {g.code}: {g.name}
                 </SelectItem>
               ))}
             </SelectContent>

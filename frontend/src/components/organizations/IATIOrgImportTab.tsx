@@ -567,7 +567,7 @@ export default function IATIOrgImportTab({ organizationId, currentOrgData, onImp
                     <Input
                       value={xmlUrl}
                       onChange={(e) => setXmlUrl(e.target.value)}
-                      placeholder="https://example.com/organization.xml"
+                      placeholder="https://example.com/organisation.xml"
                       className="flex-1"
                     />
                     <Button onClick={handleParse} disabled={!xmlUrl.trim()}>

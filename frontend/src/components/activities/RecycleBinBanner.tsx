@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Trash2, Undo2, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/format';
 
 interface RecycleBinBannerProps {
   deletedAt?: string | null;
@@ -15,19 +16,6 @@ interface RecycleBinBannerProps {
   className?: string;
 }
 
-const formatDate = (iso?: string | null): string | null => {
-  if (!iso) return null;
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return null;
-  }
-};
-
 export const RecycleBinBanner: React.FC<RecycleBinBannerProps> = ({
   deletedAt,
   deletedByName,
@@ -37,8 +25,8 @@ export const RecycleBinBanner: React.FC<RecycleBinBannerProps> = ({
   className,
 }) => {
   const [restoring, setRestoring] = useState(false);
-  const deletedLabel = formatDate(deletedAt);
-  const purgeLabel = formatDate(purgeOnDate);
+  const deletedLabel = deletedAt ? formatDate(deletedAt) : '';
+  const purgeLabel = purgeOnDate ? formatDate(purgeOnDate) : '';
 
   const handleRestore = async () => {
     if (!onRestore) return;

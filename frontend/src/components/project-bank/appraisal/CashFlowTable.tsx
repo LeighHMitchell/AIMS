@@ -30,8 +30,8 @@ const COLUMN_LABELS: Record<string, string> = {
 };
 
 const COLUMN_HELP: Record<string, string> = {
-  capex: 'Capital Expenditure — one-time costs for construction, equipment, land acquisition, and other upfront investments. Enter the total amount in your project currency (e.g. USD). In Quick Entry mode, use the toggle to choose whether to distribute across construction years, operational years, or all years.',
-  opex: 'Operating Expenditure — recurring annual costs to run and maintain the project, including staffing, maintenance, utilities, and supplies. Enter the total amount in your project currency. In Quick Entry mode, use the toggle to choose the distribution period.',
+  capex: 'Capital Expenditure: one-time costs for construction, equipment, land acquisition, and other upfront investments. Enter the total amount in your project currency (e.g. USD). In Quick Entry mode, use the toggle to choose whether to distribute across construction years, operational years, or all years.',
+  opex: 'Operating Expenditure: recurring annual costs to run and maintain the project, including staffing, maintenance, utilities, and supplies. Enter the total amount in your project currency. In Quick Entry mode, use the toggle to choose the distribution period.',
   revenue: 'Projected income the project is expected to generate from user fees, tolls, lease payments, or other revenue streams. Enter the total amount in your project currency. In Quick Entry mode, use the toggle to choose the distribution period. Leave blank or zero if the project does not generate revenue.',
 };
 
@@ -152,7 +152,7 @@ export function CashFlowTable({
       {quickEntry && !readOnly && (
         <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-2">
           <p className="text-helper text-foreground font-medium">
-            Enter totals — they will be distributed across years automatically.
+            Enter totals; they will be distributed across years automatically.
           </p>
           <div className="grid grid-cols-3 gap-3">
             {columns.map(col => (

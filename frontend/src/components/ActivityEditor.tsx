@@ -166,7 +166,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
             onBlur={(e) => handleFieldBlur('title', e.target.value)}
             disabled={saving.title}
             placeholder="Enter activity title..."
-            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-muted disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:bg-muted disabled:cursor-not-allowed"
           />
           {saving.title && (
             <p className="text-helper text-blue-600">Saving...</p>
@@ -186,7 +186,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
             onBlur={(e) => handleFieldBlur('description', e.target.value)}
             disabled={saving.description}
             placeholder="Describe the activity objectives, scope, and expected outcomes..."
-            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-muted disabled:cursor-not-allowed resize-none"
+            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:bg-muted disabled:cursor-not-allowed resize-none"
           />
           {saving.description && (
             <p className="text-helper text-blue-600">Saving...</p>
@@ -206,7 +206,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
               handleFieldBlur('activity_status', e.target.value);
             }}
             disabled={saving.activity_status}
-            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-muted disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:bg-muted disabled:cursor-not-allowed"
           >
             <option value="">Select status...</option>
             {ACTIVITY_STATUSES.map((status) => (
@@ -233,7 +233,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
               handleFieldBlur('collaboration_type', e.target.value);
             }}
             disabled={saving.collaboration_type}
-            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-muted disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:bg-muted disabled:cursor-not-allowed"
           >
             <option value="">Select collaboration type...</option>
             {COLLABORATION_TYPES.map((type) => (
@@ -373,7 +373,7 @@ export default function ActivityEditor({ activityId, initialData = {} }: Activit
               Changes are automatically saved when you finish editing each field.
             </p>
             <CommentsDrawer activityId={activityId}>
-              <button className="inline-flex items-center gap-2 px-3 py-2 text-body font-medium text-foreground bg-white border border-input rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button className="inline-flex items-center gap-2 px-3 py-2 text-body font-medium text-foreground bg-white border border-input rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring">
                 💬 Comments
               </button>
             </CommentsDrawer>

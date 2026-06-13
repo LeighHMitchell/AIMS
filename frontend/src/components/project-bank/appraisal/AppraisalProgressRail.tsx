@@ -160,7 +160,7 @@ export function AppraisalProgressRail({
                   disabled={!intakeActive && !intakeComplete}
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
-                    intakeComplete && 'bg-gray-800 border-gray-800 text-white',
+                    intakeComplete && 'bg-primary border-primary text-primary-foreground',
                     intakeActive && !intakeComplete && 'border-gray-600 bg-muted text-foreground',
                     !intakeComplete && !intakeActive && 'border-input bg-background text-muted-foreground',
                     (intakeActive || intakeComplete) && 'cursor-pointer hover:scale-110',
@@ -220,7 +220,7 @@ export function AppraisalProgressRail({
                   disabled={!fs1Active && !fs1Complete}
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
-                    fs1Complete && 'bg-gray-800 border-gray-800 text-white',
+                    fs1Complete && 'bg-primary border-primary text-primary-foreground',
                     fs1Active && !fs1Complete && 'border-gray-600 bg-muted text-foreground',
                     !fs1Complete && !fs1Active && 'border-input bg-background text-muted-foreground',
                     !fs1Accessible && !fs1Active && !fs1Complete && 'opacity-40',
@@ -301,7 +301,7 @@ export function AppraisalProgressRail({
                   disabled={!fs2Active && !fs2Complete}
                   className={cn(
                     'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all shrink-0',
-                    fs2Complete && 'bg-gray-800 border-gray-800 text-white',
+                    fs2Complete && 'bg-primary border-primary text-primary-foreground',
                     fs2Active && !fs2Complete && 'border-gray-600 bg-muted text-foreground',
                     !fs2Complete && !fs2Active && 'border-input bg-background text-muted-foreground',
                     (fs2Active || fs2Complete) && 'cursor-pointer hover:scale-110',

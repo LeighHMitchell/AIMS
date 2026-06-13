@@ -66,7 +66,7 @@ export default function ActivitySectorsPage() {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => router.back()}
-                className="px-4 py-2 border border-input rounded-md shadow-sm text-body font-medium text-foreground bg-white hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="px-4 py-2 border border-input rounded-md shadow-sm text-body font-medium text-foreground bg-white hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
               >
                 Cancel
               </button>
@@ -74,7 +74,7 @@ export default function ActivitySectorsPage() {
               <button
                 onClick={handleSave}
                 disabled={!validation?.isValid || isSaving}
-                className={`flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                className={`flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring ${
                   validation?.isValid && !isSaving
                     ? 'bg-blue-600 hover:bg-blue-700'
                     : 'bg-gray-400 cursor-not-allowed'

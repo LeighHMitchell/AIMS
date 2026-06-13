@@ -14,6 +14,7 @@ import {
   Check
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api-fetch';
+import { formatDate } from '@/lib/format';
 // Native debounce implementation
 const debounce = <T extends (...args: any[]) => any>(func: T, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -125,16 +126,6 @@ export function MergePicker({ onSelect, onCancel }: MergePickerProps) {
   const handleConfirm = () => {
     if (selectedId) {
       onSelect(selectedId);
-    }
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
-    } catch {
-      return dateString;
     }
   };
 

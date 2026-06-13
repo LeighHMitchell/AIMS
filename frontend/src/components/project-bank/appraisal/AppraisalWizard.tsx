@@ -243,7 +243,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
     if (projectStage === 'intake_submitted' || projectStage === 'fs1_submitted') {
       return {
         icon: Clock,
-        text: lockMessage || 'This form is locked — awaiting review board decision.',
+        text: lockMessage || 'This form is locked, awaiting review board decision.',
         bgClass: 'bg-surface-muted border-border',
         textClass: 'text-foreground',
         iconClass: 'text-muted-foreground',
@@ -288,7 +288,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
     if (projectStage === 'fs2_completed' || projectStage === 'fs2_desk_reviewed' || projectStage === 'fs2_senior_reviewed') {
       return {
         icon: Clock,
-        text: 'Detailed Feasibility Study submitted — awaiting review board decision.',
+        text: 'Detailed Feasibility Study submitted, awaiting review board decision.',
         bgClass: 'bg-surface-muted border-border',
         textClass: 'text-foreground',
         iconClass: 'text-muted-foreground',
@@ -371,7 +371,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
           )}>
             <Eye className={cn('h-4 w-4 shrink-0', viewingIntakeUnlocked ? 'text-orange-600' : 'text-amber-600')} />
             <span className={cn('text-body font-medium flex-1', viewingIntakeUnlocked ? 'text-orange-800' : 'text-amber-800')}>
-              {viewingIntakeUnlocked ? 'Editing intake data — remember to save changes' : 'Viewing intake data (read-only)'}
+              {viewingIntakeUnlocked ? 'Editing intake data, remember to save changes' : 'Viewing intake data (read-only)'}
             </span>
             <Button
               size="sm"
@@ -398,7 +398,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
           )}>
             <Eye className={cn('h-4 w-4 shrink-0', viewingFS1Unlocked ? 'text-orange-600' : 'text-amber-600')} />
             <span className={cn('text-body font-medium flex-1', viewingFS1Unlocked ? 'text-orange-800' : 'text-amber-800')}>
-              {viewingFS1Unlocked ? 'Editing Preliminary Feasibility Study data — remember to save changes' : 'Viewing Preliminary Feasibility Study data (read-only)'}
+              {viewingFS1Unlocked ? 'Editing Preliminary Feasibility Study data, remember to save changes' : 'Viewing Preliminary Feasibility Study data (read-only)'}
             </span>
             <Button
               size="sm"
@@ -426,7 +426,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
             <Eye className={cn('h-4 w-4 shrink-0', viewingPhaseUnlocked ? 'text-orange-600' : 'text-amber-600')} />
             <span className={cn('text-body font-medium flex-1', viewingPhaseUnlocked ? 'text-orange-800' : 'text-amber-800')}>
               {viewingPhaseUnlocked
-                ? `Editing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : getFs3Label(wizard.formData.category_decision as CategoryDecision | null)} data — remember to save changes`
+                ? `Editing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : getFs3Label(wizard.formData.category_decision as CategoryDecision | null)} data, remember to save changes`
                 : `Viewing ${viewingPhase === 'fs2' ? 'Detailed Feasibility Study' : getFs3Label(wizard.formData.category_decision as CategoryDecision | null)} data (read-only)`
               }
             </span>
@@ -474,7 +474,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
                 )}
               >
                 {overrideLock ? <LockOpen className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-                {overrideLock ? 'Unlocked — Click to Re-lock' : 'Locked — Click to Unlock'}
+                {overrideLock ? 'Unlocked: Click to Re-lock' : 'Locked: Click to Unlock'}
               </Button>
             )}
           </div>
@@ -623,7 +623,7 @@ export function AppraisalWizard({ projectId }: AppraisalWizardProps) {
                 <XCircle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
                 <span>
                   <strong>{VALIDATION_FIELD_LABELS[key] ?? key}</strong>
-                  {message !== 'Required' && message !== 'required' ? ` — ${message}` : ''}
+                  {message !== 'Required' && message !== 'required' ? `: ${message}` : ''}
                 </span>
               </li>
             ))}

@@ -35,12 +35,12 @@ const HIERARCHY_LEVELS: HierarchyOption[] = [
   {
     level: 1,
     name: HIERARCHY_LEVEL_NAMES["1"],
-    description: "The highest level in your organisation's structure — e.g. an overarching programme or strategy."
+    description: "The highest level in your organisation's structure, e.g. an overarching programme or strategy."
   },
   {
     level: 2,
     name: HIERARCHY_LEVEL_NAMES["2"],
-    description: "One level below the top — e.g. a sub-programme or country project."
+    description: "One level below the top, e.g. a sub-programme or country project."
   },
   {
     level: 3,
@@ -55,7 +55,7 @@ const HIERARCHY_LEVELS: HierarchyOption[] = [
   {
     level: 5,
     name: HIERARCHY_LEVEL_NAMES["5"],
-    description: "A more detailed level — e.g. a task or output."
+    description: "A more detailed level, e.g. a task or output."
   }
 ];
 
@@ -168,7 +168,7 @@ export function HierarchySelect({
             </div>
             <CommandList>
               <div className="px-3 py-2 text-helper text-muted-foreground border-b bg-muted/30 leading-relaxed">
-                Levels are defined by your organisation — IATI sets no fixed names. Level 1 is the top; deeper levels are sub-activities. Pair this with a Parent/Child link on the Linked Activities tab.
+                Levels are defined by your organisation; IATI sets no fixed names. Level 1 is the top; deeper levels are sub-activities. Pair this with a Parent/Child link on the Linked Activities tab.
               </div>
               <CommandGroup className="p-0">
                 {filteredOptions.map((option) => (

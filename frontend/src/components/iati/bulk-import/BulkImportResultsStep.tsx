@@ -1,6 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -162,7 +163,7 @@ export default function BulkImportResultsStep({
                   <XCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
                     <p className="font-medium text-body">{item.activityTitle || item.iatiIdentifier}</p>
-                    <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{item.iatiIdentifier}</span>
+                    <CopyableIdBadge value={item.iatiIdentifier} label="IATI identifier" tooltip="Click to copy IATI identifier" />
                     {item.errorMessage && (
                       <p className="text-helper text-muted-foreground mt-1">{item.errorMessage}</p>
                     )}
@@ -210,7 +211,7 @@ export default function BulkImportResultsStep({
                       ) : (
                         <p className="text-body truncate">{item.activityTitle || item.iatiIdentifier}</p>
                       )}
-                      <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded mt-0.5 inline-block">{item.iatiIdentifier}</span>
+                      <CopyableIdBadge value={item.iatiIdentifier} label="IATI identifier" tooltip="Click to copy IATI identifier" className="mt-0.5" />
                     </TableCell>
                     <TableCell>
                       {item.action === 'create' && (

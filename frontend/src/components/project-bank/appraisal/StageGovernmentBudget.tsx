@@ -43,7 +43,7 @@ export function StageGovernmentBudget({ wizard }: StageGovernmentBudgetProps) {
       <div>
         <h3 className="text-lg font-semibold mb-1">Government Budget Structuring</h3>
         <p className="text-body text-muted-foreground">
-          Prepare this project for government budget funding — confirm budget allocation, implementation agency, and procurement approach.
+          Prepare this project for government budget funding: confirm budget allocation, implementation agency, and procurement approach.
         </p>
       </div>
 

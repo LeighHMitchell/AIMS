@@ -250,7 +250,7 @@ export function formatTimeSeriesForChart(data: TaskTimeSeriesData[]): {
   return {
     labels: data.map((d) => {
       const date = new Date(d.date);
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
     }),
     created: data.map((d) => d.created),
     completed: data.map((d) => d.completed),

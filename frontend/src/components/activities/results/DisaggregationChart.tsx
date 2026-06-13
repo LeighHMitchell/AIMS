@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/lib/format';
 import { 
   BarChart, 
   Bar, 
@@ -54,7 +55,7 @@ const formatValue = (value: number | null | undefined, measure?: MeasureType): s
     case 'percentage':
       return `${value}%`;
     case 'currency':
-      return `$${value.toLocaleString()}`;
+      return formatCurrency(value);
     default:
       return value.toLocaleString();
   }

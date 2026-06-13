@@ -654,7 +654,7 @@ export function ProjectOrgCountsBySector({
                           size="sm"
                           className="h-8 gap-1"
                           title={localDateRange?.from && localDateRange?.to
-                            ? `${format(localDateRange.from, 'MMM d, yyyy')} – ${format(localDateRange.to, 'MMM d, yyyy')}`
+                            ? `${format(localDateRange.from, 'd MMM yyyy')} – ${format(localDateRange.to, 'd MMM yyyy')}`
                             : undefined}
                         >
                           <CalendarIcon className="h-4 w-4" />

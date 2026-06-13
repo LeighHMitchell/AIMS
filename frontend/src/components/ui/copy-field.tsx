@@ -103,7 +103,7 @@ export function CopyField({
               tabIndex={0}
               aria-label={`Copy ${label} to clipboard`}
               className={cn(
-                "ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0",
+                "ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-colors flex-shrink-0",
                 copied && "text-[hsl(var(--success-icon))]",
                 copyError && "text-destructive"
               )}
@@ -147,7 +147,7 @@ export function CopyField({
             tabIndex={0}
             aria-label={`Copy ${label} to clipboard`}
             className={cn(
-              "ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors flex-shrink-0",
+              "ml-2 p-1 rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 transition-colors flex-shrink-0",
               copied && "text-[hsl(var(--success-icon))]",
               copyError && "text-destructive"
             )}

@@ -787,8 +787,8 @@ export default function TransactionModal({
     },
     'CORE CONTRIBUTIONS': {
       'B01': { label: 'Core support to NGOs', desc: 'Core contributions to NGOs for operational or programme activities' },
-      'B02': { label: 'Core contributions to multilateral institutions', desc: 'Unearmarked contributions to multilateral organizations' },
-      'B03': { label: 'Contributions to specific programmes', desc: 'Earmarked contributions managed by international organizations' },
+      'B02': { label: 'Core contributions to multilateral institutions', desc: 'Unearmarked contributions to multilateral organisations' },
+      'B03': { label: 'Contributions to specific programmes', desc: 'Earmarked contributions managed by international organisations' },
       'B04': { label: 'Basket funds/pooled funding', desc: 'Pooled contributions for joint programmes' },
     },
     'PROJECT-TYPE': {
@@ -819,7 +819,7 @@ export default function TransactionModal({
     '20': { label: 'OOF', desc: 'Other Official Flows: non-concessional developmental flows' },
     '21': { label: 'Non-export credit OOF', desc: 'OOF excluding officially supported export credits' },
     '22': { label: 'Officially supported export credits', desc: 'Export credits with official support' },
-    '30': { label: 'Private grants', desc: 'Grants from private organizations and individuals' },
+    '30': { label: 'Private grants', desc: 'Grants from private organisations and individuals' },
     '35': { label: 'Private market', desc: 'Private flows at market terms' },
     '36': { label: 'Private Foreign Direct Investment', desc: 'Private investment for lasting interest in enterprises' },
     '37': { label: 'Other private flows', desc: 'Other private flows at market terms' },
@@ -1062,6 +1062,9 @@ export default function TransactionModal({
           <DialogTitle className="text-xl">
             {isEditing ? "Edit Transaction" : "Add New Transaction"}
           </DialogTitle>
+          <DialogDescription>
+            Record a financial transaction for this activity: its type, value, dates and the organisations involved.
+          </DialogDescription>
         </DialogHeader>
         
         <ScrollArea className="flex-1 overflow-y-auto">
@@ -1397,8 +1400,8 @@ export default function TransactionModal({
                           });
                         }
                       }}
-                      placeholder="Select provider organization"
-                      className="w-full rounded-md border px-4 py-4 text-body shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Select provider organisation"
+                      className="w-full rounded-md border px-4 py-4 text-body shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                     />
                   </div>
                 </div>
@@ -1428,8 +1431,8 @@ export default function TransactionModal({
                           });
                         }
                       }}
-                      placeholder="Select receiver organization"
-                      className="w-full rounded-md border px-4 py-4 text-body shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Select receiver organisation"
+                      className="w-full rounded-md border px-4 py-4 text-body shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                     />
                   </div>
                 </div>

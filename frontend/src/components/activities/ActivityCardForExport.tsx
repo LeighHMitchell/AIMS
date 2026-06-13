@@ -12,6 +12,7 @@ import { codeAndName } from '@/lib/iati/codelist-resolver';
 // Tied Status mappings imported from @/types/transaction
 import { SDGImageGrid } from '@/components/ui/SDGImageGrid';
 import { formatReportedBy } from '@/utils/format-helpers';
+import { formatCurrencyCompact, formatDate } from '@/lib/format';
 
 interface ActivityCardForExportProps {
   activity: any;
@@ -21,33 +22,12 @@ interface ActivityCardForExportProps {
 const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportProps>(
   ({ activity, className = '' }, ref) => {
     
-    // Currency formatting utility
-    const formatCurrency = (value: number) => {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-    };
-
-    // Date formatting utilities
+    // Date formatting utilities (delegate to canonical formatDate)
     const formatDateRange = (startDate?: string, endDate?: string) => {
       if (!startDate && !endDate) return '';
-      if (!startDate) return `Until ${new Date(endDate!).toLocaleDateString()}`;
-      if (!endDate) return `From ${new Date(startDate).toLocaleDateString()}`;
-      
-      const start = new Date(startDate).toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
-      });
-      const end = new Date(endDate).toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
-      });
-      return `${start} – ${end}`;
+      if (!startDate) return `Until ${formatDate(endDate!)}`;
+      if (!endDate) return `From ${formatDate(startDate)}`;
+      return `${formatDate(startDate)} – ${formatDate(endDate)}`;
     };
 
     const calculateDuration = (startDate: string, endDate: string) => {
@@ -225,12 +205,12 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
                   <>
                     <div className="bg-muted rounded-lg p-3 border">
                       <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">Total Budgeted</div>
-                      <div className="text-body text-foreground">{formatCurrency(activity.totalBudget || 0)}</div>
+                      <div className="text-body text-foreground">{formatCurrencyCompact(activity.totalBudget || 0)}</div>
                     </div>
                     
                     <div className="bg-muted rounded-lg p-3 border">
                       <div className="text-section-label font-medium text-muted-foreground uppercase mb-1">Total Disbursed</div>
-                      <div className="text-body text-foreground">{formatCurrency(activity.totalDisbursed || 0)}</div>
+                      <div className="text-body text-foreground">{formatCurrencyCompact(activity.totalDisbursed || 0)}</div>
                     </div>
                   </>
                 )}
@@ -312,11 +292,7 @@ const ActivityCardForExport = forwardRef<HTMLDivElement, ActivityCardForExportPr
           <div className="border-t pt-3 mt-6">
             <div className="flex items-center justify-between text-helper text-muted-foreground">
               <span>Exported from AIMS Platform</span>
-              <span>{new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}</span>
+              <span>{formatDate(new Date())}</span>
             </div>
           </div>
 

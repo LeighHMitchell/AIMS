@@ -53,7 +53,7 @@ export function determineRouting(firr: number | null, ndpAligned: boolean): Rout
   return {
     pathway: 'oda',
     status: 'appraisal',
-    label: 'EIRR appraisal required — if ≥ 15%, enters PPP / ODA pathway',
+    label: 'EIRR appraisal required: if ≥ 15%, enters PPP / ODA pathway',
     description: 'Not commercially viable but MSDP-aligned. If EIRR ≥ 15%, enters PPP mechanism. If ODA co-financing is sought, the project will also appear in the AIMS activity list.',
     color: 'purple',
   };
@@ -241,10 +241,10 @@ export const FEASIBILITY_STAGE_ORDER: FeasibilityStage[] = [
 
 /** Category decision labels */
 export const CATEGORY_LABELS: Record<CategoryDecision, string> = {
-  category_a: 'Category A — Full Private',
-  category_b: 'Category B — Government Budget',
-  category_c: 'Category C — PPP',
-  category_d: 'Category D — Development Partner (ODA)',
+  category_a: 'Category A: Full Private',
+  category_b: 'Category B: Government Budget',
+  category_c: 'Category C: PPP',
+  category_d: 'Category D: Development Partner (ODA)',
 };
 
 /** Short category labels for badges */
@@ -623,7 +623,7 @@ export function determineFullRouting(
     return {
       outcome: null,
       label: 'FIRR Could Not Be Calculated',
-      description: 'The FIRR requires at least one year with a net outflow (costs exceeding revenue) followed by years with net inflows. Check that your CAPEX figures are realistic — most projects have higher upfront costs than revenue in early years.',
+      description: 'The FIRR requires at least one year with a net outflow (costs exceeding revenue) followed by years with net inflows. Check that your CAPEX figures are realistic; most projects have higher upfront costs than revenue in early years.',
       color: 'amber',
       nextSteps: 'Review your cost and revenue projections to ensure they reflect the expected investment profile.',
     };
@@ -632,7 +632,7 @@ export function determineFullRouting(
   if (firrPercent >= 10 && ndpAligned) {
     return {
       outcome: 'private_with_state_support',
-      label: 'Likely Commercially Viable — Private Sector with State Support',
+      label: 'Likely Commercially Viable: Private Sector with State Support',
       description: `FIRR ${firrPercent.toFixed(1)}% ≥ 10% and MSDP-aligned. This project is likely to be eligible for private investment with state land/property support via the Project Bank and Land Bank.`,
       color: 'green',
       nextSteps: 'You may proceed to submit for review. If approved, the project will be listed for private investor engagement.',
@@ -642,7 +642,7 @@ export function determineFullRouting(
   if (firrPercent >= 10) {
     return {
       outcome: 'private_no_support',
-      label: 'Likely Commercially Viable — Private Sector',
+      label: 'Likely Commercially Viable: Private Sector',
       description: `FIRR ${firrPercent.toFixed(1)}% ≥ 10% but not MSDP-aligned. This project may be suitable for private investment without state support.`,
       color: 'blue',
       nextSteps: 'You may proceed to submit for review. The review board will make the final determination.',
@@ -652,7 +652,7 @@ export function determineFullRouting(
   if (!ndpAligned) {
     return {
       outcome: 'rejected_not_msdp',
-      label: 'At Risk of Rejection — Below Viability Threshold',
+      label: 'At Risk of Rejection: Below Viability Threshold',
       description: `FIRR ${firrPercent.toFixed(1)}% is below the 10% commercial viability threshold and the project is not aligned with MSDP. Without alignment, there is no basis for state support or further economic analysis.`,
       color: 'red',
       nextSteps: 'Consider revising the project scope, improving revenue projections, or establishing MSDP alignment before submitting. The review board is likely to reject projects that are neither commercially viable nor nationally aligned.',
@@ -673,7 +673,7 @@ export function determineFullRouting(
   if (eirrPercent >= 15) {
     return {
       outcome: 'ppp_mechanism',
-      label: 'Likely Economically Viable — PPP or ODA Pathway',
+      label: 'Likely Economically Viable: PPP or ODA Pathway',
       description: `EIRR ${eirrPercent.toFixed(1)}% ≥ 15%. This project is likely to qualify for a PPP mechanism or development partner funding. The review board will determine the appropriate category based on sector and project characteristics.`,
       color: 'purple',
       nextSteps: 'You may proceed to submit for review. The review board will categorize the project and determine the delivery pathway.',
@@ -682,7 +682,7 @@ export function determineFullRouting(
 
   return {
     outcome: 'rejected_low_eirr',
-    label: 'At Risk of Rejection — Insufficient Economic Returns',
+    label: 'At Risk of Rejection: Insufficient Economic Returns',
     description: `EIRR ${eirrPercent.toFixed(1)}% is below the 15% threshold. The economic returns may not be sufficient to justify state investment at this stage.`,
     color: 'red',
     nextSteps: 'Consider revising the project scope or cost structure to improve economic returns before submitting. The review board is likely to reject projects below this threshold.',
@@ -702,23 +702,23 @@ export const PROJECT_STAGE_LABELS: Record<ProjectStage, string> = {
   intake_approved: 'Approved',
   intake_returned: 'Returned',
   intake_rejected: 'Rejected',
-  fs1_draft: 'PFS — Draft',
-  fs1_submitted: 'PFS — Pending Review',
-  fs1_desk_claimed: 'PFS — Desk Review',
-  fs1_approved: 'PFS — Approved',
-  fs1_returned: 'PFS — Returned',
-  fs1_rejected: 'PFS — Rejected',
-  fs2_assigned: 'DFS — Assigned',
-  fs2_in_progress: 'DFS — In Progress',
-  fs2_completed: 'DFS — Completed',
-  fs2_desk_claimed: 'DFS — Desk Review',
-  fs2_desk_reviewed: 'DFS — Senior Review',
-  fs2_senior_reviewed: 'DFS — Senior Reviewed',
-  fs2_returned: 'DFS — Returned',
+  fs1_draft: 'PFS: Draft',
+  fs1_submitted: 'PFS: Pending Review',
+  fs1_desk_claimed: 'PFS: Desk Review',
+  fs1_approved: 'PFS: Approved',
+  fs1_returned: 'PFS: Returned',
+  fs1_rejected: 'PFS: Rejected',
+  fs2_assigned: 'DFS: Assigned',
+  fs2_in_progress: 'DFS: In Progress',
+  fs2_completed: 'DFS: Completed',
+  fs2_desk_claimed: 'DFS: Desk Review',
+  fs2_desk_reviewed: 'DFS: Senior Review',
+  fs2_senior_reviewed: 'DFS: Senior Reviewed',
+  fs2_returned: 'DFS: Returned',
   fs2_categorized: 'Categorized',
-  fs3_in_progress: 'PPP Structuring — In Progress',
-  fs3_completed: 'PPP Structuring — Completed',
-  fs3_returned: 'PPP Structuring — Returned',
+  fs3_in_progress: 'PPP Structuring: In Progress',
+  fs3_completed: 'PPP Structuring: Completed',
+  fs3_returned: 'PPP Structuring: Returned',
 };
 
 /** Badge styles for each unified project stage — palette: Scarlet #dc2625, Pale Slate #cfd0d5, Blue Slate #4c5568, Cool Steel #7b95a7, Platinum #f1f4f8 */
@@ -837,7 +837,7 @@ export function isFormEditable(stage: ProjectStage): boolean {
 
 /** Get lock reason message */
 export function getLockMessage(stage: ProjectStage): string | null {
-  if (stage.endsWith('_submitted')) return 'This form is locked — awaiting review board decision.';
+  if (stage.endsWith('_submitted')) return 'This form is locked, awaiting review board decision.';
   if (stage.endsWith('_rejected')) return 'This project has been rejected.';
   return null;
 }

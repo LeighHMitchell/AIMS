@@ -14,6 +14,7 @@ export interface UserProfile {
 export interface RecencyItem {
   id: string;
   title: string;
+  acronym?: string;
   timestamp: string;
   iatiIdentifier?: string;
   creatorProfile?: UserProfile;
@@ -33,6 +34,7 @@ export type ValidationEventType = 'validated' | 'rejected' | 'more_info_requeste
 export interface ValidationEvent {
   activityId: string;
   activityTitle: string;
+  acronym?: string;
   iatiIdentifier?: string;
   eventType: ValidationEventType;
   timestamp: string;

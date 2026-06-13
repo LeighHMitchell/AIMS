@@ -135,7 +135,7 @@ export function TaskDeliveryStep({
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {deadlineDate ? format(deadlineDate, 'MMM d, yyyy') : 'Pick a date'}
+              {deadlineDate ? format(deadlineDate, 'd MMM yyyy') : 'Pick a date'}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0 z-[100]" align="start">

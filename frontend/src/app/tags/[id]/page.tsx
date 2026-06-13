@@ -8,6 +8,7 @@ import { MainLayout } from '@/components/layout/main-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -407,19 +408,20 @@ export default function TagProfilePage() {
                 <Card><CardHeader><CardTitle className="text-body">Top Activities</CardTitle></CardHeader><CardContent>
                   <div className="space-y-2">
                     {activities.slice(0, 5).map(activity => (
-                      <Link key={activity.id} href={`/activities/${activity.id}`} className="flex items-start justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex-1 min-w-0">
+                      <div key={activity.id} className="relative flex items-start justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                        <Link href={`/activities/${activity.id}`} className="absolute inset-0 z-0 cursor-pointer" aria-label={`View ${activity.title_narrative || 'activity'}`} />
+                        <div className="flex-1 min-w-0 relative z-10 pointer-events-none">
                           <h3 className="font-medium text-body text-foreground truncate">{activity.title_narrative || 'Untitled Activity'}</h3>
                           <div className="flex items-center gap-2 mt-0.5">
-                            {activity.iati_identifier && <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iati_identifier}</code>}
+                            {activity.iati_identifier && <CopyableIdBadge value={activity.iati_identifier} label="IATI identifier" tooltip="Click to copy IATI identifier" className="pointer-events-auto" />}
                             <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
                           </div>
                         </div>
-                        <div className="text-right ml-3 flex-shrink-0">
+                        <div className="text-right ml-3 flex-shrink-0 relative z-10 pointer-events-none">
                           <p className="text-body font-semibold text-foreground">{formatCurrencyShort(activity.totalValue)}</p>
                           <p className="text-[10px] text-muted-foreground">{activity.transactionCount} tx</p>
                         </div>
-                      </Link>
+                      </div>
                     ))}
                   </div>
                 </CardContent></Card>
@@ -528,22 +530,25 @@ export default function TagProfilePage() {
               {activityView === 'card' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {paginatedActivities.map(activity => (
-                    <Link key={activity.id} href={`/activities/${activity.id}`}>
-                      <Card className="h-full hover:shadow-card-hover transition-shadow cursor-pointer">
+                    <div key={activity.id} className="relative">
+                      <Card className="h-full hover:shadow-card-hover transition-shadow">
                         <CardContent className="p-6">
-                          <div className="flex items-start justify-between mb-2">
-                            <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
-                            <span className="text-[10px] text-muted-foreground">{activity.transactionCount} tx</span>
-                          </div>
-                          <h3 className="font-medium text-body text-foreground line-clamp-2 mb-2">{activity.title_narrative || 'Untitled Activity'}</h3>
-                          {activity.iati_identifier && <code className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded block mb-2 truncate">{activity.iati_identifier}</code>}
-                          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-                            <div><p className="text-[10px] text-muted-foreground">Committed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
-                            <div><p className="text-[10px] text-muted-foreground">Disbursed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
+                          <Link href={`/activities/${activity.id}`} className="absolute inset-0 z-0 cursor-pointer" aria-label={`View ${activity.title_narrative || 'activity'}`} />
+                          <div className="relative z-10 pointer-events-none">
+                            <div className="flex items-start justify-between mb-2">
+                              <Badge variant={getStatusVariant(activity.activity_status)} className="text-[10px] px-1.5 py-0">{getStatusLabel(activity.activity_status)}</Badge>
+                              <span className="text-[10px] text-muted-foreground">{activity.transactionCount} tx</span>
+                            </div>
+                            <h3 className="font-medium text-body text-foreground line-clamp-2 mb-2">{activity.title_narrative || 'Untitled Activity'}</h3>
+                            {activity.iati_identifier && <CopyableIdBadge value={activity.iati_identifier} label="IATI identifier" tooltip="Click to copy IATI identifier" className="mb-2 max-w-full pointer-events-auto" />}
+                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
+                              <div><p className="text-[10px] text-muted-foreground">Committed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.commitments)}</p></div>
+                              <div><p className="text-[10px] text-muted-foreground">Disbursed</p><p className="text-helper font-semibold text-foreground">{formatCurrencyShort(activity.disbursements)}</p></div>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               ) : (

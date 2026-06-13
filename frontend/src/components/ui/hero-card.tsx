@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
-import { formatNumberWithAbbreviation } from "@/utils/format-helpers";
+import { formatCurrencyPrecise, formatCurrencyCompact, formatAxisCurrency } from "@/lib/format";
 
 interface BudgetByYear {
   year: number;
@@ -153,7 +153,9 @@ export function HeroCard<T = any>({
     }
   }, [calculatedValue, onValueChange]);
 
-  // Format value based on props and data type
+  // Display string for the hero value. Currency amounts delegate to the
+  // canonical formatter; counts (no currency) stay plain whole numbers and an
+  // explicit `prefix` keeps the caller's override. `suffix` is appended as-is.
   const formatValue = (amount: number) => {
     // Legacy support: if value was a string, return as-is
     if (value !== undefined && typeof value === 'string' && isNaN(parseFloat(value))) {
@@ -161,18 +163,15 @@ export function HeroCard<T = any>({
     }
 
     let formatted: string;
-    
-    if (currency === "USD") {
-      // Format full number with 2 decimal places for USD currency
-      const currencyPrefix = prefix || "US$";
-      formatted = `${currencyPrefix}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    } else if (currency === "" || currency === null || currency === undefined) {
+
+    if (currency === "" || currency === null || currency === undefined) {
       // No currency - format as whole number for counts
       formatted = amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    } else if (prefix) {
+      // Explicit prefix override supplied by the caller
+      formatted = `${prefix}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     } else {
-      // Other currency - format full number with 2 decimal places
-      const currencyPrefix = prefix || currency;
-      formatted = `${currencyPrefix}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      formatted = formatCurrencyPrecise(amount, currency);
     }
 
     if (suffix) {
@@ -216,8 +215,8 @@ export function HeroCard<T = any>({
   const { cardClass, valueClass } = getVariantClasses();
 
   // Format currency for chart tooltip
-  const formatChartCurrency = (value: number) => {
-    return formatNumberWithAbbreviation(value, { decimals: 1 });
+  const formatChartCurrency = (amount: number) => {
+    return formatCurrencyCompact(amount, currency || 'USD');
   };
 
   return (
@@ -323,9 +322,7 @@ export function HeroCard<T = any>({
                       tick={{ fontSize: 10, fill: '#64748b' }}
                       axisLine={{ stroke: '#e5e7eb' }}
                       tickLine={false}
-                      tickFormatter={(value) => {
-                        return formatNumberWithAbbreviation(value, { decimals: 0 });
-                      }}
+                      tickFormatter={(tick) => formatAxisCurrency(tick, currency || 'USD')}
                     />
                     <RechartsTooltip 
                       cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}

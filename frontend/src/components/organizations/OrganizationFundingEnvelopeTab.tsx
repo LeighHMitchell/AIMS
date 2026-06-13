@@ -426,11 +426,6 @@ export default function OrganizationFundingEnvelopeTab({
     }
   }, [showModal, editingEnvelope?.id])
 
-  const formatCurrency = (amount: number | null | undefined, currency: string = 'USD') => {
-    if (amount === null || amount === undefined) return 'N/A'
-    return formatCurrencyPrecise(amount, currency)
-  }
-
   // Format the budget period. Prefer the explicit IATI period dates; fall back
   // to the year(s) for legacy rows that predate the date columns.
   const formatPeriod = (envelope: OrganizationFundingEnvelope) => {
@@ -612,7 +607,11 @@ export default function OrganizationFundingEnvelopeTab({
                               </TableCell>
                               <TableCell>
                                 <div className="font-medium">
-                                  {formatCurrency(envelope.amount, envelope.currency)}
+                                  {envelope.amount != null ? (
+                                    formatCurrencyPrecise(envelope.amount, envelope.currency)
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
                                 </div>
                               </TableCell>
                               <TableCell className="text-body">
@@ -623,16 +622,16 @@ export default function OrganizationFundingEnvelopeTab({
                                     year: 'numeric'
                                   })
                                 ) : (
-                                  <span className="text-muted-foreground">-</span>
+                                  <span className="text-muted-foreground">—</span>
                                 )}
                               </TableCell>
                               <TableCell>
                                 {envelope.amount_usd ? (
                                   <div className="font-medium">
-                                    {formatCurrency(envelope.amount_usd, 'USD')}
+                                    {formatCurrencyPrecise(envelope.amount_usd, 'USD')}
                                   </div>
                                 ) : (
-                                  <span className="text-muted-foreground">-</span>
+                                  <span className="text-muted-foreground">—</span>
                                 )}
                               </TableCell>
                               <TableCell>

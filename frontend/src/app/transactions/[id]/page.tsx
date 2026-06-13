@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2 } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs"
+import { CopyableIdBadge } from "@/components/ui/copyable-id-badge"
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -91,10 +92,6 @@ export default function TransactionDetailPage() {
     }
   };
 
-  const formatCurrency = (value: number, currency: string = "USD") => {
-    return formatCurrencyPrecise(value, currency);
-  };
-
   if (loading) {
     return (
       <MainLayout>
@@ -137,9 +134,9 @@ export default function TransactionDetailPage() {
             <h1 className="text-2xl font-semibold text-foreground">
               Transaction Details
             </h1>
-            <p className="text-body text-muted-foreground">
-              ID: {transaction.id}
-            </p>
+            <div className="text-body text-muted-foreground flex items-center gap-1.5">
+              ID: <CopyableIdBadge value={transaction.id} label="Transaction ID" tooltip="Click to copy transaction ID" />
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm">
@@ -180,7 +177,7 @@ export default function TransactionDetailPage() {
             <div>
               <label className="text-body font-medium text-muted-foreground">Transaction Date</label>
               <p className="mt-1 text-foreground">
-                {format(new Date(transaction.transaction_date), "MMMM d, yyyy")}
+                {format(new Date(transaction.transaction_date), "d MMMM yyyy")}
               </p>
             </div>
 
@@ -188,7 +185,7 @@ export default function TransactionDetailPage() {
               <label className="text-body font-medium text-muted-foreground">Value Date</label>
               <p className="mt-1 text-foreground">
                 {transaction.value_date 
-                  ? format(new Date(transaction.value_date), "MMMM d, yyyy")
+                  ? format(new Date(transaction.value_date), "d MMMM yyyy")
                   : "—"
                 }
               </p>
@@ -197,7 +194,7 @@ export default function TransactionDetailPage() {
             <div>
               <label className="text-body font-medium text-muted-foreground">Amount</label>
               <p className="mt-1 text-2xl font-semibold text-foreground">
-                {formatCurrency(transaction.value, transaction.currency)}
+                {formatCurrencyPrecise(transaction.value, transaction.currency)}
               </p>
             </div>
 
@@ -267,14 +264,14 @@ export default function TransactionDetailPage() {
               {/* Transaction UUID Display */}
               <div className="mt-2">
                 <span className="text-helper text-muted-foreground">Transaction UUID:</span>
-                <div className="font-mono text-sm bg-muted px-2 py-1 rounded mt-1 inline-block">
-                  {transaction.uuid || transaction.id}
+                <div className="mt-1">
+                  <CopyableIdBadge value={transaction.uuid || transaction.id} label="Transaction UUID" tooltip="Click to copy transaction UUID" className="text-sm" />
                 </div>
               </div>
               {transaction.activity.iati_id && (
-                <p className="text-body text-muted-foreground mt-1">
-                  IATI ID: {transaction.activity.iati_id}
-                </p>
+                <div className="text-body text-muted-foreground mt-1 flex items-center gap-1.5">
+                  IATI ID: <CopyableIdBadge value={transaction.activity.iati_id} label="IATI identifier" tooltip="Click to copy IATI identifier" />
+                </div>
               )}
             </CardContent>
           </Card>

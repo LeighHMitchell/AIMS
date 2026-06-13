@@ -26,7 +26,8 @@ import { ChartMethodology } from '@/components/analytics/ChartMethodology'
 import { exportToCSV } from '@/lib/exports'
 import { CHART_COLORS, CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
-import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format'
+import { formatTooltipCurrency, formatAxisCurrency, formatCurrencyCompact, formatCurrency, formatDate } from '@/lib/format'
+import { CurrencyValue } from '@/components/ui/currency-value'
 import {
   Table,
   TableBody,
@@ -256,24 +257,6 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
     fetchData()
   }, [viewMode])
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
-
-  const formatCurrencyFull = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value)
-  }
-
   const getFlowWidth = (amount: number, maxAmount: number) => {
     const minWidth = 2
     const maxWidth = 40
@@ -327,7 +310,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
                   {donor.name}
                 </div>
                 <div className="text-helper text-muted-foreground">
-                  {formatCurrency(donor.total)}
+                  {formatCurrencyCompact(donor.total)}
                 </div>
               </div>
             ))}
@@ -380,7 +363,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
                   {sector.name}
                 </div>
                 <div className="text-helper text-muted-foreground">
-                  {formatCurrency(sector.total)}
+                  {formatCurrencyCompact(sector.total)}
                 </div>
               </div>
             ))}
@@ -460,11 +443,11 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
                 <TableCell className="font-medium">{point.period}</TableCell>
                 {sectors.map(sector => (
                   <TableCell key={sector.name} className="text-right">
-                    {formatCurrencyFull(point[sector.name] as number || 0)}
+                    <CurrencyValue amount={point[sector.name] as number || 0} variant="precise" />
                   </TableCell>
                 ))}
                 <TableCell className="text-right font-semibold">
-                  {formatCurrencyFull(rowTotal)}
+                  <CurrencyValue amount={rowTotal} variant="precise" />
                 </TableCell>
               </TableRow>
             )
@@ -475,12 +458,12 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
               const columnTotal = chartData.reduce((sum, point) => sum + (point[sector.name] as number || 0), 0)
               return (
                 <TableCell key={sector.name} className="text-right">
-                  {formatCurrencyFull(columnTotal)}
+                  <CurrencyValue amount={columnTotal} variant="precise" />
                 </TableCell>
               )
             })}
             <TableCell className="text-right">
-              {formatCurrencyFull(totalAmount)}
+              <CurrencyValue amount={totalAmount} variant="precise" />
             </TableCell>
           </TableRow>
         </TableBody>
@@ -499,7 +482,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
             source="Disbursement transactions linked to activity sector codes"
             basis="IATI transaction_type = 3 (Disbursement), status = actual"
             currency="USD (converted at transaction date for non-USD source values)"
-            asOf={`${dateRange.from.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} – ${dateRange.to.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+            asOf={`${formatDate(dateRange.from)} – ${formatDate(dateRange.to)}`}
             notes="Excludes commitments and expenditures. Only transactions with a valid provider organisation and at least one activity sector are included."
           />
         </div>
@@ -554,7 +537,7 @@ export function SankeyFlow({ dateRange, filters, refreshKey }: SankeyFlowProps) 
         {/* Total Display */}
         <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
           <span className="text-body font-medium text-muted-foreground">Total Disbursements:</span>
-          <span className="text-lg font-bold text-foreground">{formatCurrencyFull(totalAmount)}</span>
+          <span className="text-lg font-bold text-foreground">{formatCurrency(totalAmount)}</span>
         </div>
 
         {/* Chart Display */}

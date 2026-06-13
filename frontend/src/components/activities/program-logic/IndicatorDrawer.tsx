@@ -6,6 +6,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -114,6 +115,9 @@ export function IndicatorDrawer({
       <SheetContent className="sm:max-w-xl w-full overflow-y-auto p-0">
         <SheetHeader className="bg-surface-muted p-6 border-b border-border">
           <SheetTitle>Measurement indicators</SheetTitle>
+          <SheetDescription>
+            Add and manage the indicators used to measure progress for this result, with their baselines and targets.
+          </SheetDescription>
         </SheetHeader>
 
         <div className="p-6 space-y-6">
@@ -131,7 +135,7 @@ export function IndicatorDrawer({
               Linked indicators
               <HelpTextTooltip
                 size="sm"
-                content="Indicators already attached to this node, with their latest baseline, target and actual shown read-only (edit these in the activity's Results tab). Removing a link here only detaches it — the indicator itself is untouched."
+                content="Indicators already attached to this node, with their latest baseline, target and actual shown read-only (edit these in the activity's Results tab). Removing a link here only detaches it; the indicator itself is untouched."
               />
             </h4>
             {loadingLinked ? (
@@ -183,7 +187,7 @@ export function IndicatorDrawer({
               Find indicators
               <HelpTextTooltip
                 size="sm"
-                content="Search indicators that already exist on this investment's activities (the umbrella activity and its children). The badges show the IATI result type and the result they belong to — handy when an agency separates, e.g., PDO from intermediate-results indicators."
+                content="Search indicators that already exist on this investment's activities (the umbrella activity and its children). The badges show the IATI result type and the result they belong to, which is handy when an agency separates, e.g., PDO from intermediate-results indicators."
               />
             </h4>
             <div className="relative">

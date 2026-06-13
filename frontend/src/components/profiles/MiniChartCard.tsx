@@ -3,16 +3,18 @@
 import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Maximize2 } from 'lucide-react'
 
 interface MiniChartCardProps {
   title: string
   children: React.ReactNode
   expandedContent?: React.ReactNode
+  /** One-line subtitle shown under the title in the expanded view. */
+  description?: string
 }
 
-export function MiniChartCard({ title, children, expandedContent }: MiniChartCardProps) {
+export function MiniChartCard({ title, children, expandedContent, description }: MiniChartCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
@@ -39,6 +41,9 @@ export function MiniChartCard({ title, children, expandedContent }: MiniChartCar
         <DialogContent chart className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
+            <DialogDescription>
+              {description ?? `An enlarged view of the ${title} chart for closer inspection.`}
+            </DialogDescription>
           </DialogHeader>
           <div className="w-full [&>div]:!h-[400px]">
             {expandedContent || children}

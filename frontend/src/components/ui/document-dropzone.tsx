@@ -338,7 +338,7 @@ export function DocumentDropzone({
       {/* Document list — excludes docs inside the 5s undo window */}
       {documents.some((d) => !pendingDeleteIds.has(d.id)) && (
         <div className="relative w-full overflow-x-auto overflow-y-visible">
-          <table className="w-full caption-bottom text-body border border-border dark:border-gray-700 rounded-lg">
+          <table className="w-full caption-bottom text-body border border-border rounded-lg">
             <thead className="bg-surface-muted">
               <tr>
                 <th className="w-8 p-2" />
@@ -385,7 +385,7 @@ export function DocumentDropzone({
                           <span className="text-helper text-muted-foreground block">
                             {formatFileSize(doc.fileSize)}
                             {doc.uploadedAt && (
-                              <> · Uploaded {format(new Date(doc.uploadedAt), 'MMM d, yyyy')}</>
+                              <> · Uploaded {format(new Date(doc.uploadedAt), 'd MMM yyyy')}</>
                             )}
                             {doc.uploadedBy && (
                               <> by {doc.uploadedBy}</>

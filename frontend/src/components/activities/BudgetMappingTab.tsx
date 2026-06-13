@@ -692,7 +692,7 @@ export default function BudgetMappingTab({
                       <span className="inline-flex items-center gap-1">
                         Classification Type
                         <HelpTextTooltip>
-                          The level of the classification — e.g. sector, sub-sector,
+                          The level of the classification, e.g. sector, sub-sector,
                           function, or programme.
                         </HelpTextTooltip>
                       </span>

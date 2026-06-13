@@ -11,6 +11,29 @@
     "security/detect-eval-with-expression": "error",
     "security/detect-unsafe-regex": "error",
     "security/detect-buffer-noassert": "error",
-    "security/detect-child-process": "error"
+    "security/detect-child-process": "error",
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "Literal[value=/(^|[\\s'\"`])dark:/]",
+        "message": "Dark mode is intentionally disabled — never add dark: variants (design-system/design-system.md §5)."
+      },
+      {
+        "selector": "TemplateElement[value.raw=/(^|\\s)dark:/]",
+        "message": "Dark mode is intentionally disabled — never add dark: variants (design-system/design-system.md §5)."
+      },
+      {
+        "selector": "Literal[value=/MMM d{1,2}, yyyy/]",
+        "message": "Dates are day-first ('d MMM yyyy' / formatDate from @/lib/format) — never month-first (design-system §8)."
+      },
+      {
+        "selector": "CallExpression[callee.property.name='toLocaleDateString'] > Literal[value='en-US']",
+        "message": "Dates render en-GB day-first — use formatDate() from @/lib/format or 'en-GB' (design-system §8)."
+      },
+      {
+        "selector": "Literal[value='#8884d8']",
+        "message": "Never use recharts default colors — resolve via @/lib/chart-colors (OTHERS_COLOR for fallbacks, design-system §7)."
+      }
+    ]
   }
 }

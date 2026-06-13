@@ -49,7 +49,8 @@ import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
 import { CsvExportButton } from '@/components/ui/csv-export-button';
-import { formatTooltipCurrency } from '@/lib/format';
+import { formatTooltipCurrency, formatCurrencyCompact } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 
 interface EnhancedAidOnBudgetChartProps {
   refreshKey?: number;
@@ -216,24 +217,6 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
   // Chart dimensions (constants for zoom calculations)
   const chartWidth = 1200;
   const chartHeight = 700;
-
-  // Format number to abbreviated form
-  const formatAbbreviated = (value: number): string => {
-    if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-    if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
-    if (value >= 1e3) return `$${(value / 1e3).toFixed(1)}K`;
-    return `$${value.toFixed(0)}`;
-  };
-
-  // Format currency - always in USD (transactions are converted using value_usd)
-  const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   // Export table data to CSV
   const exportToCSV = () => {
@@ -750,7 +733,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
       .attr("font-size", "22px")
       .attr("font-weight", "bold")
       .attr("fill", palette.blueSlate)
-      .text(formatAbbreviated(totalValue));
+      .text(formatCurrencyCompact(totalValue));
 
     g.append("text")
       .attr("text-anchor", "middle")
@@ -904,7 +887,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
           .attr("font-size", r > 60 ? "16px" : r > 45 ? "14px" : "12px")
           .attr("font-weight", "bold")
           .attr("fill", palette.blueSlate)
-          .text(formatAbbreviated(sectorTotal));
+          .text(formatCurrencyCompact(sectorTotal));
 
         // Name text (wrapped if needed) - improved for larger satellites
         const words = sector.name.split(" ");
@@ -1159,7 +1142,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
-                {formatAbbreviated(summary.totalDomesticExpenditure)}
+                {formatCurrencyCompact(summary.totalDomesticExpenditure)}
               </div>
               <div className="text-helper mt-1" style={{ color: '#7b95a7' }}>
                 {summary.domesticExecutionRate.toFixed(1)}% execution rate
@@ -1177,7 +1160,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
-                {formatAbbreviated(summary.totalOnBudgetAid + summary.totalPartialAid)}
+                {formatCurrencyCompact(summary.totalOnBudgetAid + summary.totalPartialAid)}
               </div>
               <div className="text-helper mt-1" style={{ color: '#7b95a7' }}>
                 {summary.onBudgetActivityCount + summary.partialActivityCount} activities
@@ -1195,7 +1178,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
-                {formatAbbreviated(summary.totalOffBudgetAid + summary.totalUnknownAid)}
+                {formatCurrencyCompact(summary.totalOffBudgetAid + summary.totalUnknownAid)}
               </div>
               <div className="text-helper mt-1" style={{ color: '#7b95a7' }}>
                 {summary.offBudgetActivityCount + summary.unknownActivityCount} activities
@@ -1213,7 +1196,7 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                 </HelpTextTooltip>
               </div>
               <div className="text-xl font-bold" style={{ color: '#4c5568' }}>
-                {formatAbbreviated(summary.totalBudgetSupport)}
+                {formatCurrencyCompact(summary.totalBudgetSupport)}
               </div>
               <div className="text-helper mt-1" style={{ color: '#7b95a7' }}>
                 {summary.budgetSupportActivityCount} activities (A01/A02)
@@ -1331,19 +1314,19 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                 {sector.name}
                               </TableCell>
                               <TableCell className="text-right">
-                                {formatCurrency(sector.domesticExpenditure)}
+                                <CurrencyValue amount={sector.domesticExpenditure} />
                               </TableCell>
                               <TableCell className="text-right">
-                                {formatCurrency(sector.onBudgetAid)}
+                                <CurrencyValue amount={sector.onBudgetAid} />
                               </TableCell>
                               <TableCell className="text-right">
-                                {formatCurrency(sector.offBudgetAid)}
+                                <CurrencyValue amount={sector.offBudgetAid} />
                               </TableCell>
                               <TableCell className="text-right font-semibold">
-                                {formatCurrency(onBudgetTotal)}
+                                <CurrencyValue amount={onBudgetTotal} />
                               </TableCell>
                               <TableCell className="text-right font-semibold">
-                                {formatCurrency(grandTotal)}
+                                <CurrencyValue amount={grandTotal} />
                               </TableCell>
                               <TableCell className="text-right">
                                 {grandTotal > 0 ? (((sector.onBudgetAid + sector.offBudgetAid) / grandTotal) * 100).toFixed(1) : 0}%
@@ -1376,16 +1359,16 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                                 </TableCell>
                                 <TableCell></TableCell>
                                 <TableCell className="text-right text-body">
-                                  {formatCurrency(activity.onBudgetAmount)}
+                                  <CurrencyValue amount={activity.onBudgetAmount} />
                                 </TableCell>
                                 <TableCell className="text-right text-body">
-                                  {formatCurrency(activity.offBudgetAmount)}
+                                  <CurrencyValue amount={activity.offBudgetAmount} />
                                 </TableCell>
                                 <TableCell className="text-right text-body font-medium">
-                                  {formatCurrency(activity.onBudgetAmount)}
+                                  <CurrencyValue amount={activity.onBudgetAmount} />
                                 </TableCell>
                                 <TableCell className="text-right text-body font-medium">
-                                  {formatCurrency(activity.totalDisbursements)}
+                                  <CurrencyValue amount={activity.totalDisbursements} />
                                 </TableCell>
                                 <TableCell></TableCell>
                               </TableRow>
@@ -1413,19 +1396,19 @@ export function EnhancedAidOnBudgetChart({ refreshKey }: EnhancedAidOnBudgetChar
                           <TableCell></TableCell>
                           <TableCell>Total (COFOG 01–10 only)</TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(cofogDomestic)}
+                            <CurrencyValue amount={cofogDomestic} />
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(cofogOnBudget)}
+                            <CurrencyValue amount={cofogOnBudget} />
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(cofogOffBudget)}
+                            <CurrencyValue amount={cofogOffBudget} />
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(cofogOnBudgetTotal)}
+                            <CurrencyValue amount={cofogOnBudgetTotal} />
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(cofogGrandTotal)}
+                            <CurrencyValue amount={cofogGrandTotal} />
                           </TableCell>
                           <TableCell className="text-right">
                             {cofogAidShare.toFixed(1)}%

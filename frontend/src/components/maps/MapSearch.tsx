@@ -191,7 +191,7 @@ export function MapSearch({ onLocationSelect, className, placeholder = "Search l
       </PopoverTrigger>
       
       <PopoverContent
-        className="w-[400px] p-0 z-[9999]"
+        className="w-[400px] p-0 z-[10005]"
         align="start"
         sideOffset={5}
         onOpenAutoFocus={(e) => e.preventDefault()}

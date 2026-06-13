@@ -1,6 +1,8 @@
 "use client";
 
 import { RequiredDot } from "@/components/ui/required-dot";
+import { formatCurrencyCompact } from "@/lib/format";
+import { CurrencyValue } from "@/components/ui/currency-value";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
@@ -186,16 +188,6 @@ export function DomesticBudgetManagement() {
   useEffect(() => {
     fetchBudgetData();
   }, [fetchBudgetData]);
-
-  // Format currency
-  const formatCurrency = (amount: number, currency: string = "USD") => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   // Filter classifications for searchable combobox
   const filteredClassifications = React.useMemo(() => {
@@ -503,7 +495,7 @@ export function DomesticBudgetManagement() {
                   Total Budget
                 </div>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(summary.totalBudget)}
+                  {formatCurrencyCompact(summary.totalBudget)}
                 </div>
               </CardContent>
             </Card>
@@ -514,7 +506,7 @@ export function DomesticBudgetManagement() {
                   Total Expenditure
                 </div>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(summary.totalExpenditure)}
+                  {formatCurrencyCompact(summary.totalExpenditure)}
                 </div>
               </CardContent>
             </Card>
@@ -691,7 +683,7 @@ export function DomesticBudgetManagement() {
                           <TableRow key={item.id}>
                             <TableCell>
                               <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                                {item.budgetClassification?.code || "-"}
+                                {item.budgetClassification?.code || "—"}
                               </span>
                             </TableCell>
                             <TableCell>
@@ -711,13 +703,13 @@ export function DomesticBudgetManagement() {
                                 ? CLASSIFICATION_TYPE_LABELS[
                                     item.budgetClassification.classificationType
                                   ]
-                                : "-"}
+                                : "—"}
                             </TableCell>
                             <TableCell className="text-right font-mono">
-                              {formatCurrency(item.budgetAmount, item.currency)}
+                              <CurrencyValue amount={item.budgetAmount} currency={item.currency} />
                             </TableCell>
                             <TableCell className="text-right font-mono">
-                              {formatCurrency(item.expenditureAmount, item.currency)}
+                              <CurrencyValue amount={item.expenditureAmount} currency={item.currency} />
                             </TableCell>
                             <TableCell>
                               <div

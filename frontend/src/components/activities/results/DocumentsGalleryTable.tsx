@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -125,19 +126,9 @@ const getLocalizedString = (value: any, lang: string = 'en'): string => {
   return '';
 };
 
-// Format date for display
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return '—';
-  try {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  } catch {
-    return dateString;
-  }
-};
+// '—' fallback wrapper around the canonical lib formatDate.
+const formatDateOrDash = (dateString?: string): string =>
+  (dateString && formatDate(dateString)) || '—';
 
 export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -231,7 +222,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
           // Period documents
           if (indicator.periods) {
             indicator.periods.forEach(period => {
-              const periodLabel = `${formatDate(period.period_start)} - ${formatDate(period.period_end)}`;
+              const periodLabel = `${formatDateOrDash(period.period_start)} - ${formatDateOrDash(period.period_end)}`;
               
               // Target documents
               if (period.target_document_links) {
@@ -477,7 +468,7 @@ export function DocumentsGalleryTable({ results, className }: DocumentsGalleryTa
                   </div>
                 </TableCell>
                 <TableCell className="text-body text-muted-foreground">
-                  {formatDate(doc.documentDate)}
+                  {formatDateOrDash(doc.documentDate)}
                 </TableCell>
                 <TableCell>
                   <Button

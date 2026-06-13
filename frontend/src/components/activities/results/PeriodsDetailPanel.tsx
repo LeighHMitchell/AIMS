@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { formatLongDate } from '@/lib/date-utils';
+import { formatCurrency } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,7 @@ const formatValue = (value: number | null | undefined, measure?: MeasureType): s
     case 'percentage':
       return `${value}%`;
     case 'currency':
-      return `$${value.toLocaleString()}`;
+      return formatCurrency(value);
     default:
       return value.toLocaleString();
   }
@@ -66,8 +67,8 @@ const getLocalizedString = (value: any, lang: string = 'en'): string => {
   return '';
 };
 
-// Format date for display ("1 July 2024")
-const formatDate = (dateString?: string): string => {
+// Long-form date with em-dash fallback — delegates to shared formatLongDate.
+const formatDateOrDash = (dateString?: string): string => {
   if (!dateString) return '—';
   return formatLongDate(dateString) || dateString;
 };
@@ -118,7 +119,7 @@ function PeriodCard({ period, measure }: PeriodCardProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="text-body font-medium text-foreground">
             <Calendar className="h-4 w-4 inline mr-2 text-muted-foreground" />
-            {formatDate(period.period_start)} → {formatDate(period.period_end)}
+            {formatDateOrDash(period.period_start)} → {formatDateOrDash(period.period_end)}
           </CardTitle>
           {achievement !== null && (
             <Badge variant="outline" className={cn("font-medium", getStatusColor(achievement))}>

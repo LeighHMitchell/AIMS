@@ -473,7 +473,7 @@ export function FundingSourceBreakdown({
       {isExpanded && (
         <p className="text-body text-muted-foreground leading-relaxed mt-4">
           This chart shows funding by source organisation, disaggregated by the metrics you select (use the metrics
-          control). Each source&apos;s bars show the chosen series side by side — e.g. how much a partner has committed
+          control). Each source&apos;s bars show the chosen series side by side, e.g. how much a partner has committed
           versus actually disbursed. Transactions and planned disbursements use the reported provider organisation;
           budgets have no provider, so they are attributed to the activity&apos;s reporting organisation. Sources beyond
           the top seven are grouped as Others.

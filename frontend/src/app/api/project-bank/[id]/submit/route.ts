@@ -18,7 +18,7 @@ export async function POST(
   const { phase } = body; // 'intake', 'fs1', 'fs2', or 'fs3'
 
   if (!phase || !['intake', 'fs1', 'fs2', 'fs3'].includes(phase)) {
-    return NextResponse.json({ error: 'Invalid phase — must be "intake", "fs1", "fs2", or "fs3"' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid phase. Must be "intake", "fs1", "fs2", or "fs3"' }, { status: 400 });
   }
 
   // Verify project exists and check ownership/role

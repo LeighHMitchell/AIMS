@@ -41,7 +41,7 @@ export function CollaborationTypeDemo() {
         <CardContent>
           <ul className="space-y-2 text-body">
             <li>✅ <strong>Searchable</strong> - Type to filter by code, name, or description</li>
-            <li>✅ <strong>Grouped</strong> - Options organized under Bilateral, Multilateral, and Other types</li>
+            <li>✅ <strong>Grouped</strong> - Options organised under Bilateral, Multilateral, and Other types</li>
             <li>✅ <strong>Formatted display</strong> - Shows #code followed by name, with description below</li>
             <li>✅ <strong>Keyboard navigation</strong> - Arrow keys, Enter, Escape support</li>
             <li>✅ <strong>Accessible</strong> - Proper ARIA attributes and roles</li>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Link2, Plus, X, ExternalLink, LayoutGrid, Table as TableIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 import ActivityCard from './ActivityCard';
 import LinkedActivityModal from './LinkedActivityModal';
 import { apiFetch } from '@/lib/api-fetch';
@@ -395,9 +396,10 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-medium text-body">{la.activityTitle}</h4>
-                          <p className="text-helper text-muted-foreground mt-1">
-                            <span className="font-semibold">IATI Identifier:</span> {la.iatiIdentifier}
-                          </p>
+                          <div className="text-helper text-muted-foreground mt-1 flex items-center gap-1.5">
+                            <span className="font-semibold">IATI Identifier:</span>
+                            <CopyableIdBadge value={la.iatiIdentifier} label="IATI identifier" tooltip="Click to copy IATI identifier" />
+                          </div>
                         </div>
                         <ExternalLink className="w-4 h-4 text-muted-foreground" />
                       </div>
@@ -464,7 +466,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
             <input
               type="text"
               placeholder="Search by UUID, Activity ID, IATI Identifier, or Title..."
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -472,7 +474,7 @@ const LinkedActivitiesTab: React.FC<LinkedActivitiesTabProps> = ({
           <button
             onClick={() => handleSearch(searchQuery)}
             disabled={searching || !searchQuery.trim()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
           >
             {searching && (
               <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

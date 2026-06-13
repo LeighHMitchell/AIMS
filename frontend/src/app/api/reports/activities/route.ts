@@ -264,7 +264,7 @@ export async function GET() {
     const fpFmt = (c: any) => {
       const name = `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || ''
       const posOrg = [c.position, c.organisation].filter(Boolean).join(', ')
-      return [name, posOrg, c.email, c.phone].filter(Boolean).join(' — ')
+      return [name, posOrg, c.email, c.phone].filter(Boolean).join(' | ')
     }
     const fpByActivity = new Map<string, Record<string, string[]>>()
     ;(contacts as any[] || []).forEach(c => {

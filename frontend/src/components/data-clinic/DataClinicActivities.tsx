@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, getSortIcon, sortableHeaderClasses } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { CopyableIdBadge } from "@/components/ui/copyable-id-badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -642,7 +643,7 @@ export function DataClinicActivities() {
                     </TableCell>
                     <TableCell>
                       {activity.iatiIdentifier
-                        ? <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{activity.iatiIdentifier}</span>
+                        ? <CopyableIdBadge value={activity.iatiIdentifier} label="IATI identifier" tooltip="Click to copy IATI identifier" />
                         : <span className="text-body text-muted-foreground">-</span>
                       }
                     </TableCell>

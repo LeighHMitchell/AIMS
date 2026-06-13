@@ -1337,7 +1337,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
             <CardDescription>
               Create custom pivot tables by dragging and dropping fields. Filter data and save your configurations for later use.
               <span className="mt-1 block text-helper text-muted-foreground">
-                Tip: percentage and score fields (e.g. Completeness Score, Execution Rate, Disbursement Rate) are per-activity values — use the <strong>Average</strong> aggregator, not Sum, or the total will exceed 100%.
+                Tip: percentage and score fields (e.g. Completeness Score, Execution Rate, Disbursement Rate) are per-activity values, so use the <strong>Average</strong> aggregator, not Sum, or the total will exceed 100%.
               </span>
             </CardDescription>
           </div>
@@ -1376,7 +1376,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
               {dataInfo.totalRows.toLocaleString()} rows loaded
             </span>
             {dataInfo.truncated && (
-              <span className="text-yellow-600 dark:text-yellow-500">
+              <span className="text-yellow-600">
                 (results truncated - apply filters for complete data)
               </span>
             )}
@@ -1385,11 +1385,11 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
 
         {/* Warning when mixing record types */}
         {filters.recordTypes.length === 0 && dataInfo && (
-          <Alert className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+          <Alert className="bg-amber-50 border-amber-200">
             <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800 dark:text-amber-200">
+            <AlertDescription className="text-amber-800">
               <strong>Data accuracy warning:</strong> You are viewing all record types together (Transactions + Planned Disbursements + Budgets).
-              Summing amounts across these types may be misleading. Use the <strong>Record Type</strong> filter to analyze specific data types,
+              Summing amounts across these types may be misleading. Use the <strong>Record Type</strong> filter to analyse specific data types,
               or use <strong>Weighted Amount (USD)</strong> for accurate sector-level analysis.
             </AlertDescription>
           </Alert>
@@ -1518,7 +1518,7 @@ export function CustomReportBuilder({ isAdmin = false }: CustomReportBuilderProp
         {/* Pivot Table */}
         <div 
           ref={pivotContainerRef}
-          className="border rounded-lg overflow-auto bg-white dark:bg-gray-950 max-h-[600px]"
+          className="border rounded-lg overflow-auto bg-white max-h-[600px]"
           onClick={(e) => {
             // Handle clicks on remove buttons for pivot fields
             const target = e.target as HTMLElement

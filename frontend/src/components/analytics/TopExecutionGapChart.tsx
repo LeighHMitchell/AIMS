@@ -228,7 +228,7 @@ export function TopExecutionGapChart({ refreshKey, onDataChange, compact = true 
 
       {!compact && !hasNoData && (
         <p className="mt-4 text-body text-muted-foreground leading-relaxed">
-          This chart ranks the top 10 activities by execution gap — the value committed (outgoing commitments) but
+          This chart ranks the top 10 activities by execution gap: the value committed (outgoing commitments) but
           not yet delivered (disbursements + expenditures). Each bar shows total commitment, split into the spent
           portion and the remaining gap (red). A large gap points to commitments that haven&apos;t yet been spent.
           Use the organisation-type filter to focus on a kind of publisher, and table view for the exact figures.

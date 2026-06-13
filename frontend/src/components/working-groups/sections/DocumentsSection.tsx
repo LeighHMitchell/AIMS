@@ -236,7 +236,7 @@ export default function DocumentsSection({ workingGroupId }: DocumentsSectionPro
                           {getDocTypeLabel(doc.document_type)}
                         </Badge>
                         <p className="text-helper text-muted-foreground">
-                          Uploaded {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}
+                          Uploaded {format(new Date(doc.uploaded_at), 'd MMM yyyy')}
                         </p>
                       </div>
                     </div>

@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -149,6 +150,9 @@ export function EdgeDialog({
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg border-b border-border">
           <DialogTitle>Contribution links</DialogTitle>
+          <DialogDescription>
+            Connect this result to others and set how much each one contributes, so progress rolls up through your program logic.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 pt-2">
@@ -168,7 +172,7 @@ export function EdgeDialog({
               Links to higher-tier nodes
               <HelpTextTooltip
                 size="sm"
-                content="Each link rolls this node up into a higher node. A node may feed several parents and a parent may draw from several children (a many-to-many graph). Set each link as: Contribution — you help cause the higher result alongside others; or Attribution — the higher result is solely down to this node. Add an optional rationale (the if-then assumption)."
+                content="Each link rolls this node up into a higher node. A node may feed several parents and a parent may draw from several children (a many-to-many graph). Set each link as: Contribution (you help cause the higher result alongside others) or Attribution (the higher result is solely down to this node). Add an optional rationale (the if-then assumption)."
               />
             </Label>
             {outgoing.length === 0 && (
@@ -234,7 +238,7 @@ export function EdgeDialog({
               Add a contribution link
               <HelpTextTooltip
                 size="sm"
-                content="Choose the node this one contributes to. ‘Default’ picks the link type automatically — contribution when the link crosses above the accountability ceiling, otherwise your choice. You can always override it. Links that would create a loop are rejected."
+                content="Choose the node this one contributes to. ‘Default’ picks the link type automatically: contribution when the link crosses above the accountability ceiling, otherwise your choice. You can always override it. Links that would create a loop are rejected."
               />
             </Label>
             <Select value={targetId} onValueChange={setTargetId}>

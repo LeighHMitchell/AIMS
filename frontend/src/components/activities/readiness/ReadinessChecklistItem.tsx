@@ -273,7 +273,7 @@ export function ReadinessChecklistItem({
                     </TooltipTrigger>
                     <TooltipContent className="max-w-sm">
                       <p className="text-body">
-                        Add any notes or context for this item — e.g. why it isn't yet complete,
+                        Add any notes or context for this item, e.g. why it isn't yet complete,
                         who owns the next action, blockers, or an explanation when marking Not Required.
                       </p>
                     </TooltipContent>
@@ -293,7 +293,7 @@ export function ReadinessChecklistItem({
               {response?.completed_by && response?.completed_at && (
                 <div className="text-helper text-muted-foreground pt-2 border-t">
                   Completed by {response.completed_by_user?.name || 'Unknown'} on{' '}
-                  {format(new Date(response.completed_at), 'MMMM d, yyyy')}
+                  {format(new Date(response.completed_at), 'd MMMM yyyy')}
                 </div>
               )}
             </div>

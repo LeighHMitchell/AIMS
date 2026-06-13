@@ -18,7 +18,7 @@ import { AlertCircle, Info, CalendarIcon, ChevronDown, BarChart3, Table as Table
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api-fetch';
 import { CHART_STRUCTURE_COLORS, PERFECT_SPEND_COLOR, getTransactionTypeColor } from '@/lib/chart-colors';
-import { formatAxisCurrency } from '@/lib/format';
+import { formatAxisCurrency, formatCurrencyCompact, formatDate } from '@/lib/format';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { ChartFullscreen, ChartExpandIconButton } from '@/components/charts/ChartFullscreen';
 import { FormulaTooltip } from '@/components/ui/formula-tooltip';
@@ -72,24 +72,6 @@ interface SpendTrajectoryData {
 
 interface ActivitySpendTrajectoryChartProps {
   activityId: string
-}
-
-// Format currency with k/m suffixes
-const formatCurrencyCompact = (value: number): string => {
-  const absValue = Math.abs(value)
-  if (absValue >= 1000000000) return `$${(value / 1000000000).toFixed(1)}b`
-  if (absValue >= 1000000) return `$${(value / 1000000).toFixed(1)}m`
-  if (absValue >= 1000) return `$${(value / 1000).toFixed(1)}k`
-  return `$${value.toFixed(0)}`
-}
-
-// Format for tooltip - slightly more precise
-const formatTooltipCurrency = (value: number): string => {
-  const absValue = Math.abs(value)
-  if (absValue >= 1000000000) return `$${(value / 1000000000).toFixed(2)}b`
-  if (absValue >= 1000000) return `$${(value / 1000000).toFixed(2)}m`
-  if (absValue >= 1000) return `$${(value / 1000).toFixed(1)}k`
-  return `$${value.toFixed(0)}`
 }
 
 /**
@@ -349,11 +331,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
     if (active && payload && payload.length) {
       const dataPoint = payload[0]?.payload
       const date = dataPoint?.date
-      const formattedDate = date ? new Date(date).toLocaleDateString('en-AU', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      }) : ''
+      const formattedDate = date ? formatDate(new Date(date)) : ''
 
       const perfectSpend = dataPoint?.perfectSpend || 0
       const cumulative = dataPoint?.cumulativeDisbursements || 0
@@ -361,7 +339,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
       const varianceColor = variance >= 0 ? '#16a34a' : '#dc2626'
       const varianceValue = (
         <span style={{ color: varianceColor }}>
-          {Math.abs(variance) < 1 ? '—' : formatTooltipCurrency(Math.abs(variance))}
+          {Math.abs(variance) < 1 ? '—' : formatCurrencyCompact(Math.abs(variance))}
         </span>
       )
 
@@ -369,8 +347,8 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
         <ChartTooltipCard
           title={formattedDate}
           rows={[
-            { label: 'Perfect spend', value: formatTooltipCurrency(perfectSpend), color: COLOURS.coolSteel },
-            { label: 'Actual spend', value: formatTooltipCurrency(cumulative), color: COLOURS.primaryScarlet },
+            { label: 'Perfect spend', value: formatCurrencyCompact(perfectSpend), color: COLOURS.coolSteel },
+            { label: 'Actual spend', value: formatCurrencyCompact(cumulative), color: COLOURS.primaryScarlet },
             { label: variance >= 0 ? 'Ahead' : 'Behind', value: varianceValue },
           ]}
         />
@@ -518,16 +496,16 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
                     return (
                       <tr key={row.year} className="border-b border-border hover:bg-muted/50">
                         <td className="py-2.5 px-4 font-medium text-foreground">{calendarYearState.getYearLabel(row.year)}</td>
-                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatTooltipCurrency(row.disbursedInYear)}</td>
-                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatTooltipCurrency(row.cumulativeActual)}</td>
-                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatTooltipCurrency(row.baseline)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrencyCompact(row.disbursedInYear)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrencyCompact(row.cumulativeActual)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrencyCompact(row.baseline)}</td>
                         <td className="text-right py-2.5 px-4 tabular-nums" style={{ color: varianceColor }}>
                           {Math.abs(variance) < 1
                             ? '—'
-                            : `${variance >= 0 ? '+' : '−'}${formatTooltipCurrency(Math.abs(variance))}`}
+                            : `${variance >= 0 ? '+' : '−'}${formatCurrencyCompact(Math.abs(variance))}`}
                         </td>
-                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatTooltipCurrency(row.cumulativePlanned)}</td>
-                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatTooltipCurrency(row.cumulativeCommitments)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrencyCompact(row.cumulativePlanned)}</td>
+                        <td className="text-right py-2.5 px-4 text-foreground tabular-nums">{formatCurrencyCompact(row.cumulativeCommitments)}</td>
                       </tr>
                     )
                   })}
@@ -631,7 +609,7 @@ export function ActivitySpendTrajectoryChart({ activityId }: ActivitySpendTrajec
         </div>
         {isFullscreen && (
           <p className="text-body text-muted-foreground leading-relaxed mt-auto pt-6 shrink-0">
-            The dashed line is the activity's <strong>perfect spend trajectory</strong> — what cumulative disbursements would look like if the full budget were paid out evenly across the planned start and end dates — while the solid stepped line tracks the <strong>actual cumulative disbursements</strong> reported to date. When the solid line sits below the dashed one the activity is behind on disbursing funds; above it, ahead. The diagonal-striped band measures that variance, and a persistent gap below the line is an early signal that planned activities aren't being funded on time — worth investigating against procurement, partner readiness, or reporting lag.
+            The dashed line is the activity's <strong>perfect spend trajectory</strong> (what cumulative disbursements would look like if the full budget were paid out evenly across the planned start and end dates), while the solid stepped line tracks the <strong>actual cumulative disbursements</strong> reported to date. When the solid line sits below the dashed one the activity is behind on disbursing funds; above it, ahead. The diagonal-striped band measures that variance, and a persistent gap below the line is an early signal that planned activities aren't being funded on time, worth investigating against procurement, partner readiness, or reporting lag.
           </p>
         )}
       </CardContent>

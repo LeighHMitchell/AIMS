@@ -83,6 +83,7 @@ import { ReferencesManager } from './results/ReferencesManager';
 import { DimensionsManager } from './results/DimensionsManager';
 import { LocationsManager } from './results/LocationsManager';
 import { MeasureTypeSearchableSelect } from '@/components/forms/MeasureTypeSearchableSelect';
+import { formatCurrency } from '@/lib/format';
 
 // Monochrome chart colors
 const CHART_COLORS = {
@@ -102,7 +103,7 @@ const formatValue = (value: number | undefined, measure: MeasureType): string =>
     case 'percentage':
       return `${value}%`;
     case 'currency':
-      return `$${value.toLocaleString()}`;
+      return formatCurrency(value);
     case 'unit':
       return value.toLocaleString();
     default:
@@ -631,7 +632,7 @@ export function ResultsTab({
     displayResults.forEach((result: ActivityResult) => {
       result.indicators?.forEach((indicator: any) => {
         indicator.periods?.forEach((period: any) => {
-          const date = new Date(period.period_end).toLocaleDateString('en-US', { 
+          const date = new Date(period.period_end).toLocaleDateString('en-GB', { 
             month: 'short', 
             year: 'numeric' 
           });
@@ -744,6 +745,9 @@ export function ResultsTab({
         <DialogContent className="sm:max-w-[600px]" onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>What result do you want to achieve?</DialogTitle>
+            <DialogDescription>
+              Define a result for this activity: choose its type and describe the change you expect to see.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -935,6 +939,9 @@ export function ResultsTab({
                 <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col" onCloseAutoFocus={(e) => e.preventDefault()}>
                   <DialogHeader>
                     <DialogTitle>Edit Result</DialogTitle>
+                    <DialogDescription>
+                      Update this result’s type, title and description.
+                    </DialogDescription>
                   </DialogHeader>
                   <ScrollArea className="flex-1 max-h-[calc(90vh-10rem)]">
                     <div className="space-y-4 pr-4">
@@ -1102,6 +1109,9 @@ export function ResultsTab({
                           <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" onCloseAutoFocus={(e) => e.preventDefault()}>
                             <DialogHeader className="shrink-0">
                               <DialogTitle>Edit Indicator</DialogTitle>
+                              <DialogDescription>
+                                Update this indicator’s measure, baseline and targets used to track the result.
+                              </DialogDescription>
                             </DialogHeader>
                             <div className="flex-1 min-h-0 overflow-y-auto">
                               <div className="space-y-4 pr-4">
@@ -1550,7 +1560,7 @@ export function ResultsTab({
                                           period_end: monthEnd.toISOString().split('T')[0],
                                           target_value: '',
                                           actual_value: '',
-                                          target_comment: `Target for ${monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+                                          target_comment: `Target for ${monthStart.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}`,
                                           actual_comment: ''
                                         });
                                         setShowAddPeriod(indicator.id);
@@ -1965,7 +1975,7 @@ export function ResultsTab({
                           
                           // Add period data points
                           indicator.periods?.forEach((period: any) => {
-                            const date = new Date(period.period_end).toLocaleDateString('en-US', { 
+                            const date = new Date(period.period_end).toLocaleDateString('en-GB', { 
                               month: 'short', 
                               year: 'numeric' 
                             });
@@ -2110,8 +2120,8 @@ export function ResultsTab({
                     </ResponsiveContainer>
                   ) : (
                     <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
-                      <img src="/images/empty-sundial.webp" alt="No indicators to analyze" className="h-32 mx-auto mb-4 opacity-50" />
-                      <h3 className="text-base font-semibold mb-2">No indicators to analyze</h3>
+                      <img src="/images/empty-sundial.webp" alt="No indicators to analyse" className="h-32 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-base font-semibold mb-2">No indicators to analyse</h3>
                       <p className="text-muted-foreground">Add indicators to see status distribution.</p>
                     </div>
                   )}
@@ -2135,8 +2145,8 @@ export function ResultsTab({
                     </ResponsiveContainer>
                   ) : (
                     <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
-                      <img src="/images/empty-kite-spool.webp" alt="No results to categorize" className="h-32 mx-auto mb-4 opacity-50" />
-                      <h3 className="text-base font-semibold mb-2">No results to categorize</h3>
+                      <img src="/images/empty-kite-spool.webp" alt="No results to categorise" className="h-32 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-base font-semibold mb-2">No results to categorise</h3>
                       <p className="text-muted-foreground">Add results to see them grouped by type.</p>
                     </div>
                   )}
@@ -2201,9 +2211,9 @@ export function ResultsTab({
                                 const totalActual = result.indicators!.reduce((sum: number, ind: ResultIndicator) => sum + (ind.latestActual || 0), 0);
                                 const rate = totalTarget > 0 ? Math.round((totalActual / totalTarget) * 100) : 0;
                                 
-                                if (rate >= 80) return <Badge className="bg-gray-900 text-white">On Track</Badge>;
-                                if (rate >= 50) return <Badge className="bg-gray-600 text-white">Attention Needed</Badge>;
-                                if (rate > 0) return <Badge className="bg-gray-400 text-white">Off Track</Badge>;
+                                if (rate >= 80) return <Badge variant="success">On Track</Badge>;
+                                if (rate >= 50) return <Badge variant="warning">Attention Needed</Badge>;
+                                if (rate > 0) return <Badge className="bg-[hsl(var(--error-bg))] text-[hsl(var(--error-text))]">Off Track</Badge>;
                                 return <Badge variant="outline">No Data</Badge>;
                               })()
                             ) : <Badge variant="outline">No Data</Badge>}

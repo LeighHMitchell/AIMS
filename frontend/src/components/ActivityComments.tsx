@@ -695,7 +695,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
                         <p className="text-body font-medium text-green-800">Resolution</p>
                         <p className="text-body text-green-700 mt-1">{comment.resolutionNote}</p>
                         <p className="text-helper text-[hsl(var(--success-icon))] mt-1">
-                          by {comment.resolvedBy?.name} • {format(new Date(comment.resolvedAt), 'MMM d, yyyy h:mm a')}
+                          by {comment.resolvedBy?.name} • {format(new Date(comment.resolvedAt), 'd MMM yyyy h:mm a')}
                         </p>
                       </div>
                     </div>
@@ -967,7 +967,7 @@ export function ActivityComments({ activityId, contextSection, allowContextSwitc
               <Button variant="ghost" size="sm" onClick={() => handleMentionTrigger('user')} title="Mention users (@)">
                 <AtSign className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleMentionTrigger('organization')} title="Mention organizations (#)">
+              <Button variant="ghost" size="sm" onClick={() => handleMentionTrigger('organization')} title="Mention organisations (#)">
                 <Hash className="h-4 w-4" />
               </Button>
             </div>

@@ -214,7 +214,7 @@ export default function PolicyMarkerEditPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="pm-order" className="flex items-center gap-1.5">Display Order
-                      <HelpTextTooltip size="sm" content="Controls where this marker appears in its list — lower numbers show first." />
+                      <HelpTextTooltip size="sm" content="Controls where this marker appears in its list; lower numbers show first." />
                     </Label>
                     <Select value={displayOrder || undefined} onValueChange={setDisplayOrder}>
                       <SelectTrigger id="pm-order"><SelectValue placeholder="Select position" /></SelectTrigger>
@@ -271,8 +271,8 @@ export default function PolicyMarkerEditPage() {
 
                 {/* Color */}
                 <div className="space-y-2">
-                  <Label htmlFor="pm-color" className="flex items-center gap-1.5">Theme color
-                    <HelpTextTooltip size="sm" content="The accent color used for this marker's card banner and the charts on its profile page. Leave unset to use the default palette color." />
+                  <Label htmlFor="pm-color" className="flex items-center gap-1.5">Theme colour
+                    <HelpTextTooltip size="sm" content="The accent colour used for this marker's card banner and the charts on its profile page. Leave unset to use the default palette colour." />
                   </Label>
                   <div className="flex items-center gap-3">
                     <input

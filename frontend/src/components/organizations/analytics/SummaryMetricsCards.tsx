@@ -58,7 +58,7 @@ export function SummaryMetricsCards({
           currency=""
           subtitle="in current portfolio"
           variant={projectsDelta.isPositive ? 'success' : 'default'}
-          helpText="Total number of active projects in the organization's portfolio"
+          helpText="Total number of active projects in the organisation's portfolio"
         />
         {previousYear.activeProjects > 0 && (
           <div className="mt-2 flex items-center gap-1 text-helper">
@@ -82,7 +82,7 @@ export function SummaryMetricsCards({
           currency={currency}
           subtitle="committed funds (2025)"
           variant="default"
-          helpText="Total financial commitments made by or to the organization in 2025"
+          helpText="Total financial commitments made by or to the organisation in 2025"
         />
         {previousYear.commitments > 0 && (
           <div className="mt-2 flex items-center gap-1 text-helper">
@@ -106,7 +106,7 @@ export function SummaryMetricsCards({
           currency={currency}
           subtitle="funds disbursed (2025)"
           variant="default"
-          helpText="Total funds disbursed to or from the organization in 2025"
+          helpText="Total funds disbursed to or from the organisation in 2025"
         />
         {previousYear.disbursements > 0 && (
           <div className="mt-2 flex items-center gap-1 text-helper">
@@ -130,7 +130,7 @@ export function SummaryMetricsCards({
           currency={currency}
           subtitle="total spent (2025)"
           variant="default"
-          helpText="Total expenditures reported by the organization in 2025"
+          helpText="Total expenditures reported by the organisation in 2025"
         />
         {previousYear.expenditures > 0 && (
           <div className="mt-2 flex items-center gap-1 text-helper">

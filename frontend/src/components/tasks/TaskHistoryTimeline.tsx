@@ -143,7 +143,7 @@ export function TaskHistoryTimeline({ history, className }: TaskHistoryTimelineP
 
                 {/* Timestamp */}
                 <div className="mt-1 text-helper text-muted-foreground">
-                  {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
+                  {format(new Date(entry.created_at), 'd MMM yyyy h:mm a')}
                 </div>
               </div>
             </div>

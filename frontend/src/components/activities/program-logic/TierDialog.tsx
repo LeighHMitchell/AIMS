@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -114,6 +115,9 @@ export function TierDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg border-b border-border">
           <DialogTitle>{isEdit ? "Edit Tier" : "Add Tier"}</DialogTitle>
+          <DialogDescription>
+            Name a level in your results hierarchy and choose whether it aggregates progress from the tier below.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">

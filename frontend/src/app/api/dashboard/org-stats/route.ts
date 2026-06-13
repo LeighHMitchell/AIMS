@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       // Last activity created (with creator info)
       supabase
         .from('activities')
-        .select('id, title_narrative, iati_identifier, created_at, created_by')
+        .select('id, title_narrative, acronym, iati_identifier, created_at, created_by')
         .eq('reporting_org_id', organizationId)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       // Last activity edited — only activities with a non-null updated_at
       supabase
         .from('activities')
-        .select('id, title_narrative, iati_identifier, created_at, updated_at, last_edited_by')
+        .select('id, title_narrative, acronym, iati_identifier, created_at, updated_at, last_edited_by')
         .eq('reporting_org_id', organizationId)
         .is('deleted_at', null)
         .not('updated_at', 'is', null)
@@ -98,6 +98,7 @@ export async function GET(request: NextRequest) {
           activities!inner (
             id,
             title_narrative,
+            acronym,
             iati_identifier,
             reporting_org_id,
             deleted_at
@@ -167,6 +168,7 @@ export async function GET(request: NextRequest) {
       lastActivityCreated = {
         id: lastCreatedResult.data.id,
         title: lastCreatedResult.data.title_narrative || 'Untitled Activity',
+        acronym: lastCreatedResult.data.acronym || undefined,
         timestamp: lastCreatedResult.data.created_at,
         iatiIdentifier: lastCreatedResult.data.iati_identifier || undefined,
         creatorProfile: buildProfile(lastCreatedResult.data.created_by),
@@ -187,6 +189,7 @@ export async function GET(request: NextRequest) {
         lastActivityEdited = {
           id: lastEdited.id,
           title: lastEdited.title_narrative || 'Untitled Activity',
+          acronym: lastEdited.acronym || undefined,
           timestamp: lastEdited.updated_at,
           iatiIdentifier: lastEdited.iati_identifier || undefined,
           editedByYou: editedByYou || editorUnknown,
@@ -199,11 +202,12 @@ export async function GET(request: NextRequest) {
     // Process last validation event
     let lastValidationEvent: ValidationEvent | null = null;
     if (lastValidationResult.data && !lastValidationResult.error) {
-      const activity = lastValidationResult.data.activities as unknown as { id: string; title_narrative: string; iati_identifier?: string; deleted_at?: string | null } | null;
+      const activity = lastValidationResult.data.activities as unknown as { id: string; title_narrative: string; acronym?: string; iati_identifier?: string; deleted_at?: string | null } | null;
       const validatorProfile = buildProfile(lastValidationResult.data.updated_by);
       lastValidationEvent = {
         activityId: lastValidationResult.data.activity_id,
         activityTitle: activity?.title_narrative || 'Untitled Activity',
+        acronym: activity?.acronym || undefined,
         iatiIdentifier: activity?.iati_identifier || undefined,
         eventType: lastValidationResult.data.validation_status as ValidationEvent['eventType'],
         timestamp: lastValidationResult.data.validation_date || lastValidationResult.data.updated_at,

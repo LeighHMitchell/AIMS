@@ -64,7 +64,7 @@ export function ChartFullscreen({ children, className }: ChartFullscreenProps) {
       {rendering && (
         <div
           className={cn(
-            "fixed inset-0 z-[999] bg-black/50 backdrop-blur-sm",
+            "fixed inset-0 z-[10000] bg-black/50 backdrop-blur-sm",
             closing
               ? "animate-out fade-out-0 duration-200"
               : "animate-in fade-in-0 duration-200",
@@ -82,7 +82,7 @@ export function ChartFullscreen({ children, className }: ChartFullscreenProps) {
       <div
         className={cn(
           rendering
-            ? "fixed inset-0 z-[1000] grid place-items-center p-4 pointer-events-none"
+            ? "fixed inset-0 z-[10000] grid place-items-center p-4 pointer-events-none"
             : "contents",
         )}
       >
@@ -90,6 +90,12 @@ export function ChartFullscreen({ children, className }: ChartFullscreenProps) {
           className={cn(
             rendering
               ? "pointer-events-auto w-[95vw] max-w-[1400px] h-[85vh] overflow-auto bg-background border border-border rounded-lg shadow-2xl ease-out-expo " +
+                  // The explainer paragraph each chart renders at the bottom (only
+                  // when fullscreen) carries the canonical
+                  // `text-body text-muted-foreground leading-relaxed` class — give
+                  // it a divider line above so it reads as a footer, matching the
+                  // Largest Activities reference treatment.
+                  "[&_.text-body.text-muted-foreground.leading-relaxed]:mt-4 [&_.text-body.text-muted-foreground.leading-relaxed]:pt-4 [&_.text-body.text-muted-foreground.leading-relaxed]:border-t [&_.text-body.text-muted-foreground.leading-relaxed]:border-border " +
                   (closing
                     ? "animate-out fade-out-0 zoom-out-95 duration-200"
                     : "animate-in fade-in-0 zoom-in-95 duration-300")

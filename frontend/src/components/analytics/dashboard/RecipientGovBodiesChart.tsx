@@ -45,7 +45,8 @@ import { exportChartToCSV } from "@/lib/chart-export";
 import { RankedItem } from "@/types/national-priorities";
 import { CHART_RANKED_PALETTE, CHART_STRUCTURE_COLORS } from "@/lib/chart-colors";
 import { apiFetch } from '@/lib/api-fetch';
-import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
+import { formatTooltipCurrency, formatAxisCurrency, formatCurrencyCompact } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
 
@@ -63,21 +64,6 @@ const METRIC_OPTIONS = [
   { value: "commitments", label: "Commitments" },
   { value: "disbursements", label: "Disbursements" },
 ];
-
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  } else if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`;
-  } else if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
-  }
-  return `$${value.toFixed(0)}`;
-}
-
-function formatCurrencyFull(value: number): string {
-  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
 
 function formatPercent(value: number, total: number): string {
   if (total === 0) return "0%";
@@ -231,7 +217,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0, compact = false }: Rec
                 <div className="font-medium">{item.name}</div>
               </TableCell>
               <TableCell className="text-right font-mono">
-                {formatCurrencyFull(item.value)}
+                <CurrencyValue amount={item.value} />
               </TableCell>
               <TableCell className="text-right">
                 {formatPercent(item.value, grandTotal)}
@@ -261,7 +247,7 @@ export function RecipientGovBodiesChart({ refreshKey = 0, compact = false }: Rec
             <span className="truncate max-w-[150px]">{item.name}</span>
           </div>
           <div className="flex items-center gap-3 text-muted-foreground">
-            <span>{formatCurrency(item.value)}</span>
+            <span>{formatCurrencyCompact(item.value)}</span>
             <span className="w-12 text-right">
               {formatPercent(item.value, grandTotal)}
             </span>

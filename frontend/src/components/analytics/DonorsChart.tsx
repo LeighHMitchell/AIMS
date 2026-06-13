@@ -206,27 +206,6 @@ export function DonorsChart({ dateRange, refreshKey, onDataChange }: DonorsChart
     }
   }
 
-  const formatCurrency = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      const safeValue = Number(value)
-      if (isNaN(safeValue) || !isFinite(safeValue)) {
-        return '$0'
-      }
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 1
-      }).format(safeValue)
-    } catch (error) {
-      console.error('[DonorsChart] Error formatting currency:', error, value)
-      return '$0'
-    }
-  }
-
   // Generate shades of slate for bars
   const barColors = [
     '#334155', // slate-700

@@ -256,15 +256,6 @@ export function AidFlowMap({ className, height = 300, initialDateRange }: AidFlo
     URL.revokeObjectURL(url)
   }
   
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
-  
   return (
     <div className={cn("w-full", className)}>
       <div className="space-y-4">

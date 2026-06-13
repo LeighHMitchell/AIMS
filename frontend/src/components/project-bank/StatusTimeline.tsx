@@ -22,7 +22,7 @@ interface StatusTimelineProps {
 const PHASE_ORDER: ProjectPhase[] = ['intake', 'fs1', 'fs2', 'fs3']
 
 const PHASE_DESCRIPTIONS: Record<ProjectPhase, string> = {
-  intake: 'The nominating ministry submits the project proposal with basic details — sector, location, estimated cost, and objectives.',
+  intake: 'The nominating ministry submits the project proposal with basic details: sector, location, estimated cost, and objectives.',
   fs1: 'A preliminary feasibility study covering technical approach, revenue potential, environmental/social screening, MSDP alignment, and financial analysis (FIRR).',
   fs2: 'An independent detailed study conducted by assigned consultants, covering engineering design, full cost–benefit analysis, and risk assessment.',
   fs3: 'Based on the category decision, the project proceeds to either private sector listing, government budget allocation, or PPP transaction structuring with VGF/MRG mechanisms.',

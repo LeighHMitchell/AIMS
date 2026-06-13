@@ -419,7 +419,7 @@ export function CoordinationChartWithControls({
                       variant="ghost"
                       size="sm"
                       className="h-8 gap-1"
-                      title={dateRange?.from && dateRange?.to ? `${format(dateRange.from, 'MMM d, yyyy')} – ${format(dateRange.to, 'MMM d, yyyy')}` : undefined}
+                      title={dateRange?.from && dateRange?.to ? `${format(dateRange.from, 'd MMM yyyy')} – ${format(dateRange.to, 'd MMM yyyy')}` : undefined}
                     >
                       <CalendarIcon className="h-4 w-4" />
                       {selectedYears.length === 0

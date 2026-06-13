@@ -64,7 +64,7 @@ async function fetchOrganizationExportData(orgId: string): Promise<OrganizationE
 function formatDate(date: string | null | undefined): string {
   if (!date) return '—';
   try {
-    return format(new Date(date), 'MMM d, yyyy');
+    return format(new Date(date), 'd MMM yyyy');
   } catch {
     return String(date);
   }
@@ -88,7 +88,7 @@ function formatCurrency(value: number | null | undefined, currency: string = 'US
  */
 function getExportFooter(): string {
   const now = new Date();
-  const dateStr = format(now, 'MMM d, yyyy');
+  const dateStr = format(now, 'd MMM yyyy');
   const timeStr = format(now, 'h:mm a');
   return `Exported from the Aether DFMIS on ${dateStr} at ${timeStr}`;
 }

@@ -20,6 +20,7 @@ import { TRANSACTION_TYPE_LABELS } from '@/types/transaction'
 import { TRANSACTION_TYPE_COLORS } from '@/lib/chart-colors'
 import { cn } from '@/lib/utils'
 import { getTransactionUSDValueSync } from '@/lib/transaction-usd-helper'
+import { formatCurrencyCompact } from '@/lib/format'
 
 interface Transaction {
   transaction_date: string
@@ -119,14 +120,6 @@ interface DayData {
   count: number
   value: number
   typeBreakdown: Record<string, { count: number; value: number }>
-}
-
-// Format currency value in abbreviated form
-const formatCurrencyAbbreviated = (value: number): string => {
-  if (value >= 1000000000) return `${(value / 1000000000).toFixed(1)}B`
-  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`
-  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`
-  return value.toFixed(0)
 }
 
 // Get available years from data
@@ -313,7 +306,7 @@ function MonthlySummaryView({
                 <div className="font-semibold text-foreground">
                   {intensityMode === 'count'
                     ? `${month.count} transactions`
-                    : `$${formatCurrencyAbbreviated(month.value)}`
+                    : `${formatCurrencyCompact(month.value)}`
                   }
                 </div>
                 {!compact && (
@@ -461,7 +454,7 @@ function MonthlySparkline({
             const monthLabel = format(parseISO(d.month + '-01'), 'MMM yyyy')
             const valueLabel = intensityMode === 'count' 
               ? `${d.count} tx` 
-              : `$${formatCurrencyAbbreviated(d.value)}`
+              : `${formatCurrencyCompact(d.value)}`
             sparklineTooltipRef.current
               .html(`${monthLabel}: ${valueLabel}`)
               .style('left', `${event.pageX}px`)
@@ -1097,7 +1090,7 @@ export function TransactionCalendarHeatmap({ transactions, stats, showControls =
           <div
             ref={tooltipBoxRef}
             className={cn(
-              'fixed z-[100000] bg-white border border-border rounded-lg shadow-xl w-[330px] overflow-hidden',
+              'fixed z-[10005] bg-white border border-border rounded-lg shadow-xl w-[330px] overflow-hidden',
               pinned ? 'pointer-events-auto' : 'pointer-events-none',
             )}
             style={
@@ -1129,7 +1122,7 @@ export function TransactionCalendarHeatmap({ transactions, stats, showControls =
                       <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: calTypeColor(type) }} />
                       <span className="text-body font-medium text-foreground truncate">{calTypeLabel(type)}</span>
                     </div>
-                    <span className="text-helper text-muted-foreground whitespace-nowrap">{g.count} • ${formatCurrencyAbbreviated(g.value)}</span>
+                    <span className="text-helper text-muted-foreground whitespace-nowrap">{g.count} • {formatCurrencyCompact(g.value)}</span>
                   </div>
                   {pinned && (
                     <div className="pl-5 mt-1 space-y-1.5">
@@ -1144,7 +1137,7 @@ export function TransactionCalendarHeatmap({ transactions, stats, showControls =
                             ) : (
                               <span className="text-foreground break-words leading-snug font-medium">{it.provider}</span>
                             )}
-                            <span className="text-foreground whitespace-nowrap flex-shrink-0">${formatCurrencyAbbreviated(it.value)}</span>
+                            <span className="text-foreground whitespace-nowrap flex-shrink-0">{formatCurrencyCompact(it.value)}</span>
                           </div>
                           {/* Activity name (→ activity page) */}
                           {it.activityId ? (

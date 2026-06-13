@@ -14,6 +14,7 @@ import { EventDetailModal } from '@/components/calendar/EventDetailModal'
 import { CalendarEventHeatmap } from '@/components/calendar/CalendarEventHeatmap'
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
+import { formatDate as formatDateCanonical } from '@/lib/format'
 
 // Dynamic import for FullCalendar to avoid SSR issues
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), { ssr: false })
@@ -176,14 +177,9 @@ export default function CalendarPage() {
       })
     : []
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
+  // Weekday prefix is calendar-specific; date portion delegates to the canonical formatter.
+  const formatDateWithWeekday = (date: Date) =>
+    `${date.toLocaleDateString('en-GB', { weekday: 'long' })}, ${formatDateCanonical(date)}`
 
   const formatTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleTimeString('en-US', {
@@ -426,7 +422,7 @@ export default function CalendarPage() {
                         </h4>
                         <div className="flex items-center gap-1 mt-1 text-helper text-[#7b95a7]">
                           <Calendar className="h-3 w-3" />
-                          {new Date(event.start).toLocaleDateString('en-US', {
+                          {new Date(event.start).toLocaleDateString('en-GB', {
                             weekday: 'short',
                             month: 'short',
                             day: 'numeric'
@@ -471,7 +467,7 @@ export default function CalendarPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-lg text-[#4c5568]">
-                {formatDate(viewingDate)}
+                {formatDateWithWeekday(viewingDate)}
               </CardTitle>
               <CardDescription>
                 {eventsForSelectedDate.length} event{eventsForSelectedDate.length !== 1 ? 's' : ''} on this day

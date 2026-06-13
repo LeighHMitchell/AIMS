@@ -24,28 +24,28 @@ interface CategoryDecisionPanelProps {
 const CATEGORY_CARDS: { value: CategoryDecision; label: string; description: string; icon: typeof Building; color: string }[] = [
   {
     value: "category_a",
-    label: "Category A — Full Private",
+    label: "Category A: Full Private",
     description: "Commercially viable. Project proceeds to competitive tendering for private sector delivery.",
     icon: Building,
     color: "text-[hsl(var(--success-icon))]",
   },
   {
     value: "category_b",
-    label: "Category B — Government Budget",
+    label: "Category B: Government Budget",
     description: "Not commercially viable but NDP-aligned. Funded through domestic budget allocation.",
     icon: Wallet,
     color: "text-blue-600",
   },
   {
     value: "category_c",
-    label: "Category C — PPP",
+    label: "Category C: PPP",
     description: "Economically viable but not commercially. Proceeds to FS-3 for PPP structuring (VGF, MRG, etc.).",
     icon: Handshake,
     color: "text-purple-600",
   },
   {
     value: "category_d",
-    label: "Category D — Development Partner (ODA)",
+    label: "Category D: Development Partner (ODA)",
     description: "Public-good sector with social returns. Proceeds to AIMS transfer preparation with development partner funding.",
     icon: Globe,
     color: "text-cyan-600",
@@ -116,7 +116,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-[hsl(var(--success-icon))]" />
-          <h3 className="text-lg font-semibold">Categorization Complete</h3>
+          <h3 className="text-lg font-semibold">Categorisation Complete</h3>
         </div>
         <div className="border border-border rounded-lg p-4 space-y-2">
           <p className="text-body">
@@ -145,7 +145,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Project Categorization</h3>
+      <h3 className="text-lg font-semibold">Project Categorisation</h3>
 
       {/* System recommendation */}
       {recommendation && (
@@ -256,7 +256,7 @@ export function CategoryDecisionPanel({ project, onCategorized }: CategoryDecisi
       <GateChecklistModal
         open={showGateModal}
         onOpenChange={setShowGateModal}
-        title="Confirm Category C — PPP Pathway"
+        title="Confirm Category C: PPP Pathway"
         description="Complete all requirements before advancing to FS-3 PPP structuring."
         projectId={project.id}
         items={[

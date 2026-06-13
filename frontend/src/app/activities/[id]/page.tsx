@@ -10,12 +10,12 @@ import { ActivityOverviewTab } from "@/components/activities/ActivityOverviewTab
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { apiFetch } from '@/lib/api-fetch';
-import { formatCurrencyShort } from '@/lib/format';
+import { formatCurrencyShort, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils'
 import {
   ArrowLeft,
@@ -1465,17 +1465,6 @@ export default function ActivityDetailPage() {
     )
   }
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'Not set'
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Not set';
-      return format(date, 'dd MMM yyyy')
-    } catch {
-      return 'Not set'
-    }
-  }
-
   // Helper function to render label with help tooltip
   const LabelWithHelp = ({ label, helpText }: { label: string; helpText: string }) => (
     <div className="flex items-center gap-1">
@@ -2308,16 +2297,13 @@ export default function ActivityDetailPage() {
                       {TAB_GROUPS.flatMap(g => g.tabs).map((t) => {
                         const inGroup = activeGroup.tabs.some(sub => sub.value === t.value);
                         return (
-                          <TabsTrigger
+                          <PageTabsTrigger
                             key={t.value}
                             value={t.value}
-                            className={cn(
-                              "data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm whitespace-nowrap",
-                              !inGroup && "hidden"
-                            )}
+                            className={cn(!inGroup && "hidden")}
                           >
                             {t.label}
-                          </TabsTrigger>
+                          </PageTabsTrigger>
                         );
                       })}
                     </TabsList>

@@ -25,7 +25,7 @@ import {
 } from '@/types/organization-funding-envelope'
 import { TrendingUp, AlertCircle, BarChart3, LineChart as LineChartIcon, Table as TableIcon, Layers, RefreshCw } from 'lucide-react'
 import { convertToUSD } from '@/lib/currency-conversion-api'
-import { formatAxisCurrency } from '@/lib/format'
+import { formatAxisCurrency, formatCurrencyCompact } from '@/lib/format'
 
 // Color scheme
 const COLORS = {
@@ -198,18 +198,6 @@ export default function OrganizationFundingVisualization({
   }, [envelopes, currentYear, convertedAmounts])
 
 
-  // Format currency
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000000) {
-      return `$${Math.round(value / 1000000000)}B`
-    } else if (value >= 1000000) {
-      return `$${Math.round(value / 1000000)}M`
-    } else if (value >= 1000) {
-      return `$${Math.round(value / 1000)}K`
-    }
-    return `$${Math.round(value)}`
-  }
-
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -218,7 +206,7 @@ export default function OrganizationFundingVisualization({
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex justify-between gap-4 text-body">
               <span style={{ color: entry.color || COLORS.primaryScarlet }}>{entry.name}:</span>
-              <span className="font-medium" style={{ color: COLORS.blueSlate }}>{formatCurrency(entry.value)}</span>
+              <span className="font-medium" style={{ color: COLORS.blueSlate }}>{formatCurrencyCompact(entry.value)}</span>
             </div>
           ))}
         </div>
@@ -251,7 +239,7 @@ export default function OrganizationFundingVisualization({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" style={{ color: COLORS.primaryScarlet }}>
-              {formatCurrency(
+              {formatCurrencyCompact(
                 categorized.past.reduce((sum, e) => sum + getEnvelopeUSDAmount(e), 0)
               )}
             </div>
@@ -267,7 +255,7 @@ export default function OrganizationFundingVisualization({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" style={{ color: COLORS.coolSteel }}>
-              {formatCurrency(
+              {formatCurrencyCompact(
                 categorized.current.reduce((sum, e) => sum + getEnvelopeUSDAmount(e), 0)
               )}
             </div>
@@ -283,7 +271,7 @@ export default function OrganizationFundingVisualization({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" style={{ color: COLORS.blueSlate }}>
-              {formatCurrency(
+              {formatCurrencyCompact(
                 categorized.future.reduce((sum, e) => sum + getEnvelopeUSDAmount(e), 0)
               )}
             </div>
@@ -570,19 +558,19 @@ export default function OrganizationFundingVisualization({
                   </thead>
                   <tbody>
                     {timeSeriesData.map((row, index) => (
-                      <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#ffffff' : COLORS.platinum }}>
+                      <tr key={index} className="hover:bg-muted/50 transition-colors">
                         <td className="border p-3 font-medium" style={{ color: COLORS.blueSlate }}>{row.year}</td>
                         <td className="border p-3 text-right font-semibold" style={{ color: COLORS.primaryScarlet }}>
-                          {formatCurrency(row.total)}
+                          {formatCurrencyCompact(row.total)}
                         </td>
                         <td className="border p-3 text-right" style={{ color: COLORS.blueSlate }}>
-                          {formatCurrency(row.past)}
+                          {formatCurrencyCompact(row.past)}
                         </td>
                         <td className="border p-3 text-right" style={{ color: COLORS.blueSlate }}>
-                          {formatCurrency(row.current)}
+                          {formatCurrencyCompact(row.current)}
                         </td>
                         <td className="border p-3 text-right" style={{ color: COLORS.blueSlate }}>
-                          {formatCurrency(row.future)}
+                          {formatCurrencyCompact(row.future)}
                         </td>
                       </tr>
                     ))}

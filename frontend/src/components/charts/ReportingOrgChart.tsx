@@ -248,7 +248,7 @@ export const ReportingOrgChart: React.FC<ReportingOrgChartProps> = ({
         <p className="text-body text-muted-foreground leading-relaxed">
           This chart compares each reporting organisation&apos;s planned budget against its actual spending
           (disbursements and expenditures). Use it to see which organisations report the largest portfolios
-          and how fully they are executing them — a large budget with low disbursement points to commitments
+          and how fully they are executing them. A large budget with low disbursement points to commitments
           that haven&apos;t yet been delivered. Switch to table view to read the exact figures. All amounts are USD.
         </p>
       </div>

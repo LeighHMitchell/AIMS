@@ -380,7 +380,7 @@ export function IATIImportLogsManagement() {
                               {formatDistanceToNow(new Date(log.import_date), { addSuffix: true })}
                             </div>
                             <div className="text-helper text-muted-foreground">
-                              {format(new Date(log.import_date), 'MMM d, yyyy HH:mm')}
+                              {format(new Date(log.import_date), 'd MMM yyyy HH:mm')}
                             </div>
                           </TableCell>
                           <TableCell>

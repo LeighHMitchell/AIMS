@@ -249,7 +249,7 @@ export function ReadinessDocumentUpload({
       {/* Uploaded Documents Table */}
       {hasDocuments && (
         <div className="relative w-full overflow-x-auto overflow-y-visible">
-          <table className="w-full caption-bottom text-body border border-border dark:border-gray-700 rounded-lg">
+          <table className="w-full caption-bottom text-body border border-border rounded-lg">
             <thead className="bg-surface-muted">
               <tr>
                 <th className="w-8 p-2" />
@@ -293,7 +293,7 @@ export function ReadinessDocumentUpload({
                           <span className="text-helper text-muted-foreground block">
                             {formatFileSize(doc.file_size)}
                             {doc.uploaded_at && (
-                              <> · Uploaded {format(new Date(doc.uploaded_at), 'MMM d, yyyy')}</>
+                              <> · Uploaded {format(new Date(doc.uploaded_at), 'd MMM yyyy')}</>
                             )}
                             {doc.uploaded_by_user?.name && (
                               <> by {doc.uploaded_by_user.name}</>

@@ -874,7 +874,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
   // shorter duration, plain guidance.
   useEffect(() => {
     if (!general.id && !hasShownInitialToast.current && isNewActivity) {
-      toast.info('Start with the Activity Title — the other fields unlock once the activity is created.', {
+      toast.info('Start with the Activity Title. The other fields unlock once the activity is created.', {
         position: 'top-center',
         duration: 4000,
       });
@@ -1687,7 +1687,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
           </LabelSaveIndicator>
           {general.is_pooled_fund === true && (
             <span className="text-helper text-muted-foreground font-normal">
-              — shown as fund manager on the Pooled funds page
+              (shown as fund manager on the Pooled funds page)
             </span>
           )}
         </div>
@@ -1721,7 +1721,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
       <SubSection
         prominentTitle
         title="Narrative"
-        help="What this activity is about — a plain-language summary anyone can read."
+        help="What this activity is about: a plain-language summary anyone can read."
       >
 
       {/* Description with field-level autosave */}
@@ -2250,7 +2250,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               <div className="flex items-center gap-2">
                 Activity Hierarchy Level
                 <HelpTextTooltip>
-                  The IATI <code>@hierarchy</code> value: a depth number your organisation defines for itself. Level 1 is the top of your structure; higher numbers are sub-activities further down. IATI sets no fixed labels or maximum, and the number is only meaningful within your own reporting. It is optional — leave it blank if you don't use a hierarchy. To actually connect activities, add a Parent/Child link on the Linked Activities tab.
+                  The IATI <code>@hierarchy</code> value: a depth number your organisation defines for itself. Level 1 is the top of your structure; higher numbers are sub-activities further down. IATI sets no fixed labels or maximum, and the number is only meaningful within your own reporting. It is optional; leave it blank if you don't use a hierarchy. To actually connect activities, add a Parent/Child link on the Linked Activities tab.
                 </HelpTextTooltip>
               </div>
               {fieldLockStatus.isLocked && (
@@ -2815,7 +2815,7 @@ function GeneralSection({ general, setGeneral, user, getDateFieldStatus, setHasU
               <label className="text-body font-medium text-foreground flex items-center gap-1">
                 Description/Context
                 <HelpTextTooltip>
-                  Optional context about this date — what happened, why it matters, or any background that helps readers interpret it. The IATI Standard does not impose a length limit on narrative text, so longer descriptions are accepted.
+                  Optional context about this date: what happened, why it matters, or any background that helps readers interpret it. The IATI Standard does not impose a length limit on narrative text, so longer descriptions are accepted.
                 </HelpTextTooltip>
               </label>
               <Textarea
@@ -4924,7 +4924,7 @@ function NewActivityPageContent() {
       "linked_activities": "The Linked Activities tab shows connections between this activity and others, defined through recognised relationship types such as parent, child, or related projects. Each linked activity is displayed with its title, identifier, and reporting organisation, along with its relationship to the current activity. A relationship visualisation provides a clear overview of how activities are structured and connected across partners.",
       tags: "Add custom tags to categorise this activity and make it easier to find through search and reporting. You can click on any tag to edit it inline. When creating tags, use clear and specific terms, such as \"water-infrastructure\" instead of simply \"water,\" to ensure accuracy. Tags ignore letter cases and will always be saved in lowercase. For consistency, try to reuse existing tags whenever possible. Careful tagging not only improves searchability but also strengthens the quality of filtering and reporting across activities.",
       working_groups: "In this section you can map the activity to the relevant technical or sector working groups. Doing so ensures that the activity is visible within the appropriate coordination structures, helps align it with other initiatives in the same area, and supports joint planning, monitoring and reporting. By linking your activity to the correct working group, you contribute to better coordination across partners and provide government and sector leads with a clearer picture of collective efforts.",
-      policy_markers: "Assign OECD DAC and IATI-compliant policy markers to show how this activity addresses cross-cutting development issues. Policy markers are a standard way of signalling whether and to what extent an activity contributes to objectives such as gender equality, climate change, biodiversity, or disaster risk reduction. Each marker is scored to reflect the importance of the objective within the activity—for example, whether it is a principal objective, a significant objective, or not targeted at all. The Rio Markers are a specific subset that track environmental objectives in line with OECD DAC guidelines. Providing a short rationale alongside your chosen scores helps explain and justify the assessment, making the data more transparent and easier to interpret across organisations and reports.",
+      policy_markers: "Assign OECD DAC and IATI-compliant policy markers to show how this activity addresses cross-cutting development issues. Policy markers are a standard way of signalling whether and to what extent an activity contributes to objectives such as gender equality, climate change, biodiversity, or disaster risk reduction. Each marker is scored to reflect the importance of the objective within the activity, for example whether it is a principal objective, a significant objective, or not targeted at all. The Rio Markers are a specific subset that track environmental objectives in line with OECD DAC guidelines. Providing a short rationale alongside your chosen scores helps explain and justify the assessment, making the data more transparent and easier to interpret across organisations and reports.",
       documents: "You can drag and drop files into the upload area or click \"Choose Files\" to browse your computer. Supported formats include images (PNG, JPG, GIF), PDFs, Word documents, Excel sheets, and CSV files. Add a clear title and category so your uploads are easy to find later in the library.",
       "xml-import": "Import activity data from an IATI-compliant XML file. You can review and select which fields to import.",
       "excel-import": "Import activity data from an Excel spreadsheet. Download the template, fill it out, and upload it to populate the activity fields.",
@@ -4935,7 +4935,7 @@ function NewActivityPageContent() {
       "forward-spending-survey": "Record forward-looking spending estimates for the activity beyond the current year. These projections help government and partners plan future budgets and understand the medium-term aid outlook. Enter expected disbursements by year in the currency of the commitment, along with any assumptions or caveats that affect the estimates.",
       "financing-terms": "Capture the financial terms of the activity, including the type of finance (grant, loan, guarantee, or equity), interest rate, repayment schedule, grace period, and maturity. For concessional loans, record the grant element where available. These details determine how the activity is classified for ODA reporting and help recipients understand the true cost of the financing.",
       metadata: "Administrative information about this activity record, including who created and last modified it, the reporting organisation, publication status, and IATI identifiers. Use this section to review the record's provenance and confirm it is attributed correctly before publishing.",
-      results: "Record the results framework for this activity — the outputs, outcomes, and impacts the activity aims to deliver. For each result, add indicators with baselines, targets, and actual values over time. A well-structured results section allows progress to be tracked against original intentions and supports evidence-based reporting to funders and partners.",
+      results: "Record the results framework for this activity: the outputs, outcomes, and impacts the activity aims to deliver. For each result, add indicators with baselines, targets, and actual values over time. A well-structured results section allows progress to be tracked against original intentions and supports evidence-based reporting to funders and partners.",
       finances: "Record every financial transaction associated with the activity, including commitments, disbursements, expenditures, incoming funds, and reimbursements. Each transaction captures the value, date, currency, provider, receiver, and (optionally) sector, aid type, flow type, and finance type. Accurate transaction data underpins all financial reporting and reconciliation across the system.",
       budgets: "Record the activity's planned budget broken down by period, typically by year or quarter. Budgets show the intended spending profile over the life of the activity and are distinct from actual disbursements. Periods should not overlap and, together, should cover the full duration of the activity. Budget status (indicative or committed) indicates how firm each figure is.",
       "planned-disbursements": "Record expected future disbursements to help partners and government forecast incoming funds. Each planned disbursement covers a specific period and includes the amount, currency, provider organisation, and receiver organisation. Planned disbursements differ from budgets: they reflect actual money flows expected on specific dates rather than the overall spending plan.",
@@ -6231,7 +6231,7 @@ function NewActivityPageContent() {
           </div>
           
           {/* Combined Footer with Navigation and Validation Actions */}
-          <footer className={`fixed bottom-0 right-0 bg-card/60 dark:bg-gray-900/60 backdrop-blur-md py-4 px-8 transition-all duration-400 ${sidebarCollapsed ? 'left-20' : 'left-72'} ${isModalOpen ? 'z-[40]' : 'z-[60]'}`}>
+          <footer className={`fixed bottom-0 right-0 bg-card/60 backdrop-blur-md py-4 px-8 transition-all duration-400 ${sidebarCollapsed ? 'left-20' : 'left-72'} ${isModalOpen ? 'z-[40]' : 'z-[60]'}`}>
             <div className="max-w-full flex items-center justify-between gap-4">
               {/* Left side: Validation Actions */}
               <div className="flex items-center gap-4">

@@ -70,7 +70,7 @@ export function PageHelpCard({
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error || `HTTP ${res.status}`);
       }
-      toast.success('Thanks — your question has been submitted.');
+      toast.success('Thanks, your question has been submitted.');
       setQuestion('');
       onClose();
     } catch (err) {

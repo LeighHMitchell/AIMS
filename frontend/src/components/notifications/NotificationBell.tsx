@@ -245,7 +245,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="h-auto p-1 text-helper text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-gray-100"
+              className="h-auto p-1 text-helper text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.preventDefault();
                 markAllAsRead();
@@ -273,7 +273,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
                 key={notification.id}
                 className={cn(
                   'flex flex-col items-start gap-1 p-3 cursor-pointer',
-                  !notification.is_read && 'bg-muted dark:bg-gray-800/50'
+                  !notification.is_read && 'bg-muted'
                 )}
                 onClick={() => handleNotificationClick(notification)}
               >
@@ -304,7 +304,7 @@ export function NotificationBell({ userId, onOpen }: NotificationBellProps) {
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="text-center text-body text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-gray-100 cursor-pointer justify-center"
+          className="text-center text-body text-muted-foreground hover:text-foreground cursor-pointer justify-center"
           onClick={() => {
             router.push('/dashboard?tab=notifications');
             setOpen(false);

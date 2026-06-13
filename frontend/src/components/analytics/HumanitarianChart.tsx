@@ -176,46 +176,6 @@ export function HumanitarianChart({ dateRange, refreshKey, onDataChange, compact
     onDataChange?.(data)
   }, [data, onDataChange])
 
-  const formatCurrency = (value: number) => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      const safeValue = Number(value)
-      if (isNaN(safeValue) || !isFinite(safeValue)) {
-        return '$0'
-      }
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        notation: 'compact',
-        maximumFractionDigits: 0
-      }).format(safeValue)
-    } catch (error) {
-      console.error('[HumanitarianChart] Error formatting currency:', error, value)
-      return '$0'
-    }
-  }
-
-  const formatCurrencyFull = (value: number): string => {
-    try {
-      if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-        return '$0'
-      }
-      // Format in billions or millions
-      if (value >= 1_000_000_000) {
-        return `$${Math.round(value / 1_000_000_000)} bn`
-      } else if (value >= 1_000_000) {
-        return `$${Math.round(value / 1_000_000)} M`
-      } else if (value >= 1_000) {
-        return `$${Math.round(value / 1_000)} K`
-      }
-      return `$${Math.round(value)}`
-    } catch (error) {
-      return '$0'
-    }
-  }
-
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const total = payload.reduce((sum: number, entry: any) => sum + (Number(entry.value) || 0), 0)

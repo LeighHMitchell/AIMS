@@ -21,7 +21,7 @@ import { CustomYear, getCustomYearRange, getCustomYearLabel, pickDefaultCalendar
 import { apiFetch } from '@/lib/api-fetch';
 import { cn } from '@/lib/utils'
 import { CHART_STRUCTURE_COLORS } from '@/lib/chart-colors'
-import { formatAxisCurrency } from '@/lib/format'
+import { formatAxisCurrency, formatTooltipCurrency } from '@/lib/format'
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
@@ -174,18 +174,6 @@ export function SDGConcentrationChart({
     }
   }
 
-  const formatCurrency = (value: number) => {
-    if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
-      return '$0'
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1
-    }).format(value)
-  }
-
   const getMetricValue = (item: ConcentrationData) => {
     if (metric === 'activities') return item.activityCount
     if (metric === 'budget') return item.totalBudget
@@ -250,7 +238,7 @@ export function SDGConcentrationChart({
     if (active && payload && payload.length) {
       const rows = payload.map((entry: any) => ({
         label: entry.name,
-        value: metric === 'activities' ? entry.value.toFixed(0) : formatCurrency(entry.value),
+        value: metric === 'activities' ? entry.value.toFixed(0) : formatTooltipCurrency(entry.value, isExpanded),
         color: entry.color || entry.stroke || entry.fill,
       }))
       return <ChartTooltipCard title={`Year: ${getYearLabel(label)}`} rows={rows} />
@@ -407,7 +395,7 @@ export function SDGConcentrationChart({
             This chart tracks how many SDGs are typically assigned to each activity over time, helping assess the
             organization&apos;s approach to SDG alignment. Activities mapped to just one or two SDGs suggest targeted,
             focused interventions, while those mapped to five or more SDGs may indicate cross-cutting programs or
-            potentially unfocused design. Neither approach is inherently better—the optimal strategy depends on the
+            potentially unfocused design. Neither approach is inherently better; the optimal strategy depends on the
             organization&apos;s mandate and context. Use this visualization to understand whether aid programming is
             becoming more specialized or more integrated over time, and to inform strategic discussions about how
             broadly or narrowly to align future activities with global development goals.

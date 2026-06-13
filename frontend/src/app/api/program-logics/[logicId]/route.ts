@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       return badRequest(`Unknown framework_preset: ${body.framework_preset}`);
     update.framework_preset = body.framework_preset;
     presetWarning =
-      'Framework changed. Existing tiers and nodes were kept unchanged — review the tier vocabulary and re-tier any nodes as needed.';
+      'Framework changed. Existing tiers and nodes were kept unchanged. Review the tier vocabulary and re-tier any nodes as needed.';
   }
 
   if (Object.keys(update).length === 0) return badRequest('No updatable fields provided');

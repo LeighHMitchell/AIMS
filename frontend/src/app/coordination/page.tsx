@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { apiFetch } from "@/lib/api-fetch";
+import { formatCurrencyCompact } from "@/lib/format";
 import {
   CustomYear,
   getCustomYearRange,
@@ -320,12 +321,6 @@ export default function CoordinationPage() {
   const financeTypeLabel = financeTypes.length === 0 ? 'Finance' : financeTypes.length === 1 ? FINANCE_TYPE_OPTIONS.find((t) => t.code === financeTypes[0])?.code || financeTypes[0] : `${financeTypes.length} finance`;
   const donorLabel = donorIds.length === 0 ? 'Partners' : donorIds.length === 1 ? orgList.find((o) => o.id === donorIds[0])?.acronym || orgList.find((o) => o.id === donorIds[0])?.name || 'Partner' : `${donorIds.length} partners`;
 
-  const formatCurrency = (value: number): string => {
-    if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
-    if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
-    if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
-    return `$${value.toFixed(0)}`;
-  };
   const formatNumber = (value: number): string => new Intl.NumberFormat('en-US').format(value);
 
   const isCountMeasure = measure === 'activities' || measure === 'donors';
@@ -432,7 +427,7 @@ export default function CoordinationPage() {
                           className="h-8 gap-1"
                           title={
                             dateRange?.from && dateRange?.to
-                              ? `${format(dateRange.from, 'MMM d, yyyy')} – ${format(dateRange.to, 'MMM d, yyyy')}`
+                              ? `${format(dateRange.from, 'd MMM yyyy')} – ${format(dateRange.to, 'd MMM yyyy')}`
                               : undefined
                           }
                         >
@@ -677,7 +672,7 @@ export default function CoordinationPage() {
                     <p className="text-lg font-semibold text-foreground">
                       {isCountMeasure
                         ? formatNumber(data?.summary.totalValue || 0)
-                        : formatCurrency(data?.summary.totalValue || 0)}
+                        : formatCurrencyCompact(data?.summary.totalValue || 0)}
                     </p>
                   )}
                 </div>

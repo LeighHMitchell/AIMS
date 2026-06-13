@@ -70,18 +70,18 @@ export const PAGE_HELP_SLUGS: readonly PageHelpSlug[] = [
 
   // --- PROJECT BANK ---
   // Specific routes before /project-bank root.
-  { route: '/project-bank/projects', slug: 'project-bank/projects', title: 'Project Bank — Project List' },
-  { route: '/project-bank/gaps', slug: 'project-bank/gaps', title: 'Project Bank — Funding Gaps' },
-  { route: '/project-bank/review', slug: 'project-bank/review', title: 'Project Bank — Review Board' },
-  { route: '/project-bank/monitoring', slug: 'project-bank/monitoring', title: 'Project Bank — Monitoring' },
-  { route: '/project-bank/transfers', slug: 'project-bank/transfers', title: 'Project Bank — Transfers' },
-  { route: '/project-bank', slug: 'project-bank', title: 'Project Bank — Dashboard' },
+  { route: '/project-bank/projects', slug: 'project-bank/projects', title: 'Project Bank: Project List' },
+  { route: '/project-bank/gaps', slug: 'project-bank/gaps', title: 'Project Bank: Funding Gaps' },
+  { route: '/project-bank/review', slug: 'project-bank/review', title: 'Project Bank: Review Board' },
+  { route: '/project-bank/monitoring', slug: 'project-bank/monitoring', title: 'Project Bank: Monitoring' },
+  { route: '/project-bank/transfers', slug: 'project-bank/transfers', title: 'Project Bank: Transfers' },
+  { route: '/project-bank', slug: 'project-bank', title: 'Project Bank: Dashboard' },
 
   // --- LAND BANK ---
-  { route: '/land-bank/parcels', slug: 'land-bank/parcels', title: 'Land Bank — Parcels' },
-  { route: '/land-bank/import', slug: 'land-bank/import', title: 'Land Bank — Import' },
-  { route: '/land-bank/analytics', slug: 'land-bank/analytics', title: 'Land Bank — Analytics' },
-  { route: '/land-bank', slug: 'land-bank', title: 'Land Bank — Dashboard' },
+  { route: '/land-bank/parcels', slug: 'land-bank/parcels', title: 'Land Bank: Parcels' },
+  { route: '/land-bank/import', slug: 'land-bank/import', title: 'Land Bank: Import' },
+  { route: '/land-bank/analytics', slug: 'land-bank/analytics', title: 'Land Bank: Analytics' },
+  { route: '/land-bank', slug: 'land-bank', title: 'Land Bank: Dashboard' },
 ] as const;
 
 /**

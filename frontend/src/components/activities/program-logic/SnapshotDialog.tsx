@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,7 +82,7 @@ export function SnapshotDialog({
     setBusy(true);
     try {
       await createSnapshot(logicId, { snapshot_type: "baseline" });
-      toast.success("Baseline set — status is now ‘baselined’");
+      toast.success("Baseline set. Status is now ‘baselined’");
       await load();
       onChanged();
     } catch (e: any) {
@@ -133,6 +134,9 @@ export function SnapshotDialog({
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg border-b border-border">
           <DialogTitle>Versions &amp; Snapshots</DialogTitle>
+          <DialogDescription>
+            Save a point-in-time version of this program logic, then compare or restore earlier snapshots.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="pt-2 space-y-5">
@@ -143,7 +147,7 @@ export function SnapshotDialog({
                 <Flag className="h-4 w-4" /> Set the baseline
                 <HelpTextTooltip
                   size="sm"
-                  content="Saves a full snapshot of the current graph as the baseline and moves status from draft to baselined. Do this once the design is agreed — afterwards, changes are tracked as named revisions."
+                  content="Saves a full snapshot of the current graph as the baseline and moves status from draft to baselined. Do this once the design is agreed; afterwards, changes are tracked as named revisions."
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -165,7 +169,7 @@ export function SnapshotDialog({
                 <PlusCircle className="h-4 w-4" /> Record a revision
                 <HelpTextTooltip
                   size="sm"
-                  content="Captures a new snapshot of the current graph with a label and a required reason — the audit trail for changes after baseline (e.g. ‘Rev 1 — Mid-Term Review 2026’). Editing an end-outcome node also prompts for a revision reason."
+                  content="Captures a new snapshot of the current graph with a label and a required reason: the audit trail for changes after baseline (e.g. ‘Rev 1, Mid-Term Review 2026’). Editing an end-outcome node also prompts for a revision reason."
                 />
               </div>
               <div className="space-y-1">
@@ -173,7 +177,7 @@ export function SnapshotDialog({
                 <Input
                   value={revisionLabel}
                   onChange={(e) => setRevisionLabel(e.target.value)}
-                  placeholder="e.g. Rev 1 — MTR 2026"
+                  placeholder="e.g. Rev 1, MTR 2026"
                 />
               </div>
               <div className="space-y-1">
@@ -245,7 +249,7 @@ export function SnapshotDialog({
                   <GitCompare className="h-4 w-4" /> Compare snapshots
                   <HelpTextTooltip
                     size="sm"
-                    content="Pick two snapshots to see what changed between them — nodes and edges added, removed, or modified. Useful for showing how the logic evolved from baseline through each revision."
+                    content="Pick two snapshots to see what changed between them: nodes and edges added, removed, or modified. Useful for showing how the logic evolved from baseline through each revision."
                   />
                 </div>
                 <div className="flex items-center gap-2">

@@ -220,7 +220,7 @@ export default function OrganizationsTab({ activityId }: OrganizationsTabProps) 
             <Users className="h-5 w-5" />
             Participating Organisations
             <HelpTextTooltip>
-              Organisations that play a role in this activity — funders, implementers,
+              Organisations that play a role in this activity: funders, implementers,
               government departments, and extending partners.
             </HelpTextTooltip>
           </CardTitle>

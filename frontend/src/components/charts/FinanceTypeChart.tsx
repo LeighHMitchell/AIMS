@@ -249,7 +249,7 @@ export const FinanceTypeChart: React.FC<FinanceTypeChartProps> = ({
       <div className="mt-6">
         <p className="text-body text-muted-foreground leading-relaxed">
           This chart compares planned budgets with actual spending (disbursements and expenditures)
-          across IATI finance types — grants, loans, equity and other instruments. Use it to understand
+          across IATI finance types such as grants, loans, equity and other instruments. Use it to understand
           the financial structure of the portfolio: how much aid is grant-based versus repayable, and
           whether spending is keeping pace with what was budgeted under each instrument. All amounts are USD.
         </p>

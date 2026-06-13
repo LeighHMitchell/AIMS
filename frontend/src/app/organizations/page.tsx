@@ -17,7 +17,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { FullPagination } from '@/components/ui/full-pagination'
 import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -71,6 +71,7 @@ import Link from 'next/link'
 import { OrganisationCardSkeleton } from '@/components/ui/skeleton-loader'
 import { getCountryCode, getCountryFullName, COUNTRY_ISO_CODES } from '@/lib/country-utils'
 import { apiFetch } from '@/lib/api-fetch';
+import { formatCurrencyCompact } from '@/lib/format';
 // Using Button components for view toggle instead of ToggleGroup
 
 // Performance constants
@@ -552,17 +553,6 @@ const DEFAULT_ORGANIZATION_TYPES: OrganizationType[] = [
 
 // getCountryCode is now imported from @/lib/country-utils
 
-// Format currency helper
-const formatCurrency = (amount: number | null | undefined): string => {
-  if (amount == null || isNaN(amount)) return '-'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(amount)
-}
-
 // Format date to relative time
 const formatRelativeDate = (dateString: string | null | undefined): string => {
   if (!dateString) return 'Never'
@@ -577,7 +567,7 @@ const formatRelativeDate = (dateString: string | null | undefined): string => {
   if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
   if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} months ago`
   
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 // Validation helper
@@ -810,16 +800,6 @@ const OrganizationCard: React.FC<{
     toast.success('Copied to clipboard')
   }
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'Unknown'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    })
-  }
-
   return (
     <Card
       className="bg-card hover:border-border hover:shadow-card-hover transition-all duration-300 ease-in-out cursor-pointer h-full flex flex-col shadow-sm relative"
@@ -977,7 +957,7 @@ const OrganizationCard: React.FC<{
             </div>
             <div className="flex items-center gap-1">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span className="text-foreground font-medium">{formatCurrency(organization.totalBudgeted)}</span>
+              <span className="text-foreground font-medium">{organization.totalBudgeted != null && !isNaN(organization.totalBudgeted) ? formatCurrencyCompact(organization.totalBudgeted) : <span className="text-muted-foreground">—</span>}</span>
             </div>
           </div>
         </div>
@@ -1936,13 +1916,13 @@ function OrganizationsPageContent() {
 
         {/* Filter Tabs */}
         <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">
-          <TabsList className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap">
+          <PageTabsList>
             {IATI_TABS.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="text-helper data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              <PageTabsTrigger key={tab.value} value={tab.value}>
                 {tab.label}
-              </TabsTrigger>
+              </PageTabsTrigger>
             ))}
-          </TabsList>
+          </PageTabsList>
 
           <TabsContent value={activeFilter} className="mt-6">
             {/* Show Custom Groups when that tab is selected */}

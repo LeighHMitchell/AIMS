@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Trash2, Undo2, Pencil, X, Loader2 } from 'lucide-react';
+import { formatDate as formatDateCanonical } from '@/lib/format';
 
 interface ActivityInRecycleBinDialogProps {
   open: boolean;
@@ -27,17 +28,11 @@ interface ActivityInRecycleBinDialogProps {
   onCancel: () => void;
 }
 
+// Thin wrapper over the canonical formatDate that returns null (rather than '')
+// for empty/invalid input, so callers can conditionally render.
 const formatDate = (iso?: string | null): string | null => {
   if (!iso) return null;
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  } catch {
-    return null;
-  }
+  return formatDateCanonical(iso) || null;
 };
 
 export const ActivityInRecycleBinDialog: React.FC<ActivityInRecycleBinDialogProps> = ({

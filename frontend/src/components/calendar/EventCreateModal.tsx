@@ -39,6 +39,7 @@ import {
 import { toast } from 'sonner'
 import { useUser } from '@/hooks/useUser'
 import { format } from 'date-fns'
+import { formatDate as formatDateCanonical } from '@/lib/format'
 import { apiFetch } from '@/lib/api-fetch';
 
 interface EventCreateModalProps {
@@ -258,12 +259,15 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
     return isValid
   }
 
-  const formatDate = (dateString: string) => {
+  // Weekday-prefixed variant ("Sunday, 18 May 2024") — delegates the date body
+  // to the canonical lib formatter.
+  const formatDateWithWeekday = (dateString: string) => {
     if (!dateString) return ''
     const date = new Date(dateString)
+    const body = formatDateCanonical(date)
+    if (!body) return ''
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
+    return `${days[date.getDay()]}, ${body}`
   }
 
   const formatTime = (dateString: string) => {
@@ -537,7 +541,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
     if (diffDays === 1) return 'Tomorrow'
     if (diffDays === -1) return 'Yesterday'
     if (diffDays > 1 && diffDays < 7) return `In ${diffDays} days`
-    return formatDate(dateString)
+    return formatDateWithWeekday(dateString)
   }
 
   return (
@@ -681,7 +685,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Palette className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-body font-medium text-[#4c5568]">Color</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Colour</Label>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -706,7 +710,7 @@ export function EventCreateModal({ isOpen, onClose, selectedDate, onEventCreated
                       onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
                       className="w-7 h-7 rounded-full cursor-pointer border-0 p-0 overflow-hidden"
                       style={{ WebkitAppearance: 'none' }}
-                      title="Custom color"
+                      title="Custom colour"
                     />
                   </div>
                 </div>

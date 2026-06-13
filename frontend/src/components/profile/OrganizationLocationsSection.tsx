@@ -506,8 +506,8 @@ export function OrganizationLocationsSection({
             }
           >
             {hideAdminAreaOnly
-              ? `${adminAreaOnlyCount} admin-area location${adminAreaOnlyCount === 1 ? "" : "s"} hidden — show all`
-              : `Showing ${adminAreaOnlyCount} admin-area location${adminAreaOnlyCount === 1 ? "" : "s"} — hide`}
+              ? `${adminAreaOnlyCount} admin-area location${adminAreaOnlyCount === 1 ? "" : "s"} hidden. Show all`
+              : `Showing ${adminAreaOnlyCount} admin-area location${adminAreaOnlyCount === 1 ? "" : "s"}. Hide`}
           </button>
         )}
 
@@ -651,7 +651,7 @@ export function OrganizationLocationsSection({
                   </div>
                 </div>
                 <p className="text-helper text-muted-foreground italic">
-                  Activities counts region-coverage entries — an activity
+                  Activities counts region-coverage entries: an activity
                   with sub-national breakdown across multiple regions is
                   counted once per region, so the total can exceed the
                   number of unique activities.

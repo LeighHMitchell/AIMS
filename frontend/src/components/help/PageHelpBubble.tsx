@@ -57,7 +57,7 @@ export function PageHelpBubble({ pageSlug, pageTitle }: PageHelpBubbleProps) {
         <div
           ref={cardRef}
           role="dialog"
-          aria-label={`Help — ${pageTitle}`}
+          aria-label={`Help: ${pageTitle}`}
           className="fixed bottom-40 right-6 z-[10004] bg-background border rounded-md shadow-xl overflow-hidden"
         >
           <PageHelpCard

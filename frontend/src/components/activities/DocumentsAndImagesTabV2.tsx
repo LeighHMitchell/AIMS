@@ -728,7 +728,7 @@ export function DocumentsAndImagesTabV2({
                       </TableCell>
                       <TableCell>{languageNames || '-'}</TableCell>
                       <TableCell>
-                        {doc.documentDate ? format(new Date(doc.documentDate), 'MMM d, yyyy') : '-'}
+                        {doc.documentDate ? format(new Date(doc.documentDate), 'd MMM yyyy') : '-'}
                       </TableCell>
                       <TableCell>
                         <Badge variant={isUploaded ? 'default' : 'outline'} className="text-helper">

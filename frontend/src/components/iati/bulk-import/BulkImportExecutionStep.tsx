@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -253,9 +254,9 @@ export default function BulkImportExecutionStep({
               <TableRow key={item.iatiIdentifier || i}>
                 {/* Activity Title + IATI Identifier */}
                 <TableCell className="min-w-0">
-                  <p className="text-body truncate">
-                    {item.activityTitle || item.iatiIdentifier}
-                    <span className="ml-2 font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{item.iatiIdentifier}</span>
+                  <p className="text-body truncate inline-flex items-center gap-2 max-w-full">
+                    <span className="truncate">{item.activityTitle || item.iatiIdentifier}</span>
+                    <CopyableIdBadge value={item.iatiIdentifier} label="IATI identifier" tooltip="Click to copy IATI identifier" />
                   </p>
                 </TableCell>
                 {/* Combined Status */}

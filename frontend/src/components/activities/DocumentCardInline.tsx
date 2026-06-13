@@ -421,7 +421,7 @@ export function DocumentCardInline({
                 {formData.documentDate && (
                   <Badge variant="outline" className="text-helper gap-1">
                     <Calendar className="w-3 h-3" />
-                    {format(new Date(formData.documentDate), 'MMM d, yyyy')}
+                    {format(new Date(formData.documentDate), 'd MMM yyyy')}
                   </Badge>
                 )}
                 
@@ -718,7 +718,7 @@ export function DocumentCardInline({
                   {formData.documentDate && (
                     <div>
                       <Label className="text-helper font-medium text-muted-foreground">Date</Label>
-                      <p>{format(new Date(formData.documentDate), 'MMM d, yyyy')}</p>
+                      <p>{format(new Date(formData.documentDate), 'd MMM yyyy')}</p>
                     </div>
                   )}
                   {category && (

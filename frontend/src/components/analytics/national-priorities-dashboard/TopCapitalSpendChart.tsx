@@ -132,32 +132,6 @@ function getDateRangeFromTimeRange(timeRange: TimeRangeType): { from: Date | und
   return { from, to: now };
 }
 
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  } else if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`;
-  } else if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
-  }
-  return `$${value.toFixed(0)}`;
-}
-
-function formatCurrencyUSD(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1)}B USD`;
-  } else if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M USD`;
-  } else if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1)}K USD`;
-  }
-  return `${value.toFixed(0)} USD`;
-}
-
-function formatCurrencyFull(value: number): string {
-  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
 interface TopCapitalSpendChartProps {
   refreshKey?: number;
   compact?: boolean;
@@ -263,7 +237,7 @@ export function TopCapitalSpendChart({ refreshKey = 0, compact = false }: TopCap
   // shows the capital portion plus the remainder of the activity's total value.
   const chartData = data.map((item) => ({
     ...item,
-    displayName: item.acronym ? `${item.acronym} — ${item.title}` : item.title,
+    displayName: item.acronym ? `${item.acronym}: ${item.title}` : item.title,
     nonCapital: Math.max(0, item.baseValue - item.capitalSpendValue),
   }));
 

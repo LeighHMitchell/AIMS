@@ -90,10 +90,11 @@ export function IATIOrgImportFieldsTable({
     return filtered
   }, [allFields, searchQuery, showConflictsOnly])
 
-  // Format value for display
-  const formatValue = (value: any, field: OrgImportField): string => {
+  // Display string for a field of any shape (booleans, numbers, budget objects,
+  // raw JSON). Money keeps the table style: ISO code prefix + value-only number.
+  const formatFieldDisplay = (value: any, field: OrgImportField): string => {
     if (value === null || value === undefined || value === '') {
-      return '(empty)'
+      return '—'
     }
 
     if (typeof value === 'boolean') {
@@ -330,7 +331,7 @@ export function IATIOrgImportFieldsTable({
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <span className="text-body text-muted-foreground">
-                                    {formatValue(field.currentValue, field)}
+                                    {formatFieldDisplay(field.currentValue, field)}
                                   </span>
                                   {field.currentValue && (
                                     <Button
@@ -347,7 +348,7 @@ export function IATIOrgImportFieldsTable({
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <span className={`text-sm ${field.isNew ? 'text-green-700 font-medium' : field.hasConflict ? 'text-yellow-700 font-medium' : 'text-muted-foreground'}`}>
-                                    {formatValue(field.importValue, field)}
+                                    {formatFieldDisplay(field.importValue, field)}
                                   </span>
                                   {field.importValue && (
                                     <Button

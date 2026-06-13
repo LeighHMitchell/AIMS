@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,9 @@ export function PresetPicker({
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg border-b border-border">
           <DialogTitle>Set up a program logic</DialogTitle>
+          <DialogDescription>
+            Pick a starting template and name your results framework before you begin adding nodes and links.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 pt-2">
@@ -145,7 +149,7 @@ export function PresetPicker({
           <div className="space-y-2">
             <Label className="inline-flex items-center">
               Tiers seeded by “{selected.label}”
-              {selected.tiers.length === 0 && " (none — you'll add your own)"}
+              {selected.tiers.length === 0 && " (none yet, you'll add your own)"}
               <HelpTextTooltip
                 size="sm"
                 content="Preview of the tiers this preset creates, shown top (impact/goal) to bottom (activities/inputs). The ‘accountability ceiling’ tag marks the level the implementer is held to deliver; ‘output/outcome/impact’ tags map a tier's linked indicators for IATI export."

@@ -17,6 +17,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { apiFetch } from '@/lib/api-fetch';
+import { formatCurrencyCompact, formatDate } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 
 interface LinkedTransaction {
   id: string;
@@ -132,31 +134,6 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
     window.URL.revokeObjectURL(url);
   };
 
-  // Format currency value
-  const formatCurrency = (value: number, currency: string) => {
-    // Ensure currency is a valid 3-letter code, fallback to USD
-    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase()) 
-      ? currency.toUpperCase() 
-      : "USD";
-    
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: safeCurrency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(value);
-    } catch (error) {
-      console.warn(`[LinkedTransactionsEditorTab] Invalid currency "${currency}", using USD:`, error);
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: "USD",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(value);
-    }
-  };
-
   // Transaction type icon
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -239,7 +216,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
               {Object.entries(totalsByCurrency).map(([currency, total]) => (
                 <div key={currency} className="bg-muted rounded-lg p-4">
                   <div className="text-body text-muted-foreground">Total in {currency}</div>
-                  <div className="text-2xl font-semibold">{formatCurrency(total, currency)}</div>
+                  <div className="text-2xl font-semibold">{formatCurrencyCompact(total, currency)}</div>
                 </div>
               ))}
             </div>
@@ -310,14 +287,14 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-body font-medium">
-                        {formatCurrency(transaction.value, transaction.currency)}
+                        <CurrencyValue amount={transaction.value} currency={transaction.currency} />
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-body">
                         <div className="flex items-center gap-1">
                           <Building2 className="w-3 h-3 text-muted-foreground" />
-                          {transaction.providerOrg.name || 'N/A'}
+                          {transaction.providerOrg.name || <span className="text-muted-foreground">—</span>}
                         </div>
                         {transaction.providerOrg.ref && (
                           <div className="text-helper text-muted-foreground">{transaction.providerOrg.ref}</div>
@@ -328,7 +305,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
                       <div className="text-body">
                         <div className="flex items-center gap-1">
                           <Building2 className="w-3 h-3 text-muted-foreground" />
-                          {transaction.receiverOrg.name || 'N/A'}
+                          {transaction.receiverOrg.name || <span className="text-muted-foreground">—</span>}
                         </div>
                         {transaction.receiverOrg.ref && (
                           <div className="text-helper text-muted-foreground">{transaction.receiverOrg.ref}</div>
@@ -338,7 +315,7 @@ const LinkedTransactionsEditorTab: React.FC<LinkedTransactionsEditorTabProps> = 
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1 text-body text-muted-foreground">
                         <Calendar className="w-3 h-3" />
-                        {new Date(transaction.transactionDate).toLocaleDateString()}
+                        {formatDate(transaction.transactionDate)}
                       </div>
                     </td>
                     <td className="px-6 py-4">

@@ -50,6 +50,7 @@ import { YearRangeChip } from "@/components/ui/year-range-chip";
 import { getCustomYearLabel } from "@/types/custom-years";
 import { apiFetch } from '@/lib/api-fetch';
 import { formatTooltipCurrency, formatAxisCurrency } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 import { ChartTooltipCard } from '@/components/ui/chart-tooltip';
 import { useChartExpansion } from '@/lib/chart-expansion-context';
 
@@ -69,32 +70,6 @@ const METRIC_OPTIONS = [
   { value: "disbursements", label: "Disbursements" },
   { value: "commitments", label: "Commitments" },
 ];
-
-function formatCurrency(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `$${(value / 1_000_000_000).toFixed(1)}B`;
-  } else if (value >= 1_000_000) {
-    return `$${(value / 1_000_000).toFixed(1)}M`;
-  } else if (value >= 1_000) {
-    return `$${(value / 1_000).toFixed(1)}K`;
-  }
-  return `$${value.toFixed(0)}`;
-}
-
-function formatCurrencyWithSymbol(value: number): string {
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(1)}B USD`;
-  } else if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(1)}M USD`;
-  } else if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(1)}K USD`;
-  }
-  return `${value.toFixed(0)} USD`;
-}
-
-function formatCurrencyFull(value: number): string {
-  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
 
 type ChartMode = 'stacked' | 'grouped';
 type ChartType = 'bar' | 'line' | 'area';
@@ -361,11 +336,11 @@ export function FundingByModalityChart() {
                 <TableCell className="font-medium">{row.year}</TableCell>
                 {ALL_MODALITIES.map((modality) => (
                   <TableCell key={modality} className="text-right font-mono">
-                    {formatCurrencyFull(row[modality] || 0)}
+                    <CurrencyValue amount={row[modality] || 0} />
                   </TableCell>
                 ))}
                 <TableCell className="text-right font-mono font-semibold">
-                  {formatCurrencyFull(rowTotal)}
+                  <CurrencyValue amount={rowTotal} />
                 </TableCell>
               </TableRow>
             );

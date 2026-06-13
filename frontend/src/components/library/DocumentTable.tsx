@@ -189,7 +189,7 @@ export function DocumentTable({
                 <TableCell>
                   {doc.categoryCode ? (
                     <span className="text-body text-foreground">
-                      <span className="text-xs font-mono bg-muted dark:bg-gray-800 text-muted-foreground px-1.5 py-0.5 rounded">
+                      <span className="text-xs font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                         {doc.categoryCode}
                       </span>
                       {doc.categoryName && (
@@ -235,8 +235,8 @@ export function DocumentTable({
                             {doc.reportingOrgLogo ? (
                               <img src={doc.reportingOrgLogo} alt="" className="h-5 w-5 rounded-sm object-contain flex-shrink-0" />
                             ) : (
-                              <div className="h-5 w-5 rounded-sm bg-muted dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                                <span className="text-[10px] font-medium text-muted-foreground dark:text-muted-foreground">
+                              <div className="h-5 w-5 rounded-sm bg-muted flex items-center justify-center flex-shrink-0">
+                                <span className="text-[10px] font-medium text-muted-foreground">
                                   {(doc.reportingOrgAcronym || doc.reportingOrgName || '?')[0].toUpperCase()}
                                 </span>
                               </div>

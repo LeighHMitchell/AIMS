@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { CopyableIdBadge } from '@/components/ui/copyable-id-badge';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle, ArrowRight, Info, Calendar, Hash, FileText, Users, Coins, Globe } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { formatDate } from '@/lib/format';
 
 interface CompareDataModalProps {
   isOpen: boolean;
@@ -25,18 +27,14 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
   // Helper function to format the display value
   const formatValue = (value: any, field: string) => {
     if (value === null || value === undefined || value === '') {
-      return <span className="text-muted-foreground italic">Not set</span>;
+      return <span className="text-muted-foreground">—</span>;
     }
     if (typeof value === 'boolean') {
       return value ? 'Yes' : 'No';
     }
     if (field.includes('date') && value) {
-      // Format dates nicely
-      return new Date(value).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      });
+      // Format dates via the canonical helper ("18 May 2024")
+      return formatDate(value);
     }
     // For status codes, show both code and label
     if (field === 'activity_status' && value) {
@@ -106,7 +104,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
                     setSelectedFields(selectedFields.filter(f => f !== field));
                   }
                 }}
-                className="rounded border-input text-blue-600 focus:ring-blue-500"
+                className="rounded border-input text-blue-600 focus:ring-ring"
                 disabled={!hasIatiData}
               />
               <label htmlFor={field} className="flex items-center gap-2 cursor-pointer">
@@ -172,7 +170,7 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
                     setSelectedFields(selectedFields.filter(f => f !== field));
                   }
                 }}
-                className="rounded border-input text-blue-600 focus:ring-blue-500"
+                className="rounded border-input text-blue-600 focus:ring-ring"
                 disabled={iatiArray.length === 0}
               />
               <label htmlFor={field} className="flex items-center gap-2 cursor-pointer">
@@ -289,8 +287,8 @@ export function CompareDataModal({ isOpen, onClose, comparisonData, onImport }: 
             ) : (
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-[hsl(var(--success-icon))]" />
-                <AlertDescription className="text-green-800">
-                  Successfully fetched IATI data for activity <span className="font-mono font-semibold">{iatiData.iati_identifier}</span>
+                <AlertDescription className="text-green-800 inline-flex items-center gap-1.5 flex-wrap">
+                  Successfully fetched IATI data for activity <CopyableIdBadge value={iatiData.iati_identifier} label="IATI identifier" tooltip="Click to copy IATI identifier" />
                 </AlertDescription>
               </Alert>
             )}

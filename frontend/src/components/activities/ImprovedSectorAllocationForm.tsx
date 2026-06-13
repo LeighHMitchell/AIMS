@@ -965,7 +965,7 @@ function ImprovedSectorAllocationFormInner({
                   name="sector-export-level"
                   checked={sectorExportLevel === 'activity'}
                   onChange={() => onSectorExportLevelChange('activity')}
-                  className="mt-0.5 h-4 w-4 text-blue-600 border-border focus:ring-blue-500"
+                  className="mt-0.5 h-4 w-4 text-blue-600 border-border focus:ring-ring"
                 />
                 <div className="flex-1">
                   <span className="text-body font-medium text-foreground">Activity Level</span>
@@ -981,7 +981,7 @@ function ImprovedSectorAllocationFormInner({
                   name="sector-export-level"
                   checked={sectorExportLevel === 'transaction'}
                   onChange={() => onSectorExportLevelChange('transaction')}
-                  className="mt-0.5 h-4 w-4 text-blue-600 border-border focus:ring-blue-500"
+                  className="mt-0.5 h-4 w-4 text-blue-600 border-border focus:ring-ring"
                 />
                 <div className="flex-1">
                   <span className="text-body font-medium text-foreground">Transaction Level</span>
@@ -1069,7 +1069,7 @@ function ImprovedSectorAllocationFormInner({
               <span className="text-body font-medium text-foreground">Weighted average across transactions</span>
               <HelpTextTooltip
                 size="sm"
-                content="The activity's overall sector split, derived from its transactions and weighted by transaction value (USD) — a sector that received more money counts for more. This is how a transaction-level activity's per-transaction sectors roll up into a single activity-level breakdown. The percentages sum to 100%."
+                content="The activity's overall sector split, derived from its transactions and weighted by transaction value (USD), so a sector that received more money counts for more. This is how a transaction-level activity's per-transaction sectors roll up into a single activity-level breakdown. The percentages sum to 100%."
               />
               {sectorMode.isLoadingAggregation && (
                 <span className="text-helper text-muted-foreground ml-auto">Loading…</span>

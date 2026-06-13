@@ -4,7 +4,6 @@ import React, { useMemo, useState, useRef, useEffect } from 'react'
 import * as d3 from 'd3'
 import { format, startOfWeek, endOfWeek, eachDayOfInterval,
   isWithinInterval, startOfDay, parseISO } from 'date-fns'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -12,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
 
 type ActivityEventType = 'activity_created' | 'activity_updated' | 'transaction_created' | 'budget_created' | 'disbursement_created' | 'comment_added' | 'document_uploaded' | 'location_updated' | 'sector_updated' | 'result_added' | 'contact_updated' | 'status_changed' | 'partner_updated' | 'other'
 
@@ -139,7 +137,8 @@ function getDayColor(count: number, intensity: number): string {
 }
 
 export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCalendarHeatmapProps) {
-  const [yearType, setYearType] = useState<'calendar' | 'financial'>('calendar')
+  // Always grouped by calendar year — the financial-year toggle was removed.
+  const yearType = 'calendar' as const
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -359,17 +358,17 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
       .map(([type, count]) => {
         const typeLabel = getEventTypeLabel(type as ActivityEventType, count)
         return `
-          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
-            <span style="color: #0f172a; font-weight: 600;">${typeLabel}</span>
-            <span style="color: #0f172a; font-weight: 500; margin-left: 8px;">${count}</span>
-          </div>
+          <tr style="border-top: 1px solid #f1f5f9;">
+            <td style="padding: 4px 0; font-size: 12px; color: #0f172a; font-weight: 600;">${typeLabel}</td>
+            <td style="padding: 4px 0 4px 12px; font-size: 12px; color: #0f172a; font-weight: 500; text-align: right;">${count}</td>
+          </tr>
         `
       }).join('')
 
     const recentActions = d.data.events
       .slice(0, 3)
       .map(e => `
-        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <div style="font-size: 11px; color: #64748b; margin-bottom: 4px; white-space: normal; word-break: break-word; line-height: 1.4;">
           ${e.description}
         </div>
       `).join('')
@@ -382,7 +381,7 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
       </div>
       <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-bottom: 8px;">
         <p style="font-size: 12px; font-weight: 500; color: #334155; margin-bottom: 8px;">By Type</p>
-        <div>${typeBreakdown}</div>
+        <table style="width: 100%; border-collapse: collapse;"><tbody>${typeBreakdown}</tbody></table>
       </div>
       ${d.data.events.length > 0 ? `
         <div style="border-top: 1px solid #e2e8f0; padding-top: 8px;">
@@ -603,36 +602,6 @@ export function ActivityCalendarHeatmap({ events, fiscalYearConfig }: ActivityCa
       {/* Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-wrap">
-          {/* Year Type Toggle */}
-          <div className="flex gap-1 rounded-lg p-1 bg-muted">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setYearType('calendar')}
-              className={cn(
-                'h-7 px-3 text-helper',
-                yearType === 'calendar'
-                  ? 'bg-white shadow-sm text-foreground hover:bg-white'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              Calendar Year
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setYearType('financial')}
-              className={cn(
-                'h-7 px-3 text-helper',
-                yearType === 'financial'
-                  ? 'bg-white shadow-sm text-foreground hover:bg-white'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              Financial Year
-            </Button>
-          </div>
-
           {/* Year Selector - Dropdown */}
           {availableYears.length > 0 && (
             <Select

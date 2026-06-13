@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Copy, Download, Loader2 } from "lucide-react";
@@ -135,6 +136,9 @@ export function DiagramDialog({
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg border-b border-border">
           <DialogTitle>Program Logic Diagram</DialogTitle>
+          <DialogDescription>
+            View your results framework as a connected diagram, showing how nodes contribute to one another across tiers.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex items-center justify-between pt-3">

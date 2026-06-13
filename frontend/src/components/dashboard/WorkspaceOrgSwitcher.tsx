@@ -71,7 +71,7 @@ export function ViewingAsIndicator({ orgId }: { orgId: string }) {
               As a super user you can view the workspace from another organisation
               without changing who you are. All data on this page is scoped to{" "}
               {label} as if you were a member of that organisation. Your own account,
-              role, and permissions are unchanged — switch back any time with the
+              role, and permissions are unchanged. Switch back any time with the
               organisation selector.
             </p>
           </TooltipContent>

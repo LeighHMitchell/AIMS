@@ -42,6 +42,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useUser } from '@/hooks/useUser'
+import { formatDate as formatDateCanonical } from '@/lib/format'
 import { apiFetch } from '@/lib/api-fetch';
 import { useConfirmDialog } from '@/hooks/use-confirm-dialog';
 
@@ -281,12 +282,15 @@ export function EventDetailModal({
 
   if (!isOpen || !event) return null
 
-  const formatDate = (dateString: string) => {
+  // Weekday-prefixed variant ("Sunday, 18 May 2024") — delegates the date body
+  // to the canonical lib formatter.
+  const formatDateWithWeekday = (dateString: string) => {
     if (!dateString) return ''
     const date = new Date(dateString)
+    const body = formatDateCanonical(date)
+    if (!body) return ''
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
+    return `${days[date.getDay()]}, ${body}`
   }
 
   const formatTime = (dateString: string) => {
@@ -325,7 +329,7 @@ export function EventDetailModal({
     if (diffDays === 1) return 'Tomorrow'
     if (diffDays === -1) return 'Yesterday'
     if (diffDays > 1 && diffDays < 7) return `In ${diffDays} days`
-    return formatDate(dateString)
+    return formatDateWithWeekday(dateString)
   }
 
   const getInitials = (name: string) => {
@@ -501,12 +505,12 @@ export function EventDetailModal({
                       className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal cursor-pointer"
                       onClick={() => document.getElementById('date-input')?.click()}
                     >
-                      {formData.start ? formatDate(formData.start) : 'Select date'}
+                      {formData.start ? formatDateWithWeekday(formData.start) : 'Select date'}
                     </Badge>
                   </>
                 ) : (
                   <Badge variant="secondary" className="bg-[#f1f4f8] text-[#4c5568] hover:bg-[#f1f4f8] px-3 py-1.5 text-body font-normal">
-                    {formatDate(event.start)}
+                    {formatDateWithWeekday(event.start)}
                   </Badge>
                 )}
               </div>
@@ -608,7 +612,7 @@ export function EventDetailModal({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 w-32 flex-shrink-0">
                 <Palette className="h-4 w-4 text-[#4c5568]" />
-                <Label className="text-body font-medium text-[#4c5568]">Color</Label>
+                <Label className="text-body font-medium text-[#4c5568]">Colour</Label>
               </div>
               <div className="flex-1">
                 {isEditing ? (
@@ -632,7 +636,7 @@ export function EventDetailModal({
                       value={formData.color}
                       onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
                       className="w-6 h-6 rounded-full cursor-pointer border-0 p-0 overflow-hidden"
-                      title="Custom color"
+                      title="Custom colour"
                     />
                   </div>
                 ) : (

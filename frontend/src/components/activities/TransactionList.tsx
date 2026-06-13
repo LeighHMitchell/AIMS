@@ -84,6 +84,7 @@ import { countries as countryList } from '@/data/countries';
 import { TypeFilterPopover } from '@/components/ui/type-filter-popover';
 import aidTypesData from '@/data/aid-types.json';
 import { OrganizationLogo } from "@/components/ui/organization-logo";
+import { EmptyOrgIndicator } from "@/components/ui/empty-org-indicator";
 import { DISBURSEMENT_CHANNEL_TYPES } from '@/data/disbursement-channel-types';
 import { IATI_ORGANIZATION_TYPES } from '@/data/iati-organization-types';
 import { exportToCSV } from '@/lib/exports';
@@ -1044,10 +1045,6 @@ export default function TransactionList({
     }
   };
 
-  const formatCurrency = (value: number, curr: string = currency) => {
-    return formatCurrencyPrecise(value, curr);
-  };
-
   const getTransactionTypeColor = (type: string) => {
     const isIncoming = INCOMING_TYPES.includes(String(type));
     return isIncoming ? 'text-[hsl(var(--success-icon))]' : 'text-blue-600';
@@ -1587,7 +1584,7 @@ export default function TransactionList({
                               <div className="flex items-center gap-2">
                                 <span className="text-helper text-muted-foreground">Total USD:</span>
                                 <span className="font-semibold text-body">
-                                  {formatCurrency(groupTotal?.total || 0, 'USD')}
+                                  {formatCurrencyPrecise(groupTotal?.total || 0, 'USD')}
                                 </span>
                               </div>
                             </div>
@@ -1722,7 +1719,7 @@ export default function TransactionList({
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p className="text-helper">{displayValue} — {FINANCE_TYPE_LABELS[displayValue] || displayValue}</p>
+                                    <p className="text-helper">{displayValue}: {FINANCE_TYPE_LABELS[displayValue] || displayValue}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -1841,6 +1838,10 @@ export default function TransactionList({
                           <div className="flex items-center gap-1.5 font-medium overflow-hidden">
                             {/* Provider Org - gray if inferred, black if explicit */}
                             <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+                              {(!getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) && !transaction.provider_org_ref) ? (
+                                <EmptyOrgIndicator role="provider" />
+                              ) : (
+                              <>
                               <OrganizationLogo
                                 logo={getOrgLogo(transaction.provider_org_id, transaction.provider_org_ref) || (transaction as any).provider_org_logo}
                                 name={getOrgAcronymOrName(transaction.provider_org_id, transaction.provider_org_name, transaction.provider_org_ref) || "Unknown"}
@@ -1871,10 +1872,16 @@ export default function TransactionList({
                                   </Tooltip>
                                 </TooltipProvider>
                               )}
+                              </>
+                              )}
                             </div>
                             <span className="text-muted-foreground flex-shrink-0">→</span>
                             {/* Receiver Org - gray if inferred, black if explicit */}
                             <div className="flex items-center gap-1.5 min-w-0 flex-shrink">
+                              {(!getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) && !transaction.receiver_org_ref) ? (
+                                <EmptyOrgIndicator role="receiver" />
+                              ) : (
+                              <>
                               <OrganizationLogo
                                 logo={getOrgLogo(transaction.receiver_org_id, transaction.receiver_org_ref) || (transaction as any).receiver_org_logo}
                                 name={getOrgAcronymOrName(transaction.receiver_org_id, transaction.receiver_org_name, transaction.receiver_org_ref) || "Unknown"}
@@ -1904,6 +1911,8 @@ export default function TransactionList({
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
+                              )}
+                              </>
                               )}
                             </div>
                           </div>
@@ -2353,7 +2362,7 @@ export default function TransactionList({
                                             <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded cursor-help shrink-0">{displayValue}</span>
                                           </TooltipTrigger>
                                           <TooltipContent>
-                                            <p className="text-helper">{isInherited ? 'Inherited from activity default' : `${displayValue} — ${label}`}</p>
+                                            <p className="text-helper">{isInherited ? 'Inherited from activity default' : `${displayValue}: ${label}`}</p>
                                           </TooltipContent>
                                         </Tooltip>
                                       </TooltipProvider>

@@ -15,6 +15,7 @@ import {
 import { isEstimatedSource, isFutureFxDate } from "@/lib/planned-disbursement-usd";
 import { format } from "date-fns";
 import { formatDate as formatDateCanonical } from "@/lib/format";
+import { CurrencyValue } from "@/components/ui/currency-value";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OrganizationLogo } from "@/components/ui/organization-logo";
+import { EmptyOrgIndicator } from "@/components/ui/empty-org-indicator";
 import { ColumnSelector } from "@/components/ui/column-selector";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
@@ -255,42 +257,22 @@ export function PlannedDisbursementsTable({
   };
 
 
-  const formatCurrency = (value: number, currency: string = "USD") => {
-    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase())
-      ? currency.toUpperCase()
-      : "USD";
-
-    try {
-      const formattedValue = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-
-      return <><span className="text-helper text-muted-foreground">{safeCurrency}</span> {formattedValue}</>;
-    } catch (error) {
-      console.warn(`[PlannedDisbursementsTable] Invalid currency "${currency}", using USD:`, error);
-      const formattedValue = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-      return <><span className="text-helper text-muted-foreground font-normal">USD</span> {formattedValue}</>;
-    }
-  };
-
+  // Thin wrapper over the canonical formatter: nullable input + '—' empty fallback.
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '—';
     const formatted = formatDateCanonical(dateString);
     return formatted || '—';
   };
 
+  // Month-granularity period label ("May 2024") — the lib has no month-year form.
   const formatPeriodMonth = (dateString: string | null | undefined) => {
-    if (!dateString) return '-';
+    if (!dateString) return '—';
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '-';
+      if (isNaN(date.getTime())) return '—';
       return format(date, "MMM yyyy");
     } catch (error) {
-      return '-';
+      return '—';
     }
   };
 
@@ -536,7 +518,7 @@ export function PlannedDisbursementsTable({
                   <td key="period" className="py-3 px-4 whitespace-nowrap">
                     <span className="text-body text-muted-foreground">
                       {formatPeriodMonth(disbursement.period_start)}
-                      {' — '}
+                      {' to '}
                       {formatPeriodMonth(disbursement.period_end)}
                     </span>
                   </td>
@@ -553,8 +535,12 @@ export function PlannedDisbursementsTable({
                 providerReceiver: (
                   <td key="providerReceiver" className="py-3 px-4">
                     {(() => {
-                      const providerDisplay = disbursement.provider_org_acronym || disbursement.provider_org_name || '—';
-                      const receiverDisplay = disbursement.receiver_org_acronym || disbursement.receiver_org_name || '—';
+                      const providerName = disbursement.provider_org_acronym || disbursement.provider_org_name;
+                      const receiverName = disbursement.receiver_org_acronym || disbursement.receiver_org_name;
+                      const providerEmpty = !providerName;
+                      const receiverEmpty = !receiverName;
+                      const providerDisplay = providerName || '—';
+                      const receiverDisplay = receiverName || '—';
 
                       return (
                         <div className="text-body">
@@ -562,23 +548,29 @@ export function PlannedDisbursementsTable({
                             {/* Provider */}
                             <div className="flex flex-col gap-0.5">
                               <div className="flex items-center gap-1">
-                                <OrganizationLogo
-                                  logo={(disbursement as any).provider_org_logo}
-                                  name={providerDisplay}
-                                  size="sm"
-                                />
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="text-body">
-                                      {providerDisplay}
-                                    </span>
-                                  </TooltipTrigger>
-                                  {disbursement.provider_org_ref && (
-                                    <TooltipContent side="top">
-                                      <p className="text-helper">{disbursement.provider_org_ref}</p>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
+                                {providerEmpty ? (
+                                  <EmptyOrgIndicator role="provider" />
+                                ) : (
+                                  <>
+                                    <OrganizationLogo
+                                      logo={(disbursement as any).provider_org_logo}
+                                      name={providerDisplay}
+                                      size="sm"
+                                    />
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-body">
+                                          {providerDisplay}
+                                        </span>
+                                      </TooltipTrigger>
+                                      {disbursement.provider_org_ref && (
+                                        <TooltipContent side="top">
+                                          <p className="text-helper">{disbursement.provider_org_ref}</p>
+                                        </TooltipContent>
+                                      )}
+                                    </Tooltip>
+                                  </>
+                                )}
                               </div>
                             </div>
 
@@ -587,23 +579,29 @@ export function PlannedDisbursementsTable({
                             {/* Receiver */}
                             <div className="flex flex-col gap-0.5">
                               <div className="flex items-center gap-1">
-                                <OrganizationLogo
-                                  logo={(disbursement as any).receiver_org_logo}
-                                  name={receiverDisplay}
-                                  size="sm"
-                                />
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="text-body">
-                                      {receiverDisplay}
-                                    </span>
-                                  </TooltipTrigger>
-                                  {disbursement.receiver_org_ref && (
-                                    <TooltipContent side="top">
-                                      <p className="text-helper">{disbursement.receiver_org_ref}</p>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
+                                {receiverEmpty ? (
+                                  <EmptyOrgIndicator role="receiver" />
+                                ) : (
+                                  <>
+                                    <OrganizationLogo
+                                      logo={(disbursement as any).receiver_org_logo}
+                                      name={receiverDisplay}
+                                      size="sm"
+                                    />
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-body">
+                                          {receiverDisplay}
+                                        </span>
+                                      </TooltipTrigger>
+                                      {disbursement.receiver_org_ref && (
+                                        <TooltipContent side="top">
+                                          <p className="text-helper">{disbursement.receiver_org_ref}</p>
+                                        </TooltipContent>
+                                      )}
+                                    </Tooltip>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -650,7 +648,7 @@ export function PlannedDisbursementsTable({
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="text-body cursor-help inline-flex items-center gap-1">
-                                    {formatCurrency(row.usd, 'USD')}
+                                    <CurrencyValue amount={row.usd} currency="USD" />
                                     {row.isEstimate && (
                                       <Badge variant="outline" className="h-4 px-1 text-[10px] font-normal text-muted-foreground border-muted-foreground/40">
                                         <Info className="h-2.5 w-2.5 mr-0.5" />est.
@@ -665,7 +663,7 @@ export function PlannedDisbursementsTable({
                                     {row.date && <div>Date: {row.date}</div>}
                                     {row.isEstimate && (
                                       <div className="mt-1 pt-1 border-t text-xs text-muted-foreground">
-                                        Estimated — no exact rate was available for this date, so a {row.source} rate was used.
+                                        Estimated: no exact rate was available for this date, so a {row.source} rate was used.
                                       </div>
                                     )}
                                   </div>

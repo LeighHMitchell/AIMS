@@ -200,7 +200,7 @@ export function DocumentCard({
               {document.documentDate && (
                 <Badge variant="secondary" className="text-xs gap-1 rounded px-1.5 py-0.5 border-0">
                   <Calendar className="w-3 h-3" />
-                  {format(new Date(document.documentDate), 'MMM d, yyyy')}
+                  {format(new Date(document.documentDate), 'd MMM yyyy')}
                 </Badge>
               )}
               

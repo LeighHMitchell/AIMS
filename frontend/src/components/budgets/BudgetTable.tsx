@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatDate as formatDateCanonical } from "@/lib/format";
+import { CurrencyValue } from "@/components/ui/currency-value";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -132,26 +133,13 @@ export function BudgetTable({
   };
 
 
-  const formatCurrency = (value: number, currency: string = "USD") => {
-    const safeCurrency = currency && currency.length === 3 && /^[A-Z]{3}$/.test(currency.toUpperCase())
-      ? currency.toUpperCase()
+  // Thin wrapper around the shared <CurrencyValue> (style b: muted ISO prefix
+  // + value-only number); falls back to USD for malformed currency codes.
+  const renderCurrency = (value: number, currency: string = "USD") => {
+    const safeCurrency = currency && /^[A-Za-z]{3}$/.test(currency.trim())
+      ? currency.trim().toUpperCase()
       : "USD";
-
-    try {
-      const formattedValue = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-
-      return <><span className="text-muted-foreground text-helper">{safeCurrency}</span> {formattedValue}</>;
-    } catch (error) {
-      console.warn(`[BudgetTable] Invalid currency "${currency}", using USD:`, error);
-      const formattedValue = new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-      return <><span className="text-helper text-muted-foreground font-normal">USD</span> {formattedValue}</>;
-    }
+    return <CurrencyValue amount={value} currency={safeCurrency} />;
   };
 
   const formatDate = (dateString: string | null | undefined) => {
@@ -161,13 +149,13 @@ export function BudgetTable({
   };
 
   const formatPeriodMonth = (dateString: string | null | undefined) => {
-    if (!dateString) return '-';
+    if (!dateString) return '—';
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '-';
+      if (isNaN(date.getTime())) return '—';
       return format(date, "MMM yyyy");
     } catch (error) {
-      return '-';
+      return '—';
     }
   };
 
@@ -421,7 +409,7 @@ export function BudgetTable({
                   <TableCell key="period" className="py-3 px-4 whitespace-nowrap">
                     <span className="text-body text-muted-foreground">
                       {formatPeriodMonth(budget.period_start)}
-                      {' — '}
+                      {' to '}
                       {formatPeriodMonth(budget.period_end)}
                     </span>
                   </TableCell>
@@ -438,7 +426,7 @@ export function BudgetTable({
                 ),
                 value: (
                   <TableCell key="value" className="py-3 px-4 text-right whitespace-nowrap">
-                    {budget.value != null ? formatCurrency(budget.value, budget.currency) : '—'}
+                    {budget.value != null ? renderCurrency(budget.value, budget.currency) : '—'}
                   </TableCell>
                 ),
                 valueDate: (
@@ -450,7 +438,7 @@ export function BudgetTable({
                   <TableCell key="valueUsd" className="py-3 px-4 text-right whitespace-nowrap">
                     {budget.value_usd != null ? (
                       <span className="text-body">
-                        {formatCurrency(budget.value_usd, 'USD')}
+                        {renderCurrency(budget.value_usd, 'USD')}
                       </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
@@ -538,12 +526,12 @@ export function BudgetTable({
 
                               {/* Amount Display */}
                               <div className="text-2xl font-bold text-foreground mb-3">
-                                {budget.value != null ? formatCurrency(budget.value, budget.currency) : '—'}
+                                {budget.value != null ? renderCurrency(budget.value, budget.currency) : '—'}
                               </div>
 
                               {budget.value_usd != null && (
                                 <div className="text-body text-muted-foreground">
-                                  USD: {formatCurrency(budget.value_usd, 'USD')}
+                                  USD: {renderCurrency(budget.value_usd, 'USD')}
                                 </div>
                               )}
                             </div>

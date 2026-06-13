@@ -226,7 +226,7 @@ import { Button } from "@/components/ui/button"
                   <li>• <strong>Space Efficient:</strong> Single icon instead of multiple buttons</li>
                   <li>• <strong>Consistent Design:</strong> Uses MoreVertical icon pattern</li>
                   <li>• <strong>Hover States:</strong> Clear feedback on menu items</li>
-                  <li>• <strong>Color Coding:</strong> Red text for destructive actions</li>
+                  <li>• <strong>Colour Coding:</strong> Red text for destructive actions</li>
                   <li>• <strong>Flexible:</strong> Easy to add more actions as needed</li>
                   <li>• <strong>Accessible:</strong> Proper focus management and keyboard navigation</li>
                 </ul>
@@ -237,7 +237,7 @@ import { Button } from "@/components/ui/button"
                 <ul className="text-body text-muted-foreground space-y-1">
                   <li>• Keep menu width consistent (typically w-32 or w-40)</li>
                   <li>• Use semantic icons that match action names</li>
-                  <li>• Place destructive actions at the bottom with red color</li>
+                  <li>• Place destructive actions at the bottom with red colour</li>
                   <li>• Add separators for grouping related actions</li>
                   <li>• Handle click propagation in cards/rows to prevent conflicts</li>
                 </ul>

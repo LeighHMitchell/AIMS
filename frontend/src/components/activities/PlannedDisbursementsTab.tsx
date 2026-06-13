@@ -85,24 +85,6 @@ import {
 import { BulkActionToolbar } from '@/components/ui/bulk-action-toolbar';
 import { TypeFilterPopover } from '@/components/ui/type-filter-popover';
 
-// Format currency with abbreviations (K, M, B)
-const formatCurrencyAbbreviated = (value: number) => {
-  const absValue = Math.abs(value);
-  let formattedValue: string;
-
-  if (absValue >= 1_000_000_000) {
-    formattedValue = (value / 1_000_000_000).toFixed(1) + 'B';
-  } else if (absValue >= 1_000_000) {
-    formattedValue = (value / 1_000_000).toFixed(1) + 'M';
-  } else if (absValue >= 1_000) {
-    formattedValue = (value / 1_000).toFixed(1) + 'K';
-  } else {
-    formattedValue = value.toFixed(0);
-  }
-
-  return '$' + formattedValue;
-};
-
 // Use the shared hero card so this section matches the Transactions hero cards.
 import { HeroCard } from '@/components/ui/hero-card';
 import { StaggerContainer, StaggerItem } from '@/components/ui/stagger';
@@ -1314,14 +1296,14 @@ export default function PlannedDisbursementsTab({
     // Disbursement Details
     exportData.push(
       { label: 'Status', value: (disbursement.status || 'Original').charAt(0).toUpperCase() + (disbursement.status || 'Original').slice(1) },
-      { label: 'Period Start', value: format(parseISO(disbursement.period_start), 'MMM d, yyyy') },
-      { label: 'Period End', value: format(parseISO(disbursement.period_end), 'MMM d, yyyy') },
+      { label: 'Period Start', value: format(parseISO(disbursement.period_start), 'd MMM yyyy') },
+      { label: 'Period End', value: format(parseISO(disbursement.period_end), 'd MMM yyyy') },
       { label: 'Original Value', value: `${disbursement.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${disbursement.currency}` },
       { label: 'USD Value', value: disbursement.usdAmount != null ? `USD ${disbursement.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—' },
     );
 
     if (disbursement.value_date) {
-      exportData.push({ label: 'Value Date', value: format(parseISO(disbursement.value_date), 'MMM d, yyyy') });
+      exportData.push({ label: 'Value Date', value: format(parseISO(disbursement.value_date), 'd MMM yyyy') });
     }
 
     // Organizations
@@ -1348,10 +1330,10 @@ export default function PlannedDisbursementsTab({
       exportData.push({ label: 'Disbursement ID', value: disbursement.id });
     }
     if (disbursement.created_at) {
-      exportData.push({ label: 'Created', value: format(parseISO(disbursement.created_at), 'MMM d, yyyy') });
+      exportData.push({ label: 'Created', value: format(parseISO(disbursement.created_at), 'd MMM yyyy') });
     }
     if (disbursement.updated_at) {
-      exportData.push({ label: 'Updated', value: format(parseISO(disbursement.updated_at), 'MMM d, yyyy') });
+      exportData.push({ label: 'Updated', value: format(parseISO(disbursement.updated_at), 'd MMM yyyy') });
     }
 
     const filename = `planned-disbursement-export-${format(new Date(), 'yyyy-MM-dd')}`;
@@ -2453,7 +2435,7 @@ export default function PlannedDisbursementsTab({
             {/* Provider Organisation */}
             <div className="space-y-2">
               <LabelWithInfoAndSave
-                helpText="The organization providing or disbursing the funds for this planned disbursement"
+                helpText="The organisation providing or disbursing the funds for this planned disbursement"
                 isSaving={false}
                 isSaved={false}
                 hasValue={!!modalDisbursement?.provider_org_id}
@@ -2490,7 +2472,7 @@ export default function PlannedDisbursementsTab({
             {/* Provider Activity */}
             <div className="space-y-2">
               <LabelWithInfoAndSave
-                helpText="Link to the IATI activity of the provider organization"
+                helpText="Link to the IATI activity of the provider organisation"
                 isSaving={false}
                 isSaved={false}
                 hasValue={!!modalDisbursement?.provider_activity_uuid}
@@ -2527,7 +2509,7 @@ export default function PlannedDisbursementsTab({
             {/* Receiver Organisation */}
             <div className="space-y-2">
               <LabelWithInfoAndSave
-                helpText="The organization receiving the funds from this planned disbursement"
+                helpText="The organisation receiving the funds from this planned disbursement"
                 isSaving={false}
                 isSaved={false}
                 hasValue={!!modalDisbursement?.receiver_org_id}
@@ -2564,7 +2546,7 @@ export default function PlannedDisbursementsTab({
             {/* Receiver Activity */}
             <div className="space-y-2">
               <LabelWithInfoAndSave
-                helpText="Link to the IATI activity of the receiver organization"
+                helpText="Link to the IATI activity of the receiver organisation"
                 isSaving={false}
                 isSaved={false}
                 hasValue={!!modalDisbursement?.receiver_activity_uuid}
@@ -2601,7 +2583,7 @@ export default function PlannedDisbursementsTab({
             {/* Planned Disbursement Description */}
             <div className="space-y-2">
               <LabelWithInfoAndSave
-                helpText="Optional internal notes for this planned disbursement — e.g. purpose or scheduling rationale. This is an AIMS-only field and is not part of the IATI 2.03 <planned-disbursement> element, so it will not appear in IATI imports or exports."
+                helpText="Optional internal notes for this planned disbursement, e.g. purpose or scheduling rationale. This is an AIMS-only field and is not part of the IATI 2.03 <planned-disbursement> element, so it will not appear in IATI imports or exports."
                 isSaving={false}
                 isSaved={false}
                 hasValue={!!modalDisbursement?.notes}

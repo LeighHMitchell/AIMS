@@ -58,7 +58,7 @@ export default function HomePage() {
       label: "DFMIS",
       href: "/dashboard",
       image: "/images/module-aims.png",
-      description: "Track commitments, disbursements, expenditure, and compliance. All ODA activities — development partner-reported and projects routed from the Project Bank — published in IATI 2.03 format.",
+      description: "Track commitments, disbursements, expenditure, and compliance. All ODA activities (development partner-reported and projects routed from the Project Bank) published in IATI 2.03 format.",
       stats: stats ? [
         `${stats.aims.activities} activities`,
         `${stats.aims.donors} organizations`,
@@ -175,7 +175,7 @@ export default function HomePage() {
                     )}
                     <GlassButton
                       asChild
-                      className={`w-full bg-gray-900 hover:bg-gray-800${m.stats.length > 0 ? "" : " mt-auto"}`}
+                      className={`w-full bg-primary hover:bg-primary/90${m.stats.length > 0 ? "" : " mt-auto"}`}
                       size="default"
                     >
                       <Link href={m.href}>{m.action}</Link>

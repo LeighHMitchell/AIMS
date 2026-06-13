@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -128,6 +129,9 @@ export function NodeDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader className="bg-surface-muted -m-6 mb-0 p-6 rounded-t-lg border-b border-border">
           <DialogTitle>{isEdit ? "Edit Node" : "Add Node"}</DialogTitle>
+          <DialogDescription>
+            Describe a single result in your program logic: its label, level and supporting detail.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
@@ -176,7 +180,7 @@ export function NodeDialog({
               <RequiredDot />
               <HelpTextTooltip
                 size="sm"
-                content="The change you intend at this tier, written as a result — e.g. ‘Smallholder farmers adopt improved practices’. This is a design statement, not an IATI activity record."
+                content="The change you intend at this tier, written as a result, e.g. ‘Smallholder farmers adopt improved practices’. This is a design statement, not an IATI activity record."
               />
             </Label>
             <Textarea
@@ -206,7 +210,7 @@ export function NodeDialog({
               </div>
               <p className="text-xs text-amber-700">
                 This node is at or above the accountability ceiling and the logic is
-                baselined. Record why it is changing — a revision snapshot will be saved.
+                baselined. Record why it is changing; a revision snapshot will be saved.
               </p>
               <Input
                 value={revisionReason}

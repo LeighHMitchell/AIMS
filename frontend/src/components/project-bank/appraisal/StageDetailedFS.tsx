@@ -200,7 +200,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
           </div>
 
           <div>
-            <Label>Baseline Demand <FieldCheck value={sd.demand_baseline} /> <HelpTooltip text="Current demand baseline — existing usage or service levels." /></Label>
+            <Label>Baseline Demand <FieldCheck value={sd.demand_baseline} /> <HelpTooltip text="Current demand baseline, such as existing usage or service levels." /></Label>
             <Textarea
               value={sd.demand_baseline || ''}
               onChange={e => updateFS2Field('demand_baseline', e.target.value)}
@@ -471,7 +471,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
         {/* ═══ Tab 5: Economic Analysis ═══ */}
         <TabsContent value="economic" className="space-y-4 mt-4" id="section-fs2-economic">
           <div>
-            <Label>Economic Methodology <FieldCheck value={sd.economic_methodology} /> <HelpTooltip text="Methodology for the economic analysis — CBA, shadow pricing approach, etc." /></Label>
+            <Label>Economic Methodology <FieldCheck value={sd.economic_methodology} /> <HelpTooltip text="Methodology for the economic analysis, such as CBA, shadow pricing approach, etc." /></Label>
             <Textarea
               value={sd.economic_methodology || ''}
               onChange={e => updateFS2Field('economic_methodology', e.target.value)}
@@ -527,9 +527,9 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
             <Select value={sd.eia_category || ''} onValueChange={v => updateFS2Field('eia_category', v)} disabled={isLocked}>
               <SelectTrigger className="max-w-xs"><SelectValue placeholder="Select category..." /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="A">Category A — Full Environmental Impact Assessment</SelectItem>
-                <SelectItem value="B">Category B — Initial Environmental Examination</SelectItem>
-                <SelectItem value="C">Category C — No EIA Required</SelectItem>
+                <SelectItem value="A">Category A: Full Environmental Impact Assessment</SelectItem>
+                <SelectItem value="B">Category B: Initial Environmental Examination</SelectItem>
+                <SelectItem value="C">Category C: No EIA Required</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -664,7 +664,7 @@ export function StageDetailedFS({ wizard }: StageDetailedFSProps) {
           </div>
 
           <div>
-            <Label>M&E Framework <FieldCheck value={sd.me_framework} /> <HelpTooltip text="Monitoring and evaluation framework — indicators, reporting, review schedule." /></Label>
+            <Label>M&E Framework <FieldCheck value={sd.me_framework} /> <HelpTooltip text="Monitoring and evaluation framework: indicators, reporting, review schedule." /></Label>
             <Textarea
               value={sd.me_framework || ''}
               onChange={e => updateFS2Field('me_framework', e.target.value)}

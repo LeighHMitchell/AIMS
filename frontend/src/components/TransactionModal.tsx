@@ -2242,17 +2242,17 @@ export default function TransactionModal({
 
             {/* Parties Involved Section */}
             <div className="space-y-4">
-              <SectionHeader title="Parties Involved" helpText="The organizations providing and receiving funds in this transaction, and optionally the specific activities they relate to." />
+              <SectionHeader title="Parties Involved" helpText="The organisations providing and receiving funds in this transaction, and optionally the specific activities they relate to." />
               
               {/* Provider Organization */}
               <div className="space-y-2">
                 <LabelWithInfoAndSave
-                  helpText="The organization providing or disbursing the funds for this transaction"
+                  helpText="The organisation providing or disbursing the funds for this transaction"
                   isSaving={providerOrgAutosave.isSaving}
                   isSaved={providerOrgAutosave.isSaved}
                   hasValue={!!formData.provider_org_id}
                 >
-                  Provider Organization <RequiredDot />
+                  Provider Organisation <RequiredDot />
                 </LabelWithInfoAndSave>
                 <OrganizationSearchableSelect
                   value={formData.provider_org_id || ''}
@@ -2288,7 +2288,7 @@ export default function TransactionModal({
               {/* Provider Organization Activity ID */}
               <div className="space-y-2">
                 <LabelWithInfoAndSave
-                  helpText="Link to the IATI activity of the provider organization. For pooled funds, linking provider activities avoids double-counting in reports."
+                  helpText="Link to the IATI activity of the provider organisation. For pooled funds, linking provider activities avoids double-counting in reports."
                   isSaving={providerActivityAutosave.isSaving}
                   isSaved={providerActivityAutosave.isSaved}
                   hasValue={!!formData.provider_org_activity_id || !!formData.provider_activity_uuid}
@@ -2446,12 +2446,12 @@ export default function TransactionModal({
               {/* Receiver Organization */}
               <div className="space-y-2">
                 <LabelWithInfoAndSave
-                  helpText="The organization receiving the funds from this transaction"
+                  helpText="The organisation receiving the funds from this transaction"
                   isSaving={receiverOrgAutosave.isSaving}
                   isSaved={receiverOrgAutosave.isSaved}
                   hasValue={!!formData.receiver_org_id}
                 >
-                  Receiver Organization <RequiredDot />
+                  Receiver Organisation <RequiredDot />
                 </LabelWithInfoAndSave>
                 <OrganizationSearchableSelect
                   value={formData.receiver_org_id || ''}
@@ -2487,7 +2487,7 @@ export default function TransactionModal({
               {/* Receiver Organization Activity ID */}
               <div className="space-y-2">
                 <LabelWithInfoAndSave
-                  helpText="Link to the IATI activity of the receiver organization. For pooled funds, linking child activities avoids double-counting in reports."
+                  helpText="Link to the IATI activity of the receiver organisation. For pooled funds, linking child activities avoids double-counting in reports."
                   isSaving={receiverActivityAutosave.isSaving}
                   isSaved={receiverActivityAutosave.isSaved}
                   hasValue={!!formData.receiver_org_activity_id || !!formData.receiver_activity_uuid}
@@ -2876,7 +2876,7 @@ export default function TransactionModal({
                       formData.is_humanitarian ? "text-destructive font-medium" : "text-muted-foreground"
                     )}>
                       {formData.is_humanitarian && <Flag className="h-3.5 w-3.5 text-destructive" />}
-                      {formData.is_humanitarian ? 'Yes — humanitarian transaction' : 'No'}
+                      {formData.is_humanitarian ? 'Yes, humanitarian transaction' : 'No'}
                     </span>
                     <Switch
                       id="is_humanitarian"

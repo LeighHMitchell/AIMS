@@ -104,7 +104,7 @@ export function ChartExpandButton({ title, description, interpretation, controls
             {open && render(chartHeight)}
           </div>
           {interpretation && (
-            <p className="flex-shrink-0 mt-4 text-body text-muted-foreground leading-relaxed">
+            <p className="flex-shrink-0 mt-4 pt-4 border-t border-border text-body text-muted-foreground leading-relaxed">
               {interpretation}
             </p>
           )}

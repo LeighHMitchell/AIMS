@@ -5,7 +5,7 @@ import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger, PageTabsList, PageTabsTrigger } from "@/components/ui/tabs"
 import {
   Tooltip,
   TooltipContent,
@@ -58,6 +58,7 @@ import { TaskingTab } from "@/components/tasks/TaskingTab"
 import { NotificationTabs } from "@/components/NotificationTabs"
 import { MyTeamTab } from "@/components/dashboard/MyTeamTab"
 import { useNotificationCount } from '@/hooks/use-notification-count';
+import { useDataQualityCount } from '@/hooks/use-data-quality-count';
 import { isVisitorUser, VISITOR_BLOCKED_DASHBOARD_TABS } from '@/lib/visitor';
 
 export default function Dashboard() {
@@ -72,6 +73,11 @@ export default function Dashboard() {
   // Super users can view the workspace from another organisation's perspective.
   // null = the user's own organisation; otherwise the selected org's id.
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+
+  // Open data-quality issue count for the currently-viewed org → tab badge.
+  const dataQualityOrgId =
+    (user?.role === USER_ROLES.SUPER_USER && selectedOrgId) || user?.organizationId || undefined;
+  const dataQualityCount = useDataQualityCount(dataQualityOrgId);
 
   const isVisitor = isVisitorUser(user);
 
@@ -363,25 +369,24 @@ export default function Dashboard() {
                   { value: 'my-portfolio', label: 'My Portfolio', icon: Briefcase, show: !isVisitor },
                   { value: 'locations', label: 'Locations', icon: MapPin, show: true },
                   { value: 'flows', label: 'Aid Flows', icon: AidFlowsIcon, show: true },
-                  { value: 'data-clinic', label: 'Data Quality', icon: ClipboardCheck, show: true },
+                  { value: 'data-clinic', label: 'Data Quality', icon: ClipboardCheck, show: true, badge: dataQualityCount },
                   { value: 'my-team', label: 'My Team', icon: Users, show: !isVisitor },
                   { value: 'notifications', label: 'Notifications', icon: Bell, show: !isVisitor, badge: unreadNotificationCount },
                   { value: 'bookmarks', label: 'Bookmarks', icon: Bookmark, show: !isVisitor },
                   { value: 'tasks', label: 'Tasking', icon: ClipboardList, show: !isVisitor },
                 ].filter((t) => t.show);
                 return (
-                  <TabsList
-                    className="p-1 h-auto bg-background gap-1 border mb-6 flex flex-wrap"
+                  <PageTabsList
                     data-tour="dashboard-tabs"
-                  >
+>
                     {tabs.map((t) => {
                       const Icon = t.icon;
                       return (
-                        <TabsTrigger
+                        <PageTabsTrigger
                           key={t.value}
                           value={t.value}
-                          className="flex items-center gap-2 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                        >
+                          
+>
                           <Icon className="h-4 w-4" />
                           {t.label}
                           {(t.badge ?? 0) > 0 && (
@@ -392,10 +397,10 @@ export default function Dashboard() {
                               {(t.badge ?? 0) > 99 ? '99+' : t.badge}
                             </Badge>
                           )}
-                        </TabsTrigger>
+                        </PageTabsTrigger>
                       );
                     })}
-                  </TabsList>
+                  </PageTabsList>
                 );
               })()}
 
@@ -416,16 +421,17 @@ export default function Dashboard() {
                   <RecencyCards organizationId={viewOrgId} />
                 </div>
 
-                {/* Row 4: Actions Required Panel (Highest Priority) */}
-                <div data-tour="actions-required">
-                <ActionsRequiredPanel
-                  organizationId={viewOrgId}
-                  userId={user.id}
-                />
+                {/* Row 4: Actions Required + Data Quality, side by side (Data
+                    Quality self-gates by role and collapses to null if hidden). */}
+                <div className="grid gap-6 lg:grid-cols-2 items-start">
+                  <div data-tour="actions-required">
+                    <ActionsRequiredPanel
+                      organizationId={viewOrgId}
+                      userId={user.id}
+                    />
+                  </div>
+                  <DataQualitySummaryCard />
                 </div>
-
-                {/* Row 4b: Data Quality summary (self-gates by role) */}
-                <DataQualitySummaryCard />
 
                 {/* Row 5: Organisation Financial Data Tabs */}
                 <div data-tour="org-financial-data">

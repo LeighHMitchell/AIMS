@@ -110,21 +110,23 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
     }
   }
 
-  const handleExport = async (format: 'png' | 'svg' | 'csv') => {
+  // NB: parameter must not be named `format` — it would shadow date-fns `format`
+  // used for the date strings below.
+  const handleExport = async (exportFormat: 'png' | 'svg' | 'csv') => {
     if (timelineData.data.length === 0) {
       toast.warning('No data available to export');
       return;
     }
 
-    if (format === 'csv') {
+    if (exportFormat === 'csv') {
       // Generate CSV
       const headers = ['Project Name', 'Status', 'Role', 'Start Date', 'End Date', 'Duration (days)'];
       const rows = timelineData.data.map(entry => [
         entry.name,
         entry.status,
         entry.role,
-        format(parseISO(entry.startDate), 'MMM d, yyyy'),
-        format(parseISO(entry.endDate), 'MMM d, yyyy'),
+        format(parseISO(entry.startDate), 'd MMM yyyy'),
+        format(parseISO(entry.endDate), 'd MMM yyyy'),
         differenceInDays(parseISO(entry.endDate), parseISO(entry.startDate))
       ]);
       const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -137,7 +139,7 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Timeline exported as CSV');
-    } else if (format === 'png' || format === 'svg') {
+    } else if (exportFormat === 'png' || exportFormat === 'svg') {
       // Export as PNG using html2canvas
       if (!chartRef.current) {
         toast.error('Chart not found');
@@ -153,7 +155,7 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
         });
 
         const link = document.createElement('a');
-        link.download = `projects-timeline-${formatDate(new Date(), 'yyyy-MM-dd')}.png`;
+        link.download = `projects-timeline-${format(new Date(), 'yyyy-MM-dd')}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
 
@@ -164,9 +166,6 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
       }
     }
   };
-
-  // Helper for date formatting in export filename
-  const formatDate = (date: Date, formatStr: string) => format(date, formatStr);
 
   if (timelineData.data.length === 0) {
     return (
@@ -205,7 +204,7 @@ export function ProjectTimeline({ activities }: ProjectTimelineProps) {
               </Badge>
             </div>
             <p className="text-muted-foreground">
-              {format(parseISO(data.startDate), 'MMM d, yyyy')} - {format(parseISO(data.endDate), 'MMM d, yyyy')}
+              {format(parseISO(data.startDate), 'd MMM yyyy')} - {format(parseISO(data.endDate), 'd MMM yyyy')}
             </p>
             <p className="text-muted-foreground">
               Duration: {differenceInDays(parseISO(data.endDate), parseISO(data.startDate))} days

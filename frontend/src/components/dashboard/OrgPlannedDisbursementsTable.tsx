@@ -12,10 +12,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { Banknote, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { FullPagination } from '@/components/ui/full-pagination';
 import { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from '@/lib/pagination';
 import { OrganizationLogo } from '@/components/ui/organization-logo';
+import { EmptyOrgIndicator } from '@/components/ui/empty-org-indicator';
 import { apiFetch } from '@/lib/api-fetch';
 import { useDeleteWithUndo } from '@/hooks/useDeleteWithUndo';
 import { formatCurrencyCompact } from '@/lib/format';
@@ -162,10 +164,7 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
   return (
     <>
       {disbursements.length === 0 ? (
-        <div className="text-center py-8">
-          <Banknote className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-body text-muted-foreground">No planned disbursements found</p>
-        </div>
+        <EmptyState illustration="/images/empty-hourglass.webp" message="No planned disbursements found" />
       ) : (
         <>
           <Table>
@@ -209,24 +208,36 @@ export function OrgPlannedDisbursementsTable({ organizationId, userId, filterCon
                   <TableCell>
                     <div className="flex items-center gap-1.5 flex-wrap" title={`${d.provider_org_name || '-'} → ${d.receiver_org_name || '-'}`}>
                       <span className="flex items-center gap-1.5 flex-shrink-0">
-                        <OrganizationLogo logo={d.provider_org_logo} name={d.provider_org_name || 'Unknown'} size="sm" />
-                        <span className="text-body text-muted-foreground whitespace-nowrap">
-                          {d.provider_org_acronym || d.provider_org_name || '-'}
-                        </span>
+                        {(d.provider_org_acronym || d.provider_org_name) ? (
+                          <>
+                            <OrganizationLogo logo={d.provider_org_logo} name={d.provider_org_name || 'Unknown'} size="sm" />
+                            <span className="text-body text-muted-foreground whitespace-nowrap">
+                              {d.provider_org_acronym || d.provider_org_name}
+                            </span>
+                          </>
+                        ) : (
+                          <EmptyOrgIndicator role="provider" />
+                        )}
                         <span className="text-muted-foreground">→</span>
                       </span>
                       <span className="flex items-center gap-1.5 min-w-0">
-                        <OrganizationLogo logo={d.receiver_org_logo} name={d.receiver_org_name || 'Unknown'} size="sm" />
-                        <span className="text-body text-muted-foreground whitespace-nowrap">
-                          {d.receiver_org_acronym || d.receiver_org_name || '-'}
-                        </span>
+                        {(d.receiver_org_acronym || d.receiver_org_name) ? (
+                          <>
+                            <OrganizationLogo logo={d.receiver_org_logo} name={d.receiver_org_name || 'Unknown'} size="sm" />
+                            <span className="text-body text-muted-foreground whitespace-nowrap">
+                              {d.receiver_org_acronym || d.receiver_org_name}
+                            </span>
+                          </>
+                        ) : (
+                          <EmptyOrgIndicator role="receiver" />
+                        )}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <span className="text-body text-muted-foreground whitespace-nowrap">
                       {d.period_start ? format(new Date(d.period_start), 'MMM yyyy') : '-'}
-                      {' — '}
+                      {' – '}
                       {d.period_end ? format(new Date(d.period_end), 'MMM yyyy') : '-'}
                     </span>
                   </TableCell>

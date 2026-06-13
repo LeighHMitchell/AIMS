@@ -465,10 +465,10 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
           <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-2 mb-3">
             <p className="text-helper text-foreground font-medium">
               {econCosts.length > 0
-                ? `Enter totals — they will be distributed evenly across all ${econCosts.length} year rows.`
+                ? `Enter totals. They will be distributed evenly across all ${econCosts.length} year rows.`
                 : costTableSource
-                  ? `Enter totals — ${(costTableSource as any[]).length} year rows will be created from the Financial Analysis.`
-                  : 'Enter totals and number of years — rows will be generated automatically.'}
+                  ? `Enter totals. ${(costTableSource as any[]).length} year rows will be created from the Financial Analysis.`
+                  : 'Enter totals and number of years. Rows will be generated automatically.'}
             </p>
             {econCosts.length === 0 && !costTableSource && (
               <div className="max-w-[160px]">
@@ -693,11 +693,11 @@ export function StageEIRR({ wizard }: StageEIRRProps) {
               <div className="p-3 bg-[#f6f5f3] border border-[#5f7f7a]/20 rounded-lg space-y-2 mb-3">
                 <p className="text-helper text-foreground font-medium">
                   {econBenefits.length > 0
-                    ? `Enter a total for one category — it will be distributed evenly across all ${econBenefits.length} year rows.`
+                    ? `Enter a total for one category. It will be distributed evenly across all ${econBenefits.length} year rows.`
                     : econCosts.length > 0
-                      ? `Enter a total for one category — ${econCosts.length} year rows will be created to match costs.`
+                      ? `Enter a total for one category. ${econCosts.length} year rows will be created to match costs.`
                       : costTableSource
-                        ? `Enter a total for one category — ${(costTableSource as any[]).length} year rows from the Financial Analysis.`
+                        ? `Enter a total for one category. ${(costTableSource as any[]).length} year rows from the Financial Analysis.`
                         : 'Enter a total, category, and number of years.'}
                 </p>
                 {econBenefits.length === 0 && econCosts.length === 0 && !costTableSource && (

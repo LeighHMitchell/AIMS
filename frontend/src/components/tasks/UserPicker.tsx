@@ -412,7 +412,7 @@ function UserPickerInner({
                   className="h-8 w-8 border-2 border-background cursor-pointer hover:z-10 transition-transform hover:scale-110 bg-purple-100"
                   style={{ zIndex: 3 - idx }}
                   onClick={() => handleRemove('org', oid)}
-                  title={`${org?.name || 'Organization'} (click to remove)`}
+                  title={`${org?.name || 'Organisation'} (click to remove)`}
                 >
                   <AvatarFallback className="text-helper bg-purple-100 text-purple-700">
                     <Building2 className="h-4 w-4" />

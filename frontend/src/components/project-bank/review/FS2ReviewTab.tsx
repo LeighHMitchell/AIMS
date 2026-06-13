@@ -708,8 +708,8 @@ export function FS2ReviewTab() {
                         </p>
                         <p className="text-helper text-amber-700 mt-1">
                           FIRR: {selectedProject.firr ?? "not set"}, EIRR: {selectedProject.eirr ?? "not set"},
-                          NDP-aligned: {selectedProject.ndp_aligned ? "Yes" : "No"}
-                          — ensure financial analysis is completed for an automated recommendation.
+                          NDP-aligned: {selectedProject.ndp_aligned ? "Yes" : "No"}.
+                          Ensure financial analysis is completed for an automated recommendation.
                         </p>
                       </div>
                     )}
