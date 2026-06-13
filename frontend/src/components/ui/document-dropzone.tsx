@@ -338,11 +338,11 @@ export function DocumentDropzone({
       {/* Document list — excludes docs inside the 5s undo window */}
       {documents.some((d) => !pendingDeleteIds.has(d.id)) && (
         <div className="relative w-full overflow-x-auto overflow-y-visible">
-          <table className="w-full caption-bottom text-body border border-border rounded-lg">
+          <table className="w-full caption-bottom text-body border border-border">
             <thead className="bg-surface-muted">
               <tr>
                 <th className="w-8 p-2" />
-                <th className="text-left p-2 font-medium text-helper">File name</th>
+                <th className="text-left p-2 font-medium text-helper text-muted-foreground">File name</th>
                 <th className="text-right p-2 font-medium text-helper w-28">Actions</th>
               </tr>
             </thead>

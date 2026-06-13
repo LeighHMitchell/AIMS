@@ -1065,7 +1065,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                         toast.success("IATI ID copied");
                       }}
                       title="Click to copy"
-                      className="text-[10px] font-mono bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0 cursor-pointer"
+                      className="text-xs font-mono bg-muted hover:bg-muted/70 hover:text-foreground transition-colors px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0 cursor-pointer"
                     >
                       {activity.iatiIdentifier}
                     </button>
@@ -1111,7 +1111,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                             className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
-                          <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                             {country.code}
                           </code>
                           <span className="text-helper text-foreground">{countryName}</span>
@@ -1134,7 +1134,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                               <div className="flex items-center gap-2 flex-wrap min-w-0">
                                 <span className="text-body font-medium text-foreground break-words min-w-0">{activity.reportingOrg}</span>
                                 {activity.reportingOrgRef && (
-                                  <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0">
+                                  <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0">
                                     {activity.reportingOrgRef}
                                   </code>
                                 )}
@@ -1296,7 +1296,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                       {refDisplay.normalized && (
                                         <>
                                           {' '}
-                                          <code className={`text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline whitespace-nowrap ${!refDisplay.isValid ? 'border border-destructive/30' : ''}`}>
+                                          <code className={`text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline whitespace-nowrap ${!refDisplay.isValid ? 'border border-destructive/30' : ''}`}>
                                             {refDisplay.normalized}
                                           </code>
                                           {!refDisplay.isValid && (
@@ -1318,7 +1318,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                   <td className="px-2 py-1 whitespace-nowrap">
                                     {orgRole && roleName ? (
                                       <div className="flex items-center gap-1.5">
-                                        <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0">
+                                        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground inline-block shrink-0">
                                           {orgRole}
                                         </code>
                                         <span className="text-muted-foreground">{roleName}</span>
@@ -1371,7 +1371,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-muted-foreground whitespace-nowrap align-top">Currency:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {currencyCode}
                                     </code>
                                     {currencyName && (
@@ -1390,7 +1390,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-muted-foreground whitespace-nowrap align-top">Status:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {activity.status}
                                     </code>
                                     {statusName && (
@@ -1409,7 +1409,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-muted-foreground whitespace-nowrap align-top">Aid Type:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {label?.code || aidTypeCode}
                                     </code>
                                     <span className="text-foreground">{label?.name || activity.aidTypeName || aidTypeCode}</span>
@@ -1425,7 +1425,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-muted-foreground whitespace-nowrap align-top">Flow Type:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {label?.code || activity.flowType}
                                     </code>
                                     <span className="text-foreground">{label?.name || activity.flowTypeName || activity.flowType}</span>
@@ -1441,7 +1441,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-muted-foreground whitespace-nowrap align-top">Finance Type:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {label?.code || activity.financeType}
                                     </code>
                                     <span className="text-foreground">{label?.name || activity.financeTypeName || activity.financeType}</span>
@@ -1457,7 +1457,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="px-2 py-1 text-muted-foreground whitespace-nowrap align-top">Tied Status:</td>
                                 <td className="px-2 py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {label?.code || activity.tiedStatus}
                                     </code>
                                     <span className="text-foreground">{label?.name || activity.tiedStatusName || activity.tiedStatus}</span>
@@ -1477,7 +1477,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="py-1 pr-2 text-muted-foreground whitespace-nowrap align-top">Scope:</td>
                                 <td className="py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {scopeItem?.code || activity.activityScope}
                                     </code>
                                     <span className="text-foreground">{scopeItem?.name || activity.activityScope}</span>
@@ -1494,7 +1494,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="py-1 pr-2 text-muted-foreground whitespace-nowrap align-top">Collaboration:</td>
                                 <td className="py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {label?.code || activity.collaborationType}
                                     </code>
                                     <span className="text-foreground">{label?.name || activity.collaborationType}</span>
@@ -1511,7 +1511,7 @@ const IatiSearchResultCard = React.memo(({ activity, onSelect, isLoading }: Iati
                                 <td className="py-1 pr-2 text-muted-foreground whitespace-nowrap align-top">Hierarchy:</td>
                                 <td className="py-1">
                                   <div className="flex items-center gap-1.5">
-                                    <code className="text-[9px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
                                       {activity.hierarchy}
                                     </code>
                                     {hierarchyName && (

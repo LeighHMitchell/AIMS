@@ -966,12 +966,12 @@ export function GovernmentInputsSectionEnhanced({
                       </div>
                     ) : (
                       <div className="relative w-full overflow-x-auto overflow-y-visible">
-                        <table className="w-full caption-bottom text-body border border-border rounded-lg">
+                        <table className="w-full caption-bottom text-body border border-border">
                           <thead className="bg-surface-muted">
                             <tr>
-                              <th className="text-left p-2 font-medium text-helper w-28">Type</th>
-                              <th className="text-left p-2 font-medium text-helper w-40">Category</th>
-                              <th className="text-left p-2 font-medium text-helper">Description</th>
+                              <th className="text-left p-2 font-medium text-helper text-muted-foreground w-28">Type</th>
+                              <th className="text-left p-2 font-medium text-helper text-muted-foreground w-40">Category</th>
+                              <th className="text-left p-2 font-medium text-helper text-muted-foreground">Description</th>
                               <th className="text-right p-2 font-medium text-helper w-40">Original Value</th>
                               <th className="text-right p-2 font-medium text-helper w-32">USD Value</th>
                               <th className="w-24" />
@@ -1315,10 +1315,10 @@ export function GovernmentInputsSectionEnhanced({
               </div>
 
               <div className="relative w-full overflow-x-auto overflow-y-visible">
-                <table className="w-full caption-bottom text-body border border-border rounded-lg">
+                <table className="w-full caption-bottom text-body border border-border">
                   <thead className="bg-surface-muted">
                     <tr>
-                      <th className="text-left p-2 font-medium text-helper">Category</th>
+                      <th className="text-left p-2 font-medium text-helper text-muted-foreground">Category</th>
                       <th className="text-right p-2 font-medium text-helper w-32">Answered</th>
                       <th className="text-right p-2 font-medium text-helper w-40">Risk Level</th>
                     </tr>

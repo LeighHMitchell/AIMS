@@ -161,7 +161,7 @@ export function DateRevisionHistory({
               {/* Current value */}
               <div className="px-3 py-2.5 bg-blue-50/50">
                 <div className="flex items-center gap-1.5 text-helper text-blue-600 font-medium mb-1">
-                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                  <span className="inline-block w-2 h-2 bg-brand-blue-slate rounded-full"></span>
                   Current Value
                 </div>
                 <p className="text-body font-medium text-foreground">

@@ -656,7 +656,7 @@ export function FinancingTermsTab({
           {/* Loan Status Table */}
           {loanStatuses.length > 0 ? (
             <div className="relative w-full overflow-x-auto overflow-y-visible">
-              <table className="w-full caption-bottom text-body border border-border rounded-lg">
+              <table className="w-full caption-bottom text-body border border-border">
                 <thead className="bg-surface-muted">
                   <tr>
                     {([

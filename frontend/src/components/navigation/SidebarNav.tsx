@@ -177,6 +177,7 @@ export function SidebarNav({
       items: [
         { name: "Transparency Index", href: "/transparency-index", show: true },
         { name: "Aid Effectiveness", href: "/aid-effectiveness-dashboard", show: true },
+        { name: "API", href: "/api-portal", show: true },
       ]
     },
     {

@@ -430,7 +430,7 @@ export function EventDetailModal({
   const isOrganizer = user?.id === event.organizerId
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[10000]" onClick={onClose}>
       <Card 
         className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-xl rounded-lg"
         onClick={(e) => e.stopPropagation()}

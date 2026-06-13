@@ -1595,7 +1595,7 @@ export default function IATIImportPage() {
                             <span className="text-body">Existing in AIMS</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-blue-500 rounded-full" />
+                            <div className="w-3 h-3 bg-brand-blue-slate rounded-full" />
                             <span className="text-body">New to import</span>
                           </div>
                         </div>
@@ -1719,7 +1719,7 @@ export default function IATIImportPage() {
                             <span className="text-body">Existing in AIMS</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-blue-500 rounded-full" />
+                            <div className="w-3 h-3 bg-brand-blue-slate rounded-full" />
                             <span className="text-body">New to import</span>
                           </div>
                         </div>

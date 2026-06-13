@@ -260,7 +260,7 @@ export const ActivityPortfolioTimeline: React.FC<ActivityPortfolioTimelineProps>
           {/* Legend */}
           <div className="flex flex-wrap gap-4 pt-4 border-t border-border text-helper">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <div className="w-3 h-3 bg-brand-blue-slate rounded"></div>
               <span>Active/Implementation</span>
             </div>
             <div className="flex items-center gap-2">

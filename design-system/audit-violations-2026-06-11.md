@@ -199,7 +199,14 @@ Canonical: dialogs 10000 → menus 10001 → popovers 10005 → tooltips 10010; 
 
 **2026-06-13 — GlassButton radius RESOLVED (user decision: flatten):** `glass-button.tsx` `rounded-lg` (12px) → `rounded-md` (6px), matching the system button standard. The glass shimmer pseudo-element uses `border-radius: inherit`, so it follows automatically. Affects the sidebar "Add New Activity" CTA + home-page module buttons (the app's highest-traffic buttons) — now consistent with every other button's radius while keeping the glass treatment.
 
-All other findings in this report remain open.
+**2026-06-13 — polish tier DONE (with documented judgment calls):**
+- **Code chips:** the 7 IATI-classification chips in ActivityProfileHeader + 14 field chips in IatiImportTab bumped `text-[10px]`/`text-[9px]` → `text-xs`. The ~20 dense-overlay 10px chips (map legends, dropdown-row prefixes, year-picker/sankey labels across shared components) are KEPT as a sanctioned dense-context variant — bumping them blind would wrap cramped layouts. (4 remaining 10px in ActivityProfileHeader are non-mono micro-labels/region-tag badges, not code chips — out of scope.)
+- **Dialog title icons:** swept entire codebase — the audit's AlertTriangle/AlertCircle decorative-icon titles are ALL already text-only (fixed in worktree-agent merges / earlier work). Remaining non-text title elements are meaningful, not decorative (org logo in org-detail dialog, code-chip+label in a drill-down) — kept.
+- **Calendar modals:** full Dialog-system conversion DECLINED by design — EventCreate/DetailModal are rich modals (editable inline title, organizer action buttons, avatar block) that don't fit the text-only DialogHeader; forcing them would destroy functionality. Fixed the real bug: overlay `z-50` → `z-[10000]` (dialog layer) on both, so they no longer sit below popovers/dialogs.
+- **Form-section tables:** `rounded-lg` removed from 6 `<table>`s (square-corner rule: AidEffectivenessForm, GovernmentInputsSectionEnhanced ×2, document-dropzone, FinancingTermsTab, ReadinessDocumentUpload); `text-helper` headers in 4 files given `text-muted-foreground` (canonical muted headers). Compact `p-2`/`text-helper` sizing KEPT — sanctioned dense in-form variant.
+- **Blue accent dots:** decorative legend/timeline/step dots (ActivityPortfolioTimeline, DateRevisionHistory, FundFlowGraph legend, iati-import step dots ×2) `bg-blue-500` → `bg-brand-blue-slate`. Map markers (ActivityLocationEditor, ui/map, LocationMap, sdg-avatar-group) + heatmap intensity cell KEPT as functional-blue (legibility on map tiles / data-viz scale).
+
+REMAINING OPEN (genuinely low-value / needs visual QA): the ~20 dense 10px chips (now sanctioned), map-marker blue (functional), the 24 non-button bg-blue/gray color uses minus the dots fixed here, and the deferred eslint-ban promotions (need a custom rule). The substantive design-system remediation is complete.
 
 ## Notes & judgment calls
 

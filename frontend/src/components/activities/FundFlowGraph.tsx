@@ -523,7 +523,7 @@ export default function FundFlowGraph({
       <div className="space-y-3">
         <div className="flex items-center gap-6 text-helper text-muted-foreground flex-wrap">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+            <div className="w-4 h-4 rounded-full bg-brand-blue-slate"></div>
             <span>Provider</span>
           </div>
           <div className="flex items-center gap-2">

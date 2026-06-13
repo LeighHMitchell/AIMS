@@ -857,7 +857,7 @@ export function ActivityProfileHeader({
               <div>
                 <div className="text-muted-foreground mb-1">Hierarchy</div>
                 <div className="flex items-center gap-1.5">
-                  <code className="text-[10px] px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
+                  <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                     {activity.hierarchy}
                   </code>
                   <span className="font-medium text-foreground">
@@ -870,7 +870,7 @@ export function ActivityProfileHeader({
               <div>
                 <div className="text-muted-foreground mb-1">Collaboration</div>
                 <div className="flex items-center gap-1.5">
-                  <code className="text-[10px] px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
+                  <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                     {activity.collaborationType}
                   </code>
                   <span className="font-medium text-foreground">
@@ -883,7 +883,7 @@ export function ActivityProfileHeader({
               <div>
                 <div className="text-muted-foreground mb-1">Flow Type</div>
                 <div className="flex items-center gap-1.5">
-                  <code className="text-[10px] px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
+                  <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                     {activity.defaultFlowType}
                   </code>
                   <span className="font-medium text-foreground">
@@ -896,7 +896,7 @@ export function ActivityProfileHeader({
               <div>
                 <div className="text-muted-foreground mb-1">Finance Type</div>
                 <div className="flex items-center gap-1.5">
-                  <code className="text-[10px] px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
+                  <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                     {activity.defaultFinanceType}
                   </code>
                   <span className="font-medium text-foreground">
@@ -909,7 +909,7 @@ export function ActivityProfileHeader({
               <div>
                 <div className="text-muted-foreground mb-1">Aid Type</div>
                 <div className="flex items-center gap-1.5">
-                  <code className="text-[10px] px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
+                  <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                     {activity.defaultAidType}
                   </code>
                   <span className="font-medium text-foreground">
@@ -922,7 +922,7 @@ export function ActivityProfileHeader({
               <div>
                 <div className="text-muted-foreground mb-1">Tied Status</div>
                 <div className="flex items-center gap-1.5">
-                  <code className="text-[10px] px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
+                  <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                     {activity.defaultTiedStatus}
                   </code>
                   <span className="font-medium text-foreground">
@@ -935,7 +935,7 @@ export function ActivityProfileHeader({
               <div>
                 <div className="text-muted-foreground mb-1">Scope</div>
                 <div className="flex items-center gap-1.5">
-                  <code className="text-[10px] px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
+                  <code className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded font-mono">
                     {activity.activityScope}
                   </code>
                   <span className="font-medium text-foreground">

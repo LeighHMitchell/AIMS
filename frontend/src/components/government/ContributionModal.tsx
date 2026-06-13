@@ -815,8 +815,8 @@ function FinancialForm({
               <table className="w-full text-body">
                 <thead className="bg-surface-muted">
                   <tr>
-                    <th className="text-left p-2 font-medium text-helper w-28">Year</th>
-                    <th className="text-left p-2 font-medium text-helper w-52">Value Date</th>
+                    <th className="text-left p-2 font-medium text-helper text-muted-foreground w-28">Year</th>
+                    <th className="text-left p-2 font-medium text-helper text-muted-foreground w-52">Value Date</th>
                     <th className="text-right p-2 font-medium text-helper w-36">
                       Amount {value.currency ? `(${value.currency})` : '(Local)'}
                     </th>
