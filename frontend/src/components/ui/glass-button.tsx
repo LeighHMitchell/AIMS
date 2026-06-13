@@ -25,7 +25,7 @@ const GlassButton = React.forwardRef<HTMLButtonElement, GlassButtonProps>(
         className={cn(
           'glass-button',
           size === 'lg' && 'text-base',
-          'relative inline-flex shrink-0 rounded-lg !text-white',
+          'relative inline-flex shrink-0 rounded-md !text-white',
 
           className
         )}

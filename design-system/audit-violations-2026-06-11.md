@@ -197,6 +197,8 @@ Canonical: dialogs 10000 → menus 10001 → popovers 10005 → tooltips 10010; 
 
 **2026-06-13 — production build GREEN:** `next build` exit 0, ✓ Generating static pages (222/222), full route table emitted. The two prior failures were the documented PageNotFoundError flake (different `/api/*` route each run, all routes exist+tracked+unmodified by this work, compile/typecheck/lint always passed). Bulk of the design-system work committed by the user (c73e22c7 + worktree-agent merges); ~4 last-batch files lint-clean and pending the next commit.
 
+**2026-06-13 — GlassButton radius RESOLVED (user decision: flatten):** `glass-button.tsx` `rounded-lg` (12px) → `rounded-md` (6px), matching the system button standard. The glass shimmer pseudo-element uses `border-radius: inherit`, so it follows automatically. Affects the sidebar "Add New Activity" CTA + home-page module buttons (the app's highest-traffic buttons) — now consistent with every other button's radius while keeping the glass treatment.
+
 All other findings in this report remain open.
 
 ## Notes & judgment calls
