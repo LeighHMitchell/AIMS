@@ -46,8 +46,9 @@ import { OECDCRSFlagsMultiSelect } from '@/components/forms/OECDCRSFlagsMultiSel
 import { AddLoanStatusModal } from './AddLoanStatusModal';
 import { DatePicker } from '@/components/ui/date-picker';
 import { formatDate as formatDateCanonical } from '@/lib/format';
+import { CurrencyValue } from '@/components/ui/currency-value';
 
-export function FinancingTermsTab({ 
+export function FinancingTermsTab({
   activityId, 
   readOnly = false,
   className,
@@ -306,21 +307,16 @@ export function FinancingTermsTab({
     return plan ? plan.name : code;
   };
 
-  // Helper function to format date as "1 Jan 2023" (used in tables)
+  // Helper function to format date as "1 Jan 2023" (delegates to canonical)
   const formatDate = (dateString: string) => {
-    if (!dateString) return '-';
-    return formatDateCanonical(dateString) || '-';
+    if (!dateString) return '—';
+    return formatDateCanonical(dateString) || '—';
   };
 
-  // Helper function to format date as "1 January 2023" (used in display cards)
+  // Display-card date helper. Delegates to the canonical short-month form.
   const formatDateLong = (dateString: string) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    if (!dateString) return '—';
+    return formatDateCanonical(dateString) || '—';
   };
 
   return (
@@ -523,7 +519,7 @@ export function FinancingTermsTab({
                         <HelpTextTooltip size="sm" content="The main interest rate for the loan (percentage)" />
                       </div>
                       <div className="text-lg font-semibold text-foreground">
-                        {loanTermsForm.rate_1 ? `${loanTermsForm.rate_1}%` : '-'}
+                        {loanTermsForm.rate_1 ? `${loanTermsForm.rate_1}%` : '—'}
                       </div>
                     </div>
                     <div className="border-t pt-3">
@@ -532,7 +528,7 @@ export function FinancingTermsTab({
                         <HelpTextTooltip size="sm" content="A second interest rate, if applicable (percentage)" />
                       </div>
                       <div className="text-lg font-semibold text-foreground">
-                        {loanTermsForm.rate_2 ? `${loanTermsForm.rate_2}%` : '-'}
+                        {loanTermsForm.rate_2 ? `${loanTermsForm.rate_2}%` : '—'}
                       </div>
                     </div>
                   </div>
@@ -551,7 +547,7 @@ export function FinancingTermsTab({
                       <div className="text-body font-semibold text-foreground">
                         {loanTermsForm.repayment_type_code ?
                           getRepaymentTypeLabel(loanTermsForm.repayment_type_code) :
-                          '-'
+                          '—'
                         }
                       </div>
                     </div>
@@ -563,7 +559,7 @@ export function FinancingTermsTab({
                       <div className="text-body font-semibold text-foreground">
                         {loanTermsForm.repayment_plan_code ?
                           getRepaymentPlanLabel(loanTermsForm.repayment_plan_code) :
-                          '-'
+                          '—'
                         }
                       </div>
                     </div>
@@ -582,7 +578,7 @@ export function FinancingTermsTab({
                     <HelpTextTooltip size="sm" content="Date when the loan was committed" />
                   </div>
                   <div className="text-body font-semibold text-foreground">
-                    {loanTermsForm.commitment_date ? formatDateLong(loanTermsForm.commitment_date) : '-'}
+                    {loanTermsForm.commitment_date ? formatDateLong(loanTermsForm.commitment_date) : '—'}
                   </div>
                 </CardContent>
               </Card>
@@ -595,7 +591,7 @@ export function FinancingTermsTab({
                     <HelpTextTooltip size="sm" content="Date of first scheduled repayment" />
                   </div>
                   <div className="text-body font-semibold text-foreground">
-                    {loanTermsForm.repayment_first_date ? formatDateLong(loanTermsForm.repayment_first_date) : '-'}
+                    {loanTermsForm.repayment_first_date ? formatDateLong(loanTermsForm.repayment_first_date) : '—'}
                   </div>
                 </CardContent>
               </Card>
@@ -608,7 +604,7 @@ export function FinancingTermsTab({
                     <HelpTextTooltip size="sm" content="Date of final scheduled repayment" />
                   </div>
                   <div className="text-body font-semibold text-foreground">
-                    {loanTermsForm.repayment_final_date ? formatDateLong(loanTermsForm.repayment_final_date) : '-'}
+                    {loanTermsForm.repayment_final_date ? formatDateLong(loanTermsForm.repayment_final_date) : '—'}
                   </div>
                 </CardContent>
               </Card>
@@ -623,7 +619,7 @@ export function FinancingTermsTab({
                     <HelpTextTooltip size="sm" content="Applicable OECD CRS reporting flags for this loan" />
                   </div>
                   <div className="text-body font-semibold text-foreground">
-                    {selectedCRSFlags.length > 0 ? `${selectedCRSFlags.length} selected` : '-'}
+                    {selectedCRSFlags.length > 0 ? `${selectedCRSFlags.length} selected` : '—'}
                   </div>
                 </CardContent>
               </Card>
@@ -697,41 +693,25 @@ export function FinancingTermsTab({
                   {sortedLoanStatuses.map((status) => (
                     <tr key={status.id} className="group/row hover:bg-muted/50">
                       <td className="p-2 font-medium">{status.year}</td>
-                      <td className="p-2 whitespace-nowrap">{status.value_date ? formatDate(status.value_date) : '-'}</td>
+                      <td className="p-2 whitespace-nowrap">{status.value_date ? formatDate(status.value_date) : '—'}</td>
                       <td className="p-2 text-right tabular-nums">
                         {status.interest_received != null ? (
-                          <>
-                            {status.currency && <span className="text-muted-foreground text-helper">{status.currency}</span>}
-                            {status.currency ? ' ' : ''}
-                            {status.interest_received.toLocaleString()}
-                          </>
-                        ) : '-'}
+                          <CurrencyValue amount={status.interest_received} currency={status.currency || 'USD'} />
+                        ) : '—'}
                       </td>
                       <td className="p-2 text-right tabular-nums">
                         {status.principal_outstanding != null ? (
-                          <>
-                            {status.currency && <span className="text-muted-foreground text-helper">{status.currency}</span>}
-                            {status.currency ? ' ' : ''}
-                            {status.principal_outstanding.toLocaleString()}
-                          </>
-                        ) : '-'}
+                          <CurrencyValue amount={status.principal_outstanding} currency={status.currency || 'USD'} />
+                        ) : '—'}
                       </td>
                       <td className="p-2 text-right tabular-nums">
                         {status.principal_arrears != null ? (
-                          <>
-                            {status.currency && <span className="text-muted-foreground text-helper">{status.currency}</span>}
-                            {status.currency ? ' ' : ''}
-                            {status.principal_arrears.toLocaleString()}
-                          </>
+                          <CurrencyValue amount={status.principal_arrears} currency={status.currency || 'USD'} />
                         ) : '0'}
                       </td>
                       <td className="p-2 text-right tabular-nums">
                         {status.interest_arrears != null ? (
-                          <>
-                            {status.currency && <span className="text-muted-foreground text-helper">{status.currency}</span>}
-                            {status.currency ? ' ' : ''}
-                            {status.interest_arrears.toLocaleString()}
-                          </>
+                          <CurrencyValue amount={status.interest_arrears} currency={status.currency || 'USD'} />
                         ) : '0'}
                       </td>
                       {!readOnly && (

@@ -36,6 +36,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { formatDate } from '@/lib/format';
 import { FIELD_MAPPINGS } from '@/lib/iati-field-mapper';
 import { HelpTextTooltip } from '@/components/ui/help-text-tooltip';
 
@@ -422,14 +423,10 @@ export function IATISyncPanel({
 
   // Format value for display
   const formatValue = (value: any, field: string): string => {
-    if (value === null || value === undefined) return 'Not set';
-    
+    if (value === null || value === undefined) return '—';
+
     if (field.includes('date') && value) {
-      try {
-        return format(new Date(value), 'dd MMM yyyy');
-      } catch {
-        return value.toString();
-      }
+      return formatDate(value) || value.toString();
     }
 
     if (field === 'sectors' && Array.isArray(value)) {

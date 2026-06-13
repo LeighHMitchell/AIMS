@@ -23,7 +23,8 @@ import { BarChart3, TableIcon, ChevronDown, ChevronUp } from 'lucide-react'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
-import { formatAxisCurrency } from '@/lib/format'
+import { formatAxisCurrency, formatTooltipCurrency } from '@/lib/format'
+import { CurrencyValue } from '@/components/ui/currency-value'
 import { ChartTooltipCard, ChartTooltipRow } from '@/components/ui/chart-tooltip'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
@@ -113,15 +114,6 @@ export function DisbursementsBySectorChart({ data, loading = false, csvRows }: D
   const actualColors = ['#334155', '#4c5568', '#475569', '#5d6b7a', '#7b95a7', '#94a3b8'];
   const plannedColors = ['#94a3b8', '#a3b5c2', '#cbd5e1', '#cfd0d5', '#cbd5e1', '#cfd0d5'];
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   if (loading) {
     return <ChartLoadingPlaceholder />;
   }
@@ -156,7 +148,7 @@ export function DisbursementsBySectorChart({ data, loading = false, csvRows }: D
                   const filtered = payload.filter((e: any) => e.value)
                   const rows: ChartTooltipRow[] = filtered.map((entry: any) => ({
                     label: entry.name,
-                    value: formatCurrency(entry.value),
+                    value: formatTooltipCurrency(entry.value, isExpanded),
                     color: entry.color || entry.fill,
                   }))
                   return (
@@ -256,7 +248,7 @@ export function DisbursementsBySectorChart({ data, loading = false, csvRows }: D
                   const filtered = payload.filter((e: any) => e.value)
                   const rows: ChartTooltipRow[] = filtered.map((entry: any) => ({
                     label: entry.name,
-                    value: formatCurrency(entry.value),
+                    value: formatTooltipCurrency(entry.value, isExpanded),
                     color: entry.color || entry.fill,
                   }))
                   return (
@@ -332,18 +324,18 @@ export function DisbursementsBySectorChart({ data, loading = false, csvRows }: D
 
                         return (
                           <React.Fragment key={year}>
-                            <TableCell className="text-right">{formatCurrency(planned)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(actual)}</TableCell>
+                            <TableCell className="text-right"><CurrencyValue amount={planned} /></TableCell>
+                            <TableCell className="text-right"><CurrencyValue amount={actual} /></TableCell>
                             <TableCell className={`text-right ${varianceColor}`}>
-                              {formatCurrency(variance)}
+                              <CurrencyValue amount={variance} />
                             </TableCell>
                           </React.Fragment>
                         );
                       })}
-                      <TableCell className="text-right font-semibold">{formatCurrency(totalPlanned)}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatCurrency(totalActual)}</TableCell>
+                      <TableCell className="text-right font-semibold"><CurrencyValue amount={totalPlanned} /></TableCell>
+                      <TableCell className="text-right font-semibold"><CurrencyValue amount={totalActual} /></TableCell>
                       <TableCell className={`text-right font-semibold ${totalVariance >= 0 ? 'text-green-600' : 'text-destructive'}`}>
-                        {formatCurrency(totalVariance)}
+                        <CurrencyValue amount={totalVariance} />
                       </TableCell>
                     </TableRow>
                   );

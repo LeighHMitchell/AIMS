@@ -22,7 +22,8 @@ import {
 } from 'recharts'
 import { TrendingUp, TableIcon, AreaChartIcon } from 'lucide-react'
 import { ChartLoadingPlaceholder } from '@/components/ui/loading-text'
-import { formatAxisCurrency } from '@/lib/format'
+import { formatAxisCurrency, formatTooltipCurrency } from '@/lib/format'
+import { CurrencyValue } from '@/components/ui/currency-value'
 import { useChartExpansion } from '@/lib/chart-expansion-context'
 import { YearRangeChip } from '@/components/ui/year-range-chip'
 import { useYearRangeDefault } from '@/hooks/useYearRangeDefault'
@@ -115,24 +116,6 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
     '#84cc16', // lime
   ];
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatYAxis = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
-    } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`;
-    }
-    return `$${value}`;
-  };
-
   if (loading) {
     return <ChartLoadingPlaceholder />;
   }
@@ -158,7 +141,7 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
             <Tooltip
               formatter={(value: number, name: string) => {
                 const sector = data.sectors.find(s => s.sectorCode === name);
-                return [formatCurrency(value), sector?.sectorName || name];
+                return [formatTooltipCurrency(value, isExpanded), sector?.sectorName || name];
               }}
               labelFormatter={(year) => `Year: ${year}`}
             />
@@ -249,7 +232,7 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
               <Tooltip 
                 formatter={(value: number, name: string) => {
                   const sector = data.sectors.find(s => s.sectorCode === name);
-                  return [formatCurrency(value), sector?.sectorName || name];
+                  return [formatTooltipCurrency(value, isExpanded), sector?.sectorName || name];
                 }}
                 labelFormatter={(year) => `Year: ${year}`}
               />
@@ -287,7 +270,7 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
               <Tooltip 
                 formatter={(value: number, name: string) => {
                   const sector = data.sectors.find(s => s.sectorCode === name);
-                  return [formatCurrency(value), sector?.sectorName || name];
+                  return [formatTooltipCurrency(value, isExpanded), sector?.sectorName || name];
                 }}
                 labelFormatter={(year) => `Year: ${year}`}
               />
@@ -340,11 +323,11 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
                       </TableCell>
                       {data.sectors.map(sector => (
                         <TableCell key={sector.sectorCode} className="text-right">
-                          {formatCurrency(yearData[sector.sectorCode] || 0)}
+                          <CurrencyValue amount={yearData[sector.sectorCode] || 0} />
                         </TableCell>
                       ))}
                       <TableCell className="text-right font-semibold">
-                        {formatCurrency(total)}
+                        <CurrencyValue amount={total} />
                       </TableCell>
                     </TableRow>
                   );
@@ -360,18 +343,18 @@ export function DisbursementsOverTimeChart({ data, loading = false }: Disburseme
                       );
                       return (
                         <TableCell key={sector.sectorCode} className="text-right">
-                          {formatCurrency(sectorTotal)}
+                          <CurrencyValue amount={sectorTotal} />
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-right">
-                      {formatCurrency(
-                        timeSeriesData.reduce((sum, yearData) => {
-                          return sum + data.sectors.reduce((s, sector) => 
+                      <CurrencyValue
+                        amount={timeSeriesData.reduce((sum, yearData) => {
+                          return sum + data.sectors.reduce((s, sector) =>
                             s + (yearData[sector.sectorCode] || 0), 0
                           );
-                        }, 0)
-                      )}
+                        }, 0)}
+                      />
                     </TableCell>
                   </TableRow>
                 )}
